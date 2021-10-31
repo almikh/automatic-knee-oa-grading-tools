@@ -4,9 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
-
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+QT       += core gui widgets
 
 TARGET = grading_tool
 TEMPLATE = app
@@ -26,20 +24,28 @@ CONFIG += c++11
 
 SOURCES += \
         main.cpp \
-        mainwindow.cpp
+        mainwindow.cpp \
+        classifier.cpp \
+        zip/qzip.cpp
 
 HEADERS += \
-        mainwindow.h
+        mainwindow.h \
+        classifier.h \
+        zip/qzipreader.h \
+        zip/qzipwriter.h
 
 # torch
 CONFIG += no_keywords
 QMAKE_CXXFLAGS += -DGLIBCXX_USE_CXX11_ABI=0
 
-win32:CONFIG(debug, debug|release): LIBS += -LE:/vhdc/src/3rdparty/libtorch_debug/libtorch_debug/lib/ -ltorch -ltorch_cpu -lc10
-else:win32:CONFIG(release, debug|release): LIBS += -LE:/vhdc/src/3rdparty/libtorch_release/libtorch_debug/lib/ -ltorch -ltorch_cpu -lc10
+win32:CONFIG(debug, debug|release): \
+    LIBS += -LE:/vhdc/src/3rdparty/libtorch_debug/lib -LD:/Development/automatic-knee-oa-grading-tools/grading_tool/3rdparty/zlib/lib -ltorch -ltorch_cpu -lc10 -lzlibstaticd
+else:win32:CONFIG(release, debug|release): \
+    LIBS += -LE:/vhdc/src/3rdparty/libtorch_release/lib -LD:/Development/automatic-knee-oa-grading-tools/grading_tool/3rdparty/zlib/lib -ltorch -ltorch_cpu -lc10 -lzlibstatic
 
-INCLUDEPATH += E:/vhdc/src/3rdparty/libtorch_debug/libtorch_debug/include/
-INCLUDEPATH += E:/vhdc/src/3rdparty/libtorch_debug/libtorch_debug/include/torch/csrc/api/include/
+INCLUDEPATH += E:/vhdc/src/3rdparty/libtorch_debug/include/
+INCLUDEPATH += E:/vhdc/src/3rdparty/libtorch_debug/include/torch/csrc/api/include/
+INCLUDEPATH += 3rdparty/zlib/include
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
