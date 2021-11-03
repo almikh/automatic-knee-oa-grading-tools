@@ -32,33 +32,16 @@ bool Classifier::initFromResource(const QString& filename) {
 
     if (meta_data.contains("input_size")) {
         auto input_size = meta_data["input_size"].toObject();
-        // input_size_.height = input_size["height"].toInt();
-        // input_size_.width = input_size["width"].toInt();
+        input_size_.height = input_size["height"].toInt();
+        input_size_.width = input_size["width"].toInt();
     }
     else {
         last_error_ = "ошибка парсинга метаданных: отсутствует поле `input_size`";
         return false;
     }
 
-    if (meta_data.contains("use_axis_num")) {
-        use_axis_num_ = meta_data["use_axis_num"].toInt();
-    }
-    else use_axis_num_ = 0;
-
-    if (meta_data.contains("use_central_distances")) {
-        use_central_distances_ = meta_data["use_central_distances"].toInt();
-    }
-    else use_central_distances_ = 0;
-
-    if (meta_data.contains("use_axis_weights")) {
-        use_axis_weights_ = meta_data["use_axis_weights"].toInt();
-    }
-    else use_axis_weights_ = 0;
-
-    qDebug() << header_;
-
     // обученная модель НС
-    QFile file(QString(filename).replace(".dll", "_script.pth"));
+    QFile file("scripted.pth");
     file.remove();
 
     file.open(QIODevice::WriteOnly);
@@ -82,4 +65,38 @@ bool Classifier::initFromResource(const QString& filename) {
     file.remove();
 
     return true;
+}
+
+QString Classifier::header(int idx) const {
+  if (idx < header_.size()) {
+    return header_[idx];
+  }
+
+  return "unknown";
+}
+
+QVector<Classifier::Item> Classifier::getGrade(const Classifier::InputData& img) {
+  // формируем входные данные модели
+  torch::Tensor tensor_img = torch::from_blob(img.data, { img.rows, img.cols, 3 }, torch::kByte);
+
+  // запускаем
+  torch::NoGradGuard no_grad;
+
+  auto output = module_.forward({ tensor_img });
+  auto tensor = output.toTensor();
+  auto softmax = tensor.softmax(0);
+
+  auto count = softmax.size(0);
+  float* data = static_cast<float*>(softmax.data_ptr());
+
+  QVector<Item> answer(count);
+  for (auto i = 0; i < count; ++i) {
+    answer[i] = { header(i), data[i] };
+  }
+
+  qStableSort(answer.begin(), answer.end(), [](auto lhs, auto rhs) {
+    return lhs.confidence > rhs.confidence;
+  });
+
+  return answer;
 }
