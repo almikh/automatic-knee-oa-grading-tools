@@ -46,13 +46,13 @@ INCLUDEPATH += $${THIRD_PARTY_PATH}/zlib/include/
 LIBS += -L$${THIRD_PARTY_PATH}/zlib/lib/
 
 win32:CONFIG(debug, debug|release) {
-    INCLUDEPATH += $${TORCH_PATH}_debug/include $${TORCH_PATH}_debug/include/torch/csrc/api/include
-    LIBS += -L$${TORCH_PATH}_debug/lib -ltorch -ltorch_cpu -lc10 -lzlibstaticd
+    INCLUDEPATH += $${LIBTORCH_PATH}_debug/include $${LIBTORCH_PATH}_debug/include/torch/csrc/api/include
+    LIBS += -L$${LIBTORCH_PATH}_debug/lib -ltorch -ltorch_cpu -lc10 -lzlibstaticd
     LIBS += -L$${OPENCV_PATH}/lib -lopencv_world420d
 }
 else:win32:CONFIG(release, debug|release) {
-    INCLUDEPATH += $${TORCH_PATH}_release/include $${TORCH_PATH}_release/include/torch/csrc/api/include
-    LIBS += -L$${TORCH_PATH}_release/lib -ltorch -ltorch_cpu -lc10 -lzlibstatic
+    INCLUDEPATH += $${LIBTORCH_PATH}_release/include $${LIBTORCH_PATH}_release/include/torch/csrc/api/include
+    LIBS += -L$${LIBTORCH_PATH}_release/lib -ltorch -ltorch_cpu -lc10 -lzlibstatic
     LIBS += -L$${OPENCV_PATH}/lib -lopencv_world420
 }
 

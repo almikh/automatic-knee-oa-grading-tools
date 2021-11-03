@@ -4,8 +4,7 @@
 #include <QDebug>
 #include <QFile>
 
-#include <fstream>
-#include <zip/qzipreader.h>
+#include "zip/qzipreader.h"
 
 bool Classifier::initFromResource(const QString& filename) {
     // читаем архив
