@@ -4,6 +4,8 @@
   <PropertyGroup Label="UserMacros">
     <OPENCV_PATH>E:/opencv-4.2.0-x64-build</OPENCV_PATH>
     <LIBTORCH_PATH>E:/vhdc/src/3rdparty/libtorch</LIBTORCH_PATH>
+    <LIBTENSORFLOW_PATH>E:\libtensorflow-cpu-windows-x86_64-2.6.0</LIBTENSORFLOW_PATH>
+    <CPPFLOW_PATH>E:\cppflow-master</CPPFLOW_PATH>
   </PropertyGroup>
   <PropertyGroup />
   <ItemDefinitionGroup />
@@ -14,6 +16,14 @@
     </BuildMacro>
     <BuildMacro Include="LIBTORCH_PATH">
       <Value>$(LIBTORCH_PATH)</Value>
+	  <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="LIBTENSORFLOW_PATH">
+      <Value>$(LIBTENSORFLOW_PATH)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="CPPFLOW_PATH">
+      <Value>$(CPPFLOW_PATH)</Value>
       <EnvironmentVariable>true</EnvironmentVariable>
     </BuildMacro>
   </ItemGroup>

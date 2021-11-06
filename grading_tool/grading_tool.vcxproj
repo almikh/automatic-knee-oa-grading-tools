@@ -59,8 +59,8 @@
     <IntDir>debug\</IntDir>
     <TargetName>grading_tool</TargetName>
     <IgnoreImportLibrary>true</IgnoreImportLibrary>
-    <IncludePath>$(SolutionDir)3rdparty\zlib\include;$(OPENCV_PATH)\include;$(LIBTORCH_PATH)_debug\include;$(LIBTORCH_PATH)_debug\include\torch\csrc\api\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)3rdparty\zlib\lib;$(OPENCV_PATH)\lib;$(LIBTORCH_PATH)_debug\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>tfdetect;$(CPPFLOW_PATH)\include;$(LIBTENSORFLOW_PATH)\include;$(SolutionDir)3rdparty\zlib\include;$(OPENCV_PATH)\include;$(LIBTORCH_PATH)_debug\include;$(LIBTORCH_PATH)_debug\include\torch\csrc\api\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(LIBTENSORFLOW_PATH)\lib;$(SolutionDir)3rdparty\zlib\lib;$(OPENCV_PATH)\lib;$(LIBTORCH_PATH)_debug\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>release\</OutDir>
@@ -68,8 +68,8 @@
     <TargetName>grading_tool</TargetName>
     <IgnoreImportLibrary>true</IgnoreImportLibrary>
     <LinkIncremental>false</LinkIncremental>
-    <LibraryPath>$(SolutionDir)3rdparty\zlib\lib;$(OPENCV_PATH)\lib;$(LIBTORCH_PATH)_release\lib;$(LibraryPath)</LibraryPath>
-    <IncludePath>D:\Development\automatic-knee-oa-grading-tools\3rdparty\zlib;$(OPENCV_PATH)\include;$(LIBTORCH_PATH)_release\include;$(LIBTORCH_PATH)_release\include\torch\csrc\api\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(LIBTENSORFLOW_PATH)\lib;$(SolutionDir)3rdparty\zlib\lib;$(OPENCV_PATH)\lib;$(LIBTORCH_PATH)_release\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>tfdetect;$(LIBTENSORFLOW_PATH)\include;D:\Development\automatic-knee-oa-grading-tools\3rdparty\zlib;$(OPENCV_PATH)\include;$(LIBTORCH_PATH)_release\include;$(LIBTORCH_PATH)_release\include\torch\csrc\api\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <QtInstall>qt_5.14_msvc2017_64</QtInstall>
@@ -106,7 +106,7 @@
       <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>E:\vhdc\src\3rdparty\libtorch_release\lib\torch.lib;E:\vhdc\src\3rdparty\libtorch_release\lib\torch_cpu.lib;E:\vhdc\src\3rdparty\libtorch_release\lib\c10.lib;.\3rdparty\zlib\lib\zlibstatic.lib;E:\opencv-4.2.0-x64-build\lib\opencv_world420.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>torch.lib;torch_cpu.lib;tensorflow.lib;c10.lib;zlibstatic.lib;opencv_world420.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>E:\vhdc\src\3rdparty\libtorch_release\lib;.\3rdparty\zlib\lib;E:\opencv-4.2.0-x64-build\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>"/MANIFESTDEPENDENCY:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' publicKeyToken='6595b64144ccf1df' language='*' processorArchitecture='*'" %(AdditionalOptions)</AdditionalOptions>
       <DataExecutionPrevention>true</DataExecutionPrevention>
@@ -157,7 +157,7 @@
       <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>torch.lib;torch_cpu.lib;c10.lib;zlibstaticd.lib;opencv_world420d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>torch.lib;torch_cpu.lib;tensorflow.lib;c10.lib;zlibstaticd.lib;opencv_world420d.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>"/MANIFESTDEPENDENCY:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' publicKeyToken='6595b64144ccf1df' language='*' processorArchitecture='*'" %(AdditionalOptions)</AdditionalOptions>
       <DataExecutionPrevention>true</DataExecutionPrevention>
@@ -189,12 +189,15 @@
     <ClCompile Include="classifier.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mainwindow.cpp" />
+    <ClCompile Include="tfdetect\tfdetect.cpp" />
     <ClCompile Include="zip\qzip.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="classifier.h" />
     <QtMoc Include="mainwindow.h">
     </QtMoc>
+    <ClInclude Include="tfdetect\tfdetect.h" />
+    <ClInclude Include="tfdetect\tfwrapper.h" />
     <ClInclude Include="zip\qzipreader.h" />
     <ClInclude Include="zip\qzipwriter.h" />
   </ItemGroup>

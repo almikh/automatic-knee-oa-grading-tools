@@ -31,6 +31,12 @@
     <Filter Include="Source Files\zip">
       <UniqueIdentifier>{f90c3bde-8ff7-4663-a6bd-8ad2764a7804}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\tfdetect">
+      <UniqueIdentifier>{b480a123-f949-47e5-a2d3-63cd12f6d2d1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\tfdetect">
+      <UniqueIdentifier>{88f5423d-3181-4976-893f-92fe878b1305}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="classifier.cpp">
@@ -45,6 +51,9 @@
     <ClCompile Include="zip\qzip.cpp">
       <Filter>Source Files\zip</Filter>
     </ClCompile>
+    <ClCompile Include="tfdetect\tfdetect.cpp">
+      <Filter>Source Files\tfdetect</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="classifier.h">
@@ -58,6 +67,12 @@
     </ClInclude>
     <ClInclude Include="zip\qzipreader.h">
       <Filter>Header Files\zip</Filter>
+    </ClInclude>
+    <ClInclude Include="tfdetect\tfdetect.h">
+      <Filter>Header Files\tfdetect</Filter>
+    </ClInclude>
+    <ClInclude Include="tfdetect\tfwrapper.h">
+      <Filter>Header Files\tfdetect</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
