@@ -1,6 +1,4 @@
-#ifndef __DETECTOR_H__
-#define __DETECTOR_H__
-
+#pragma once
 #include <vector>
 #include <exception>
 #include <memory>
@@ -9,38 +7,35 @@
 
 namespace tfdetect
 {
+  struct Detection {
+    unsigned int class_id;
+    float confidence;
 
-typedef struct Detection
-{
-  unsigned int class_id;
-  float confidence;
+    float x_min;
+    float y_min;
+    float x_max;
+    float y_max;
 
-  float x_min;
-  float y_min;
-  float x_max;
-  float y_max;
+    Detection(unsigned int class_id, float confidence,
+      float x_min, float y_min, float x_max, float y_max) :
+      class_id(class_id),
+      confidence(confidence),
+      x_min(x_min),
+      y_min(y_min),
+      x_max(x_max),
+      y_max(y_max) 
+    {
 
-  Detection(unsigned int class_id, float confidence,
-            float x_min, float y_min, float x_max, float y_max) :
-    class_id(class_id),
-    confidence(confidence),
-    x_min(x_min),
-    y_min(y_min),
-    x_max(x_max),
-    y_max(y_max)
-  {}
+    }
+  };
 
-} Detection;
+  class Detector
+  {
+  public:
+    virtual ~Detector() = default;
+    virtual void detect(const cv::Mat& input_image, std::vector<Detection>& results) const = 0;
+  };
 
-class Detector
-{
-public:
-  virtual ~Detector() = default;
-  virtual void detect(const cv::Mat &input_image, std::vector<Detection> &results) const = 0;
-};
-
-std::unique_ptr<Detector> CreateDetectorFromGraph(const std::string &path_to_graph_proto);
+  std::unique_ptr<Detector> CreateDetectorFromGraph(const std::string& path_to_graph_proto);
 
 } // namespace tf_detector
-
-#endif

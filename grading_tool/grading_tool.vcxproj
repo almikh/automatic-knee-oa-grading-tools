@@ -59,7 +59,7 @@
     <IntDir>debug\</IntDir>
     <TargetName>grading_tool</TargetName>
     <IgnoreImportLibrary>true</IgnoreImportLibrary>
-    <IncludePath>tfdetect;$(CPPFLOW_PATH)\include;$(LIBTENSORFLOW_PATH)\include;$(SolutionDir)3rdparty\zlib\include;$(OPENCV_PATH)\include;$(LIBTORCH_PATH)_debug\include;$(LIBTORCH_PATH)_debug\include\torch\csrc\api\include;$(IncludePath)</IncludePath>
+    <IncludePath>tfdetect;$(CPPFLOW_PATH)\include;$(LIBTENSORFLOW_PATH)\include;$(OPENCV_PATH)\include;$(LIBTORCH_PATH)_debug\include;$(LIBTORCH_PATH)_debug\include\torch\csrc\api\include;$(SolutionDir)3rdparty\zlib\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(LIBTENSORFLOW_PATH)\lib;$(SolutionDir)3rdparty\zlib\lib;$(OPENCV_PATH)\lib;$(LIBTORCH_PATH)_debug\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -69,7 +69,7 @@
     <IgnoreImportLibrary>true</IgnoreImportLibrary>
     <LinkIncremental>false</LinkIncremental>
     <LibraryPath>$(LIBTENSORFLOW_PATH)\lib;$(SolutionDir)3rdparty\zlib\lib;$(OPENCV_PATH)\lib;$(LIBTORCH_PATH)_release\lib;$(LibraryPath)</LibraryPath>
-    <IncludePath>tfdetect;$(LIBTENSORFLOW_PATH)\include;D:\Development\automatic-knee-oa-grading-tools\3rdparty\zlib;$(OPENCV_PATH)\include;$(LIBTORCH_PATH)_release\include;$(LIBTORCH_PATH)_release\include\torch\csrc\api\include;$(IncludePath)</IncludePath>
+    <IncludePath>tfdetect;$(LIBTENSORFLOW_PATH)\include;$(OPENCV_PATH)\include;$(LIBTORCH_PATH)_release\include;$(LIBTORCH_PATH)_release\include\torch\csrc\api\include;$(SolutionDir)3rdparty\zlib\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <QtInstall>qt_5.14_msvc2017_64</QtInstall>
@@ -93,7 +93,7 @@
       <ExceptionHandling>Sync</ExceptionHandling>
       <ObjectFileName>release\</ObjectFileName>
       <Optimization>MaxSpeed</Optimization>
-      <PreprocessorDefinitions>GLIBCXX_USE_CXX11_ABI=0;_WINDOWS;UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_DEPRECATED_WARNINGS;QT_NO_DEBUG;QT_NO_KEYWORDS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>GLIBCXX_USE_CXX11_ABI=0;_WINDOWS;UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_DEPRECATED_WARNINGS;QT_NO_DEBUG;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessToFile>false</PreprocessToFile>
       <ProgramDataBaseFileName>
       </ProgramDataBaseFileName>
@@ -146,7 +146,7 @@
       <ExceptionHandling>Sync</ExceptionHandling>
       <ObjectFileName>debug\</ObjectFileName>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>GLIBCXX_USE_CXX11_ABI=0;_WINDOWS;UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_DEPRECATED_WARNINGS;QT_NO_KEYWORDS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>GLIBCXX_USE_CXX11_ABI=0;_WINDOWS;UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_DEPRECATED_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessToFile>false</PreprocessToFile>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <SuppressStartupBanner>true</SuppressStartupBanner>
@@ -190,6 +190,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mainwindow.cpp" />
     <ClCompile Include="tfdetect\tfdetect.cpp" />
+    <ClCompile Include="viewport.cpp" />
     <ClCompile Include="zip\qzip.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -198,6 +199,7 @@
     </QtMoc>
     <ClInclude Include="tfdetect\tfdetect.h" />
     <ClInclude Include="tfdetect\tfwrapper.h" />
+    <QtMoc Include="viewport.h" />
     <ClInclude Include="zip\qzipreader.h" />
     <ClInclude Include="zip\qzipwriter.h" />
   </ItemGroup>

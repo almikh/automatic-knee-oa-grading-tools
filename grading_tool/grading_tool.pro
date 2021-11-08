@@ -28,11 +28,13 @@ SOURCES += \
         main.cpp \
         mainwindow.cpp \
         classifier.cpp \
+        viewport.cpp \
         zip/qzip.cpp
 
 HEADERS += \
         mainwindow.h \
         classifier.h \
+        viewport.h \
         zip/qzipreader.h \
         zip/qzipwriter.h
 
