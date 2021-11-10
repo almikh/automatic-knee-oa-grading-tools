@@ -97,9 +97,5 @@ QVector<Classifier::Item> Classifier::getGrade(const Classifier::InputData& img)
     answer[i] = { header(i), data[i] };
   }
 
-  qStableSort(answer.begin(), answer.end(), [](auto lhs, auto rhs) {
-    return lhs.confidence > rhs.confidence;
-  });
-
   return answer;
 }
