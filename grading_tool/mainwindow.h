@@ -8,8 +8,10 @@
 
 #include "viewport.h"
 #include "classifier.h"
+#include "metadata.h"
 
 class QCustomPlot;
+class ViewQueue;
 
 class MainWindow : public QMainWindow
 {
@@ -17,7 +19,8 @@ class MainWindow : public QMainWindow
 
 protected:
   Viewport* viewport_;
-  QVBoxLayout* right_panel_;
+  ViewQueue* view_queue_;
+  QWidget* right_panel_;
   Classifier classifier_;
 
 protected:
@@ -27,14 +30,13 @@ protected:
   QtCharts::QChartView* makeGraph(const QString& title, QColor color, const QVector<Classifier::Item>& data);
   
   Q_SLOT void openSample(bool);
+  Q_SLOT void runOnData(Metadata::HardPtr data);
 
 public:
   MainWindow(QWidget* parent = nullptr);
   ~MainWindow();
 
   void init();
-
-  void runOnImage(const cv::Mat& frame);
 
   QVector<Classifier::Item> runClassifier(const cv::Mat& joint_area);
 };

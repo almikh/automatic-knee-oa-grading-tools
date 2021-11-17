@@ -57,6 +57,12 @@
     <ClCompile Include="viewport.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="view_queue.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="classifier.h">
@@ -77,6 +83,12 @@
     <ClInclude Include="tfdetect\tfwrapper.h">
       <Filter>Header Files\tfdetect</Filter>
     </ClInclude>
+    <ClInclude Include="utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="metadata.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="debug\moc_predefs.h.cbt">
@@ -88,6 +100,9 @@
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="viewport.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="view_queue.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>

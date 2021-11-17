@@ -3,9 +3,11 @@
 #include <QHBoxLayout>
 #include <QBarSeries>
 #include <QBarCategoryAxis>
+#include <QGraphicsLayout>
 #include <QValueAxis>
 #include <QBarSet>
 #include <QChart>
+#include <QSplitter>
 #include <QMenuBar>
 #include <QDebug>
 
@@ -13,31 +15,43 @@
 #include <torch/script.h>
 # define slots Q_SLOTS
 
-#include "qcustomplot.h"
+#include "utils.h"
+#include "view_queue.h"
 
 using namespace QtCharts;
 
 MainWindow::MainWindow(QWidget* parent) :
   QMainWindow(parent),
-  viewport_(new Viewport())
+  viewport_(new Viewport()),
+  view_queue_(new ViewQueue())
 {
+  auto splitter = new QSplitter();
+  splitter->setOrientation(Qt::Vertical);
+
   auto w = new QWidget();
   auto l = new QHBoxLayout(w);
-
   viewport_->setAutoscaleEnabled(true);
   viewport_->setAutoscalePolicy(Viewport::AutoscalePolicy::MinFactor);
   l->addWidget(viewport_);
 
-  auto right_panel = new QWidget();
-  right_panel_ = new QVBoxLayout(right_panel);
-  right_panel_->setAlignment(Qt::AlignTop);
-  right_panel->setFixedWidth(250);
-  l->addWidget(right_panel);
+  right_panel_ = new QWidget();
+  right_panel_->setFixedWidth(250);
+  l->addWidget(right_panel_);
+  splitter->addWidget(w);
+
+  view_queue_->setMinimumHeight(100);
+  view_queue_->setMaximumHeight(225);
+  connect(view_queue_, &ViewQueue::currentItemChanged, this, &MainWindow::runOnData);
+  splitter->addWidget(view_queue_);
+
+  for (int k = 0; k < splitter->count(); ++k) {
+    splitter->setCollapsible(k, false);
+  }
 
   makeMenuFile();
   // makeToolbar();
 
-  setCentralWidget(w);
+  setCentralWidget(splitter);
   resize(800, 600);
 }
 
@@ -86,12 +100,13 @@ QChartView* MainWindow::makeGraph(const QString& title, QColor color, const QVec
   chart->addAxis(axisY, Qt::AlignLeft);
   series->attachAxis(axisY);
 
-  chart->legend()->setVisible(false);
-  chart->legend()->setAlignment(Qt::AlignBottom);
+  chart->legend()->hide();
+  chart->layout()->setContentsMargins(0, 0, 0, 0);
+  chart->setAcceptHoverEvents(true);
 
   auto chart_view = new QChartView(chart);
   chart_view->setRenderHint(QPainter::Antialiasing);
-  chart_view->setFixedHeight(200);
+  chart_view->setMaximumHeight(200);
   return chart_view;
 }
 
@@ -99,19 +114,34 @@ void MainWindow::init() {
   classifier_.initFromResource("D:\\Development\\automatic-knee-oa-grading-tools\\cnn_converter\\script.zip");
 }
 
-void MainWindow::runOnImage(const cv::Mat& sample) {
+void MainWindow::runOnData(Metadata::HardPtr data) {
+  auto sample = data->image;
   auto detector = tfdetect::CreateDetectorFromGraph("frozen_inference_graph.pb");
 
-  std::vector<tfdetect::Detection> results;
-  detector->detect(sample, results);
+  std::vector<tfdetect::Detection> knee_joints;
+  detector->detect(sample, knee_joints);
 
   std::tuple<QString, QColor, cv::Scalar> colors[] = {
     {QString("Red Area"), QColor(Qt::red), cv::Scalar(200, 0, 0)},
     {QString("Blue Area"), QColor(Qt::blue), cv::Scalar(0, 0, 200)},
   };
 
-  for (int k = 0; k< static_cast<int>(results.size()); ++k) {
-    auto r = results[k];
+  // remove previous graphs
+  if (auto layout = right_panel_->layout()) {
+    QLayoutItem* item;
+    while ((item = layout->takeAt(0)) != 0) {
+      layout->removeItem(item);
+    }
+
+    delete layout;
+  }
+    
+  auto graphs = new QVBoxLayout(right_panel_);
+  graphs->setAlignment(Qt::AlignTop);
+
+  // classification
+  for (int k = 0; k< static_cast<int>(knee_joints.size()); ++k) {
+    auto r = knee_joints[k];
     auto rect = cv::Rect(
       r.x_min * sample.cols, 
       r.y_min * sample.rows, 
@@ -133,7 +163,8 @@ void MainWindow::runOnImage(const cv::Mat& sample) {
     cv::rectangle(sample, rect, std::get<2>(colors[k]), 3);
 
     auto title = QString("Grade %1, %2").arg(grade).arg(conf);
-    right_panel_->addWidget(makeGraph(title, std::get<1>(colors[k]), grades));
+    graphs->addWidget(makeGraph(title, std::get<1>(colors[k]), grades));
+    graphs->setStretch(graphs->count() - 1, 1);
   }
   
   viewport_->setImage(sample);
@@ -156,7 +187,13 @@ void MainWindow::openSample(bool) {
   auto filters = "Image files (*.bmp *.png *.jpg *.jpeg);;";
   auto path = QFileDialog::getOpenFileName(this, "Load image", "", filters);
   if (!path.isEmpty()) {
+    auto filename = QFileInfo(path).fileName();
     auto sample = cv::imread(path.toLocal8Bit().data(), cv::IMREAD_COLOR);
-    runOnImage(sample);
+
+    auto item = std::make_shared<Metadata>();
+    item->filename = filename;
+    item->image = sample;
+
+    view_queue_->addItem(item);
   }
 }

@@ -187,6 +187,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="classifier.cpp" />
+    <ClCompile Include="utils.cpp" />
+    <ClCompile Include="view_queue.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mainwindow.cpp" />
     <ClCompile Include="tfdetect\tfdetect.cpp" />
@@ -197,9 +199,12 @@
     <ClInclude Include="classifier.h" />
     <QtMoc Include="mainwindow.h">
     </QtMoc>
+    <QtMoc Include="view_queue.h" />
+    <ClInclude Include="metadata.h" />
     <ClInclude Include="tfdetect\tfdetect.h" />
     <ClInclude Include="tfdetect\tfwrapper.h" />
     <QtMoc Include="viewport.h" />
+    <ClInclude Include="utils.h" />
     <ClInclude Include="zip\qzipreader.h" />
     <ClInclude Include="zip\qzipwriter.h" />
   </ItemGroup>
