@@ -7,6 +7,8 @@
 #include <QValueAxis>
 #include <QBarSet>
 #include <QChart>
+#include <QHeaderView>
+#include <QTableWidget>
 #include <QSplitter>
 #include <QMenuBar>
 #include <QDebug>
@@ -20,23 +22,36 @@
 
 using namespace QtCharts;
 
+const std::tuple<QString, QColor, cv::Scalar> joint_colors[] = {
+  {QString("Red Area"), QColor(Qt::red), cv::Scalar(200, 0, 0)},
+  {QString("Blue Area"), QColor(Qt::blue), cv::Scalar(0, 0, 200)},
+};
+
 MainWindow::MainWindow(QWidget* parent) :
   QMainWindow(parent),
   viewport_(new Viewport()),
+  right_panel_(new QTableWidget()),
   view_queue_(new ViewQueue())
 {
   auto splitter = new QSplitter();
   splitter->setOrientation(Qt::Vertical);
 
   auto w = new QWidget();
-  auto l = new QHBoxLayout(w);
+  auto layout = new QHBoxLayout(w);
   viewport_->setAutoscaleEnabled(true);
   viewport_->setAutoscalePolicy(Viewport::AutoscalePolicy::MinFactor);
-  l->addWidget(viewport_);
+  layout->addWidget(viewport_);
 
-  right_panel_ = new QWidget();
-  right_panel_->setFixedWidth(250);
-  l->addWidget(right_panel_);
+  right_panel_->setShowGrid(false);
+  right_panel_->verticalHeader()->hide();
+  right_panel_->horizontalHeader()->hide();
+  right_panel_->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
+  right_panel_->setSelectionMode(QAbstractItemView::NoSelection);
+  right_panel_->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeMode::Stretch);
+  right_panel_->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeMode::Stretch);
+  right_panel_->setColumnCount(1);
+  right_panel_->setFixedWidth(200);
+  layout->addWidget(right_panel_);
   splitter->addWidget(w);
 
   view_queue_->setMinimumHeight(100);
@@ -105,8 +120,10 @@ QChartView* MainWindow::makeGraph(const QString& title, QColor color, const QVec
   chart->setAcceptHoverEvents(true);
 
   auto chart_view = new QChartView(chart);
+  chart_view->setAlignment(Qt::AlignCenter);
   chart_view->setRenderHint(QPainter::Antialiasing);
   chart_view->setMaximumHeight(200);
+  chart_view->setMaximumWidth(200);
   return chart_view;
 }
 
@@ -116,58 +133,61 @@ void MainWindow::init() {
 
 void MainWindow::runOnData(Metadata::HardPtr data) {
   auto sample = data->image;
-  auto detector = tfdetect::CreateDetectorFromGraph("frozen_inference_graph.pb");
 
-  std::vector<tfdetect::Detection> knee_joints;
-  detector->detect(sample, knee_joints);
-
-  std::tuple<QString, QColor, cv::Scalar> colors[] = {
-    {QString("Red Area"), QColor(Qt::red), cv::Scalar(200, 0, 0)},
-    {QString("Blue Area"), QColor(Qt::blue), cv::Scalar(0, 0, 200)},
-  };
-
-  // remove previous graphs
-  if (auto layout = right_panel_->layout()) {
-    QLayoutItem* item;
-    while ((item = layout->takeAt(0)) != 0) {
-      layout->removeItem(item);
+  if (data->joints.isEmpty()) {
+    if (!detector_) {
+      detector_ = tfdetect::CreateDetectorFromGraph("frozen_inference_graph.pb");
     }
 
-    delete layout;
+    std::vector<tfdetect::Detection> knee_joints;
+    detector_->detect(sample, knee_joints);
+
+    // classification
+    for (int k = 0; k < static_cast<int>(knee_joints.size()); ++k) {
+      auto r = knee_joints[k];
+      auto rect = cv::Rect(
+        r.x_min * sample.cols,
+        r.y_min * sample.rows,
+        (r.x_max - r.x_min) * sample.cols,
+        (r.y_max - r.y_min) * sample.rows);
+
+      auto grades = runClassifier(sample(rect));
+
+      Metadata::Joint joint;
+      joint.grades = grades;
+      joint.rect = rect;
+      data->joints.push_back(joint);
+    }
   }
-    
-  auto graphs = new QVBoxLayout(right_panel_);
-  graphs->setAlignment(Qt::AlignTop);
 
-  // classification
-  for (int k = 0; k< static_cast<int>(knee_joints.size()); ++k) {
-    auto r = knee_joints[k];
-    auto rect = cv::Rect(
-      r.x_min * sample.cols, 
-      r.y_min * sample.rows, 
-      (r.x_max - r.x_min) * sample.cols, 
-      (r.y_max - r.y_min) * sample.rows);
+  // remove previous graphs
+  right_panel_->setRowCount(0);
+  right_panel_->setRowCount(data->joints.size());
+  for (int k = 0; k < data->joints.size(); ++k) {
+    const auto& joint = data->joints[k];
 
-    auto grades = runClassifier(sample(rect));
-
+    // calc maximum
     int grade_idx = 0;
-    for (int k = 1; k < grades.size(); ++k) {
-      if (grades[k].confidence > grades[grade_idx].confidence) {
-        grade_idx = k;
+    for (int i = 1; i < joint.grades.size(); ++i) {
+      if (joint.grades[i].confidence > joint.grades[grade_idx].confidence) {
+        grade_idx = i;
       }
     }
 
-    auto grade = grades[grade_idx].mnemonic_code;
-    auto conf = grades[grade_idx].confidence;
+    // draw ROI
+    cv::rectangle(sample, joint.rect, std::get<2>(joint_colors[k % 2]), 3);
 
-    cv::rectangle(sample, rect, std::get<2>(colors[k]), 3);
-
+    // create graph
+    auto conf = joint.grades[grade_idx].confidence;
+    auto grade = joint.grades[grade_idx].mnemonic_code;
     auto title = QString("Grade %1, %2").arg(grade).arg(conf);
-    graphs->addWidget(makeGraph(title, std::get<1>(colors[k]), grades));
-    graphs->setStretch(graphs->count() - 1, 1);
+
+    auto graph = makeGraph(title, std::get<1>(joint_colors[k % 2]), joint.grades);
+    right_panel_->setCellWidget(k, 0, graph);
   }
-  
+
   viewport_->setImage(sample);
+  view_queue_->updateView();
 }
 
 QVector<Classifier::Item> MainWindow::runClassifier(const cv::Mat& joint_area) {

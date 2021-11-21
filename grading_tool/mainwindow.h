@@ -10,8 +10,13 @@
 #include "classifier.h"
 #include "metadata.h"
 
+class QTableWidget;
 class QCustomPlot;
 class ViewQueue;
+
+namespace tfdetect {
+  class Detector;
+}
 
 class MainWindow : public QMainWindow
 {
@@ -20,7 +25,9 @@ class MainWindow : public QMainWindow
 protected:
   Viewport* viewport_;
   ViewQueue* view_queue_;
-  QWidget* right_panel_;
+  QTableWidget* right_panel_;
+
+  std::shared_ptr<tfdetect::Detector> detector_;
   Classifier classifier_;
 
 protected:

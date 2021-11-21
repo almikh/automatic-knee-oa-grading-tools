@@ -36,6 +36,6 @@ namespace tfdetect
     virtual void detect(const cv::Mat& input_image, std::vector<Detection>& results) const = 0;
   };
 
-  std::unique_ptr<Detector> CreateDetectorFromGraph(const std::string& path_to_graph_proto);
+  std::shared_ptr<Detector> CreateDetectorFromGraph(const std::string& path_to_graph_proto);
 
 } // namespace tf_detector
