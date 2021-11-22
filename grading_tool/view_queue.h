@@ -12,7 +12,7 @@ private:
   QList<QLabel*> labels_;
   QList<Metadata::HardPtr> data_;
 
-  int getIconSize(int column);
+  int getIconHeight() const;
 
 protected:
   void resizeEvent(QResizeEvent* event) override;

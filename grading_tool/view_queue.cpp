@@ -38,10 +38,10 @@ void ViewQueue::resizeEvent(QResizeEvent* event) {
 
   if (columnCount() == 0) return;
 
+  const auto s = getIconHeight();
   for (int i = 0; i < columnCount(); ++i) {
-    const auto s = getIconSize(i);
     auto l = cellWidget(0, i)->findChild<QLabel*>("View");
-    l->setPixmap(QPixmap::fromImage(cv2qt(data_[i]->image)).scaled(s, s, Qt::KeepAspectRatio));
+    l->setPixmap(QPixmap::fromImage(cv2qt(data_[i]->image)).scaledToHeight(s));
   }
 
   resizeColumnsToContents();
@@ -58,37 +58,34 @@ void ViewQueue::keyPressEvent(QKeyEvent* e) {
 }
 
 void ViewQueue::updateView() {
+  const auto s = getIconHeight();
   for (int i = 0; i < columnCount(); ++i) {
-    const auto s = getIconSize(i);
     auto l = cellWidget(0, i)->findChild<QLabel*>("View");
-    l->setPixmap(QPixmap::fromImage(cv2qt(data_[i]->image)).scaled(s, s, Qt::KeepAspectRatio));
+    l->setPixmap(QPixmap::fromImage(cv2qt(data_[i]->image)).scaledToHeight(s));
   }
 
   resizeColumnsToContents();
   resizeRowsToContents();
 }
 
-int ViewQueue::getIconSize(int column) {
-  Q_UNUSED(column);
+int ViewQueue::getIconHeight() const {
   const auto margins = contentsMargins();
-  const int s = height() - 16 - margins.bottom() - margins.top() - 4;
+  const int s = height() - 24 - margins.bottom() - margins.top() - 4;
   return s;
 }
 
 void ViewQueue::set(int idx) {
   Q_ASSERT(idx < data_.size());
 
-  const auto s = getIconSize(idx);
-
   auto w = new QWidget(this);
   auto view = new QLabel(w);
   view->setObjectName("View");
   view->setAlignment(Qt::AlignCenter);
   view->setContentsMargins(4, 0, 4, 8);
-  view->setPixmap(QPixmap::fromImage(cv2qt(data_[idx]->image)).scaled(s, s, Qt::KeepAspectRatio));
+  view->setPixmap(QPixmap::fromImage(cv2qt(data_[idx]->image)).scaledToHeight(getIconHeight()));
 
   auto title = new QLabel(data_[idx]->filename, w);
-  title->setAlignment(Qt::AlignHCenter | Qt::AlignTop);
+  title->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
   title->setContentsMargins(4, 0, 4, 0);
   title->setObjectName("Name");
 
