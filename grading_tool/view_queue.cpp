@@ -8,6 +8,7 @@
 #include <QHBoxLayout>
 #include <QFileDialog>
 #include <QCheckBox>
+#include <QScrollBar>
 #include <QLabel>
 #include <QDebug>
 #include <QMenu>
@@ -20,12 +21,13 @@ ViewQueue::ViewQueue(QWidget* parent) :
   QTableWidget(1, 0, parent)
 {
   setShowGrid(false);
-  verticalHeader()->hide();
-  horizontalHeader()->hide();
+  setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
   setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
   setSelectionMode(QAbstractItemView::SingleSelection);
-
   setMinimumHeight(104);
+
+  verticalHeader()->hide();
+  horizontalHeader()->hide();
 
   connect(this, &QTableWidget::itemSelectionChanged, this, &ViewQueue::itemSelectionChanged);
   connect(this, &QTableWidget::cellClicked, this, &ViewQueue::itemClicked);
@@ -40,8 +42,9 @@ void ViewQueue::resizeEvent(QResizeEvent* event) {
 
   const auto s = getIconHeight();
   for (int i = 0; i < columnCount(); ++i) {
-    auto l = cellWidget(0, i)->findChild<QLabel*>("View");
-    l->setPixmap(QPixmap::fromImage(cv2qt(data_[i]->image)).scaledToHeight(s));
+    if (auto l = cellWidget(0, i)->findChild<QLabel*>("View")) {
+      l->setPixmap(QPixmap::fromImage(cv2qt(data_[i]->image)).scaledToHeight(s));
+    }
   }
 
   resizeColumnsToContents();
@@ -70,7 +73,7 @@ void ViewQueue::updateView() {
 
 int ViewQueue::getIconHeight() const {
   const auto margins = contentsMargins();
-  const int s = height() - 24 - margins.bottom() - margins.top() - 4;
+  const int s = height() - 24 - margins.bottom() - margins.top() - horizontalScrollBar()->height();
   return s;
 }
 

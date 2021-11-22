@@ -63,6 +63,9 @@
     <ClCompile Include="utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="progress_indicator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="classifier.h">
@@ -103,6 +106,9 @@
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="view_queue.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="progress_indicator.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>

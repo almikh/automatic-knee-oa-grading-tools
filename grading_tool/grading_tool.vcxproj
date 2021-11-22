@@ -73,11 +73,11 @@
   </PropertyGroup>
   <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <QtInstall>qt_5.14_msvc2017_64</QtInstall>
-    <QtModules>core;gui;widgets;charts</QtModules>
+    <QtModules>core;gui;widgets;concurrent;charts</QtModules>
   </PropertyGroup>
   <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <QtInstall>qt_5.14_msvc2017_64</QtInstall>
-    <QtModules>core;gui;widgets;charts</QtModules>
+    <QtModules>core;gui;widgets;concurrent;charts</QtModules>
   </PropertyGroup>
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.props')">
     <Import Project="$(QtMsBuild)\qt.props" />
@@ -187,6 +187,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="classifier.cpp" />
+    <ClCompile Include="progress_indicator.cpp" />
     <ClCompile Include="utils.cpp" />
     <ClCompile Include="view_queue.cpp" />
     <ClCompile Include="main.cpp" />
@@ -201,6 +202,7 @@
     </QtMoc>
     <QtMoc Include="view_queue.h" />
     <ClInclude Include="metadata.h" />
+    <QtMoc Include="progress_indicator.h" />
     <ClInclude Include="tfdetect\tfdetect.h" />
     <ClInclude Include="tfdetect\tfwrapper.h" />
     <QtMoc Include="viewport.h" />

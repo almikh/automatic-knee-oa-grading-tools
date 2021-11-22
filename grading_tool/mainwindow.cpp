@@ -4,7 +4,9 @@
 #include <QBarSeries>
 #include <QBarCategoryAxis>
 #include <QGraphicsLayout>
+#include <QStackedWidget>
 #include <QValueAxis>
+#include <QtConcurrent>
 #include <QBarSet>
 #include <QChart>
 #include <QHeaderView>
@@ -19,6 +21,7 @@
 
 #include "utils.h"
 #include "view_queue.h"
+#include "progress_indicator.h"
 
 using namespace QtCharts;
 
@@ -30,6 +33,9 @@ const std::tuple<QString, QColor, cv::Scalar> joint_colors[] = {
 MainWindow::MainWindow(QWidget* parent) :
   QMainWindow(parent),
   viewport_(new Viewport()),
+  loading_area_(new QWidget()),
+  loading_ind_(new ProgressIndicator()),
+  working_area_(new QStackedWidget()),
   right_panel_(new QTableWidget()),
   view_queue_(new ViewQueue())
 {
@@ -38,10 +44,24 @@ MainWindow::MainWindow(QWidget* parent) :
 
   auto w = new QWidget();
   auto layout = new QHBoxLayout(w);
+
+  // sample's viewport
   viewport_->setAutoscaleEnabled(true);
   viewport_->setAutoscalePolicy(Viewport::AutoscalePolicy::MinFactor);
-  layout->addWidget(viewport_);
+  working_area_->addWidget(viewport_);
 
+  // loading area
+  working_area_->addWidget(loading_area_);
+  working_area_->setStyleSheet("background-color: black");
+
+  auto l = new QVBoxLayout(loading_area_); 
+  loading_ind_->setFixedSize(150, 150);
+  loading_ind_->setColor(Qt::white);
+  l->addWidget(loading_ind_, 0, Qt::AlignCenter);
+
+  layout->addWidget(working_area_);
+
+  // graphs area
   right_panel_->setShowGrid(false);
   right_panel_->verticalHeader()->hide();
   right_panel_->horizontalHeader()->hide();
@@ -56,7 +76,7 @@ MainWindow::MainWindow(QWidget* parent) :
 
   view_queue_->setMinimumHeight(100);
   view_queue_->setMaximumHeight(225);
-  connect(view_queue_, &ViewQueue::currentItemChanged, this, &MainWindow::runOnData);
+  connect(view_queue_, &ViewQueue::currentItemChanged, this, &MainWindow::setItemAsCurrent);
   splitter->addWidget(view_queue_);
 
   for (int k = 0; k < splitter->count(); ++k) {
@@ -65,6 +85,8 @@ MainWindow::MainWindow(QWidget* parent) :
 
   makeMenuFile();
   // makeToolbar();
+
+  connect(this, &MainWindow::itemProcessed, this, &MainWindow::showItem, Qt::QueuedConnection);
 
   setCentralWidget(splitter);
   resize(800, 600);
@@ -131,34 +153,33 @@ void MainWindow::init() {
   classifier_.initFromResource("D:\\Development\\automatic-knee-oa-grading-tools\\cnn_converter\\script.zip");
 }
 
-void MainWindow::runOnData(Metadata::HardPtr data) {
-  auto sample = data->image;
+void MainWindow::setItemAsCurrent(Metadata::HardPtr data) {
+  if (!current_item_) {
+    current_item_ = data;
+  }
+
+  // is already calculating - just wait for it
+  if (in_process_.contains(data.get())) {
+    current_item_ = data;
+    working_area_->setCurrentWidget(loading_area_);
+    loading_ind_->startAnimation();
+    return;
+  }
 
   if (data->joints.isEmpty()) {
-    if (!detector_) {
-      detector_ = tfdetect::CreateDetectorFromGraph("frozen_inference_graph.pb");
-    }
+    working_area_->setCurrentWidget(loading_area_);
+    loading_ind_->startAnimation();
+    in_process_.insert(data.get());
 
-    std::vector<tfdetect::Detection> knee_joints;
-    detector_->detect(sample, knee_joints);
-
-    // classification
-    for (int k = 0; k < static_cast<int>(knee_joints.size()); ++k) {
-      auto r = knee_joints[k];
-      auto rect = cv::Rect(
-        r.x_min * sample.cols,
-        r.y_min * sample.rows,
-        (r.x_max - r.x_min) * sample.cols,
-        (r.y_max - r.y_min) * sample.rows);
-
-      auto grades = runClassifier(sample(rect));
-
-      Metadata::Joint joint;
-      joint.grades = grades;
-      joint.rect = rect;
-      data->joints.push_back(joint);
-    }
+    QtConcurrent::run(this, &MainWindow::runOnData, data);
   }
+  else {
+    showItem(data);
+  }
+}
+
+void MainWindow::showItem(Metadata::HardPtr data) {
+  auto sample = data->image.clone();
 
   // remove previous graphs
   right_panel_->setRowCount(0);
@@ -186,8 +207,48 @@ void MainWindow::runOnData(Metadata::HardPtr data) {
     right_panel_->setCellWidget(k, 0, graph);
   }
 
+  current_item_ = data;
+
+  loading_ind_->stopAnimation();
+  working_area_->setCurrentWidget(viewport_);
   viewport_->setImage(sample);
   view_queue_->updateView();
+}
+
+void MainWindow::runOnData(Metadata::HardPtr data) {
+  auto sample = data->image.clone();
+
+  // detect joints
+  if (!detector_) {
+    detector_ = tfdetect::CreateDetectorFromGraph("frozen_inference_graph.pb");
+  }
+
+  std::vector<tfdetect::Detection> knee_joints;
+  detector_->detect(sample, knee_joints);
+
+  // classification
+  for (int k = 0; k < static_cast<int>(knee_joints.size()); ++k) {
+    auto r = knee_joints[k];
+    auto rect = cv::Rect(
+      r.x_min * sample.cols,
+      r.y_min * sample.rows,
+      (r.x_max - r.x_min) * sample.cols,
+      (r.y_max - r.y_min) * sample.rows);
+
+    auto grades = runClassifier(sample(rect));
+
+    Metadata::Joint joint;
+    joint.grades = grades;
+    joint.rect = rect;
+    data->joints.push_back(joint);
+  }
+
+  in_process_.remove(data.get());
+
+  // if selected other item - just store processing results
+  if (current_item_ == data) {
+    emit itemProcessed(data);
+  }
 }
 
 QVector<Classifier::Item> MainWindow::runClassifier(const cv::Mat& joint_area) {
