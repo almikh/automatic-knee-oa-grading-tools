@@ -242,6 +242,7 @@ class SENet(nn.Module):
         downsample_padding=1,
         last_stride=2,
         fc_dims=None,
+        for_resnext=False,
         **kwargs
     ):
         """
@@ -287,6 +288,7 @@ class SENet(nn.Module):
         num_classes (int): Number of outputs in `classifier` layer.
         """
         super(SENet, self).__init__()
+        self.for_resnext = for_resnext
         self.inplanes = inplanes
         self.loss = loss
 
@@ -375,11 +377,16 @@ class SENet(nn.Module):
             downsample_padding=downsample_padding
         )
 
-        self.global_avgpool = nn.AdaptiveAvgPool2d(1)
-        self.fc = self._construct_fc_layer(
-            fc_dims, 512 * block.expansion, dropout_p
-        )
-        self.classifier = nn.Linear(self.feature_dim, num_classes)
+        if self.for_resnext:
+            self.avg_pool = nn.AvgPool2d(7, stride=1)
+            self.dropout = nn.Dropout(dropout_p) if dropout_p is not None else None
+            self.last_linear = nn.Linear(512 * block.expansion, num_classes)
+        else:
+            self.global_avgpool = nn.AdaptiveAvgPool2d(1)
+            self.fc = self._construct_fc_layer(
+                fc_dims, 512 * block.expansion, dropout_p
+            )
+            self.classifier = nn.Linear(self.feature_dim, num_classes)
 
     def _make_layer(
         self,
@@ -457,17 +464,30 @@ class SENet(nn.Module):
         x = self.layer3(x)
         x = self.layer4(x)
         return x
-
+    
+    # for resnext50
+    def logits(self, x):
+        x = self.avg_pool(x)
+        if self.dropout is not None:
+            x = self.dropout(x)
+        x = x.view(x.size(0), -1)
+        x = self.last_linear(x)
+        return x
+    
     def forward(self, x):
         f = self.featuremaps(x)
-        v = self.global_avgpool(f)
-        v = v.view(v.size(0), -1)
+        
+        if self.for_resnext:
+            return self.logits(f)
+        else:
+            v = self.global_avgpool(f)
+            v = v.view(v.size(0), -1)
 
-        if self.fc is not None:
-            v = self.fc(v)
+            if self.fc is not None:
+                v = self.fc(v)
 
-        y = self.classifier(v)
-        return y
+            y = self.classifier(v)
+            return y
 
 
 
@@ -544,6 +564,7 @@ def se_resnext50_32x4d(num_classes, loss='softmax', pretrained=True, **kwargs):
         downsample_padding=0,
         last_stride=2,
         fc_dims=None,
+        for_resnext=True,
         **kwargs
     )
     if pretrained:
