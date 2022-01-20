@@ -25,6 +25,7 @@ https://www.tensorflow.org/install
 #### 4. GDCM
 
 GDCM - library for reading DICOM files, official GIT repository is at:
+
 https://github.com/malaterre/GDCM
 
 You can use official release of build library from sources. Required structure of library's folder (named `gdcm`) is placed below.
