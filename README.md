@@ -34,14 +34,14 @@ You can use official release of build library from sources. Required structure o
  │   └── Release        # release versions of binaries
  ├── include            # include files
  ├── lib                # built libraries
-     ├── Debug          # debug versions of libs
-     |   ├── gdcmcharls.lib
-     |   ├── gdcmCommon.lib
-     |   ├── ...
-     |   └── socketxx.lib
-     └── Release        # release versions of libs
-         ├── ...
-         └── socketxx.lib
+ |   ├── Debug          # debug versions of libs
+ |   |   ├── gdcmcharls.lib
+ |   |   ├── gdcmCommon.lib
+ |   |   ├── ...
+ |   |   └── socketxx.lib
+ |   └── Release        # release versions of libs
+ |       ├── ...
+ |       └── socketxx.lib
  └── share              # internal GDCM's files
      ├── Debug          
      └── Release        
