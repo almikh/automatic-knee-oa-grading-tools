@@ -44,6 +44,7 @@ protected:
   QtCharts::QChartView* makeGraph(const QString& title, QColor color, const QVector<Classifier::Item>& data);
   
   Q_SLOT void openSample(bool);
+  Q_SLOT void openDICOM(bool);
 
   // process (or display) specified item
   Q_SLOT void setItemAsCurrent(Metadata::HardPtr data); 

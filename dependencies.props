@@ -6,6 +6,7 @@
     <LIBTORCH_PATH>E:/vhdc/src/3rdparty/libtorch</LIBTORCH_PATH>
     <LIBTENSORFLOW_PATH>E:\libtensorflow-cpu-windows-x86_64-2.6.0</LIBTENSORFLOW_PATH>
     <CPPFLOW_PATH>E:\cppflow-master</CPPFLOW_PATH>
+    <GDCM_PATH>$(SolutionDir)3rdparty\gdcm</GDCM_PATH>
   </PropertyGroup>
   <PropertyGroup />
   <ItemDefinitionGroup />
@@ -16,7 +17,7 @@
     </BuildMacro>
     <BuildMacro Include="LIBTORCH_PATH">
       <Value>$(LIBTORCH_PATH)</Value>
-	  <EnvironmentVariable>true</EnvironmentVariable>
+      <EnvironmentVariable>true</EnvironmentVariable>
     </BuildMacro>
     <BuildMacro Include="LIBTENSORFLOW_PATH">
       <Value>$(LIBTENSORFLOW_PATH)</Value>
@@ -25,6 +26,9 @@
     <BuildMacro Include="CPPFLOW_PATH">
       <Value>$(CPPFLOW_PATH)</Value>
       <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="GDCM_PATH">
+      <Value>$(GDCM_PATH)</Value>
     </BuildMacro>
   </ItemGroup>
 </Project>

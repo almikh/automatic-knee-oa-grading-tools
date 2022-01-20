@@ -1,4 +1,5 @@
 # Visual Studio dirs and files
+3rdparty/gdcm/*
 debug/
 release/
 .vs/

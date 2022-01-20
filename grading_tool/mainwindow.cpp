@@ -10,6 +10,7 @@
 #include <QBarSet>
 #include <QChart>
 #include <QHeaderView>
+#include <QMessageBox>
 #include <QTableWidget>
 #include <QSplitter>
 #include <QMenuBar>
@@ -18,6 +19,8 @@
 #undef slots
 #include <torch/script.h>
 # define slots Q_SLOTS
+
+#include <gdcm/gdcmImageReader.h>
 
 #include "utils.h"
 #include "view_queue.h"
@@ -101,6 +104,9 @@ void MainWindow::makeMenuFile() {
 
   auto open_sample = menu->addAction("Open file");
   connect(open_sample, &QAction::triggered, this, &MainWindow::openSample);
+
+  auto open_dicom = menu->addAction("Open DICOM");
+  connect(open_dicom, &QAction::triggered, this, &MainWindow::openDICOM);
 }
 
 void MainWindow::makeToolbar() {
@@ -262,6 +268,47 @@ QVector<Classifier::Item> MainWindow::runClassifier(const cv::Mat& joint_area) {
   }
 
   return grades;
+}
+
+void MainWindow::openDICOM(bool) {
+  auto filters = "DICOM files (*.DICOM *.DCM);;";
+  auto path = QFileDialog::getOpenFileName(this, "Load DICOM file", "", filters);
+  if (!path.isEmpty()) {
+    gdcm::ImageReader reader;
+    reader.SetFileName(path.toStdString().c_str());
+    if (reader.Read()) {
+      auto image = reader.GetImage();
+
+      std::vector<char> buffer(image.GetBufferLength());
+      image.GetBuffer(buffer.data());
+      
+      int cols = image.GetColumns();
+      int rows = image.GetRows();
+
+      int pixel_type;
+      auto pixel_format = image.GetPixelFormat().GetScalarType();
+      if (pixel_format == gdcm::PixelFormat::UINT8) pixel_type = CV_8UC1;
+      else if (pixel_format == gdcm::PixelFormat::INT8) pixel_type = CV_8SC1;
+      else if (pixel_format == gdcm::PixelFormat::UINT16) pixel_type = CV_16UC1;
+      else if (pixel_format == gdcm::PixelFormat::INT16) pixel_type = CV_16SC1;
+      else if (pixel_format == gdcm::PixelFormat::FLOAT32) pixel_type = CV_32FC1;
+      else if (pixel_format == gdcm::PixelFormat::FLOAT64) pixel_type = CV_64FC1;
+      else if (pixel_format == gdcm::PixelFormat::UINT32) pixel_type = CV_8UC4;
+      else if (pixel_format == gdcm::PixelFormat::INT32) pixel_type = CV_8SC4;
+      else {
+        QMessageBox::warning(this, "Warning", "Unknown pixel format of image in DICOM!");
+        return;
+      }
+
+      cv::Mat img(image.GetRows(), image.GetColumns(), pixel_type, buffer.data());
+
+      auto item = std::make_shared<Metadata>();
+      cv::cvtColor(img, item->image, cv::COLOR_GRAY2RGB);
+      item->filename = path;
+
+      view_queue_->addItem(item);
+    }
+  }
 }
 
 void MainWindow::openSample(bool) {
