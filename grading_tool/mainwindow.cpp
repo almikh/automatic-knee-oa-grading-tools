@@ -42,6 +42,8 @@ MainWindow::MainWindow(QWidget* parent) :
   right_panel_(new QTableWidget()),
   view_queue_(new ViewQueue())
 {
+  setWindowTitle("Osteoarthritis Grading Tool");
+
   auto splitter = new QSplitter();
   splitter->setOrientation(Qt::Vertical);
 
@@ -224,13 +226,13 @@ void MainWindow::showItem(Metadata::HardPtr data) {
 void MainWindow::runOnData(Metadata::HardPtr data) {
   auto sample = data->image.clone();
 
-  // detect joints
+  // init detector
   if (!detector_) {
     detector_ = tfdetect::CreateDetectorFromGraph("frozen_inference_graph.pb");
   }
 
-  std::vector<tfdetect::Detection> knee_joints;
-  detector_->detect(sample, knee_joints);
+  // detect joints
+  auto knee_joints = detector_->detect(sample);
 
   // classification
   for (int k = 0; k < static_cast<int>(knee_joints.size()); ++k) {

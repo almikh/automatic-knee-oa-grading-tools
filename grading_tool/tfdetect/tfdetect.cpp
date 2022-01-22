@@ -36,7 +36,7 @@ namespace tfdetect
         }
       }
 
-      virtual void detect(const cv::Mat& input_image, std::vector<Detection>& results) const override {
+      virtual std::vector<Detection> detect(const cv::Mat& input_image) const override {
         // the graph expects images of type uint8
         cv::Mat im_to_use;
         if (input_image.depth() != CV_8U) {
@@ -60,7 +60,7 @@ namespace tfdetect
         const auto output_classes = result_tensors[2]->View<float, 2>();
 
         // copy detections to the results vector
-        results.clear();
+        std::vector<Detection> results;
         for (size_t i = 0; i < output_scores.NumElements(); ++i) {
           if (output_scores({ 0, i }) > 0.) {
             results.emplace_back(output_classes({ 0, i }),
@@ -71,6 +71,8 @@ namespace tfdetect
               output_boxes({ 0, i, 2 }));
           }
         }
+
+        return results;
       }
 
 
@@ -81,11 +83,10 @@ namespace tfdetect
       std::vector<TF_Output> input_names_;
       std::vector<TF_Output> output_names_;
     };
-
-  } // namespace
+  }
 
   std::shared_ptr<Detector> CreateDetectorFromGraph(const std::string& path_to_graph_proto) {
     return std::shared_ptr<GraphProtoDetector>(new GraphProtoDetector(path_to_graph_proto));
   }
 
-} // namespace tf_detector
+}
