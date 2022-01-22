@@ -277,6 +277,7 @@ void MainWindow::openDICOM(bool) {
     gdcm::ImageReader reader;
     reader.SetFileName(path.toStdString().c_str());
     if (reader.Read()) {
+      auto filename = QFileInfo(path).fileName();
       auto image = reader.GetImage();
 
       std::vector<char> buffer(image.GetBufferLength());
@@ -304,7 +305,7 @@ void MainWindow::openDICOM(bool) {
 
       auto item = std::make_shared<Metadata>();
       cv::cvtColor(img, item->image, cv::COLOR_GRAY2RGB);
-      item->filename = path;
+      item->filename = filename;
 
       view_queue_->addItem(item);
     }
