@@ -18,12 +18,12 @@ Viewport::Viewport(QWidget* parent) :
   QGraphicsView(parent),
   roi_item_(new QGraphicsRectItem()),
   marker_item_(new QGraphicsEllipseItem()),
-  marker_center_item_(new QGraphicsEllipseItem()),
   scene_rect_item_(new QGraphicsRectItem()),
+  marker_center_item_(new QGraphicsEllipseItem()),
   autoscale_policy_(AutoscalePolicy::MinFactor),
   mouse_cursor_text(new QGraphicsTextItem()),
-  editable_marker(false),
   editable_roi(false),
+  editable_marker(false),
   autoscale_(true),
   scale_factor_(1.0) {
   setMouseTracking(true);

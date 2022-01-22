@@ -48,6 +48,7 @@ public:
 
   virtual QSize sizeHint() const;
   int heightForWidth(int w) const;
+
 public slots:
   /*! Starts the spin animation.
       \sa stopAnimation isAnimated

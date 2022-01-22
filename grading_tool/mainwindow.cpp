@@ -18,7 +18,7 @@
 
 #undef slots
 #include <torch/script.h>
-# define slots Q_SLOTS
+#define slots Q_SLOTS
 
 #include <gdcm/gdcmImageReader.h>
 

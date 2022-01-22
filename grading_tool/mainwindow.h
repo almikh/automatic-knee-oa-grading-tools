@@ -4,8 +4,8 @@
 #include <QChartView>
 
 #include <opencv2/opencv.hpp>
-#include <tfdetect.h>
 
+#include "tfdetect/tfdetect.h"
 #include "viewport.h"
 #include "classifier.h"
 #include "metadata.h"

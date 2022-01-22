@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT += core gui widgets
+QT += core gui widgets concurrent charts
 
 TARGET = grading_tool
 TEMPLATE = app
@@ -22,40 +22,55 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 include(../dependencies.pri)
 
-CONFIG += c++11
+CONFIG += c++1z
 
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
         classifier.cpp \
+        progress_indicator.cpp \
+        tfdetect/tfdetect.cpp \
+        utils.cpp \
+        view_queue.cpp \
         viewport.cpp \
         zip/qzip.cpp
 
 HEADERS += \
         mainwindow.h \
         classifier.h \
+        progress_indicator.h \
+        tfdetect/tfdetect.h \
+        tfdetect/tfwrapper.h \
+        utils.h \
+        view_queue.h \
         viewport.h \
         zip/qzipreader.h \
         zip/qzipwriter.h
 
 # torch
-CONFIG += no_keywords
+# CONFIG += no_keywords
 QMAKE_CXXFLAGS += -DGLIBCXX_USE_CXX11_ABI=0
 
-INCLUDEPATH += $${OPENCV_PATH}/include/
-INCLUDEPATH += $${THIRD_PARTY_PATH}/zlib/include/
+INCLUDEPATH += $${OPENCV_PATH}/include
+INCLUDEPATH += $${THIRD_PARTY_PATH}/zlib/include
+INCLUDEPATH += $${GDCM_PATH}/include
+INCLUDEPATH += $${LIBTENSORFLOW_PATH}/include
 
 LIBS += -L$${THIRD_PARTY_PATH}/zlib/lib/
+LIBS += -L$${LIBTENSORFLOW_PATH}/lib -ltensorflow
 
 win32:CONFIG(debug, debug|release) {
     INCLUDEPATH += $${LIBTORCH_PATH}_debug/include $${LIBTORCH_PATH}_debug/include/torch/csrc/api/include
     LIBS += -L$${LIBTORCH_PATH}_debug/lib -ltorch -ltorch_cpu -lc10 -lzlibstaticd
     LIBS += -L$${OPENCV_PATH}/lib -lopencv_world420d
+    LIBS += -L$${GDCM_PATH}/lib/Debug -lgdcmcharls -lgdcmDICT -lgdcmDSED -lgdcmexpat -lgdcmgetopt -lgdcmIOD -lgdcmCommon -lgdcmjpeg12 -lgdcmjpeg16 -lgdcmjpeg8 -lgdcmMEXD -lgdcmMSFF -lgdcmopenjp2 -lgdcmzlib -lsocketxx -lws2_32
+
 }
 else:win32:CONFIG(release, debug|release) {
     INCLUDEPATH += $${LIBTORCH_PATH}_release/include $${LIBTORCH_PATH}_release/include/torch/csrc/api/include
     LIBS += -L$${LIBTORCH_PATH}_release/lib -ltorch -ltorch_cpu -lc10 -lzlibstatic
     LIBS += -L$${OPENCV_PATH}/lib -lopencv_world420
+    LIBS += -L$${GDCM_PATH}/lib/Debug -lgdcmcharls -lgdcmDICT -lgdcmDSED -lgdcmexpat -lgdcmgetopt -lgdcmIOD -lgdcmCommon -lgdcmjpeg12 -lgdcmjpeg16 -lgdcmjpeg8 -lgdcmMEXD -lgdcmMSFF -lgdcmopenjp2 -lgdcmzlib -lsocketxx -lws2_32
 }
 
 # Default rules for deployment.
