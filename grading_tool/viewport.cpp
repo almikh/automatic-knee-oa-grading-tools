@@ -24,8 +24,9 @@ Viewport::Viewport(QWidget* parent) :
   mouse_cursor_text(new QGraphicsTextItem()),
   editable_roi(false),
   editable_marker(false),
-  autoscale_(true),
-  scale_factor_(1.0) {
+  autoscale_(false),
+  scale_factor_(1.0) 
+{
   setMouseTracking(true);
   roi_item_->setPen(QPen(Qt::red));
   roi_item_->setBrush(QColor(255, 255, 255, 8));

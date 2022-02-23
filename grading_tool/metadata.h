@@ -17,4 +17,6 @@ public:
   cv::Mat image;
   QString filename;
   QVector<Joint> joints;
+  bool already_display = false;
+  double viewport_scale = 1.0f;
 };

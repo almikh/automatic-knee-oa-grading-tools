@@ -51,7 +51,7 @@ MainWindow::MainWindow(QWidget* parent) :
   auto layout = new QHBoxLayout(w);
 
   // sample's viewport
-  viewport_->setAutoscaleEnabled(true);
+  viewport_->setAutoscaleEnabled(false);
   viewport_->setAutoscalePolicy(Viewport::AutoscalePolicy::MinFactor);
   working_area_->addWidget(viewport_);
 
@@ -166,6 +166,10 @@ void MainWindow::setItemAsCurrent(Metadata::HardPtr data) {
     current_item_ = data;
   }
 
+  if (current_item_ && current_item_ != data) {
+    current_item_->viewport_scale = viewport_->scaleFactor();
+  }
+
   // is already calculating - just wait for it
   if (in_process_.contains(data.get())) {
     current_item_ = data;
@@ -178,6 +182,7 @@ void MainWindow::setItemAsCurrent(Metadata::HardPtr data) {
     working_area_->setCurrentWidget(loading_area_);
     loading_ind_->startAnimation();
     in_process_.insert(data.get());
+    current_item_ = data;
 
     QtConcurrent::run(this, &MainWindow::runOnData, data);
   }
@@ -215,12 +220,27 @@ void MainWindow::showItem(Metadata::HardPtr data) {
     right_panel_->setCellWidget(k, 0, graph);
   }
 
+  // предыдущий
+  if (current_item_) {
+    current_item_->viewport_scale = viewport_->scaleFactor();
+  }
+
+  // текущий
   current_item_ = data;
+  if (!current_item_->already_display) {
+    current_item_->already_display = true;
+    viewport_->setAutoscaleEnabled(true);
+  }
+  else {
+    viewport_->setScale(current_item_->viewport_scale);
+  }
 
   loading_ind_->stopAnimation();
   working_area_->setCurrentWidget(viewport_);
   viewport_->setImage(sample);
   view_queue_->updateView();
+
+  viewport_->setAutoscaleEnabled(false);
 }
 
 void MainWindow::runOnData(Metadata::HardPtr data) {
