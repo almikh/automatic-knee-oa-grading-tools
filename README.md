@@ -2,6 +2,8 @@
 
 Instruments for the automatic classification of knee osteoarthritis according to the Kellgren-Lawrence scale.
 
+![](assets/example.png)
+
 ## Requirements
 1. OpenCV
 2. libtensorflow-cpu
