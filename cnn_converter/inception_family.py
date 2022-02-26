@@ -1,10 +1,12 @@
 import math
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.model_zoo as model_zoo
 from torchvision import models
 from torch.nn import init
-import torch
+
+import mixed_arch # inception-resnet
 
 model_urls = {
     'xception':'https://www.dropbox.com/s/1hplpzet9d7dv29/xception-c0a72b38.pth.tar?dl=1'
@@ -27,12 +29,6 @@ class SELayer(nn.Module):
         y = self.avg_pool(x).view(b, c)
         y = self.fc(y).view(b, c, 1, 1)
         return x * y
-    
-def inception_v3(num_class, pretrained=True):
-    model = models.inception_v3(pretrained = pretrained, aux_logits=False)
-    model.fc = torch.nn.Linear(2048, num_class)
-
-    return model
 
 class SE_Inception3(nn.Module):
     def __init__(self, num_classes, pretrained=True):
@@ -63,9 +59,6 @@ class SE_Inception3(nn.Module):
             raise ValueError("input size must be (299, 299)")
 
         return self.model(x)
-
-def se_inception_v3(num_class, pretrained=True):
-    return SE_Inception3(num_class, pretrained=pretrained)
 
 # Xception
 class SeparableConv2d(nn.Module):
@@ -224,11 +217,66 @@ class Xception(nn.Module):
 
         return x
 
+class SE_Xception(nn.Module):
+    def __init__(self, num_classes):
+        super(SE_Xception, self).__init__()
+
+        model = Xception()
+        model.load_state_dict(model_zoo.load_url(model_urls['xception']))
+
+        model.block1.add_module("SELayer", SELayer(128))
+        model.block2.add_module("SELayer", SELayer(256))
+        model.block3.add_module("SELayer", SELayer(728))
+
+        model.block4.add_module("SELayer", SELayer(728))
+        model.block5.add_module("SELayer", SELayer(728))
+        model.block6.add_module("SELayer", SELayer(728))
+        model.block7.add_module("SELayer", SELayer(728))
+
+        model.block8.add_module("SELayer", SELayer(728))
+        model.block9.add_module("SELayer", SELayer(728))
+        model.block10.add_module("SELayer", SELayer(728))
+        model.block11.add_module("SELayer", SELayer(728))
+
+        model.block12.add_module("SELayer", SELayer(1024))
+
+        model.fc = torch.nn.Linear(2048, num_classes)
+
+        self.model = model
+
+    def forward(self, x):
+        return self.model(x)
+    
+    
+ #=====================
+def inception_v3(num_class, pretrained=True):
+    model = models.inception_v3(pretrained = pretrained, aux_logits=False)
+    model.fc = torch.nn.Linear(2048, num_class)
+
+    return model
+
 def xception_model(num_classes, pretrained=True):
     model = Xception()
     if pretrained:
         model.load_state_dict(model_zoo.load_url(model_urls['xception']))
         
     model.fc = torch.nn.Linear(2048, num_classes)
+
+    return model
+   
+def se_inception_v3(num_class, pretrained=True):
+    return SE_Inception3(num_class, pretrained=pretrained)
+
+def se_xception_model(num_class, pretrained=True):
+    return SE_Xception(num_class)
+
+def inceptionresnetv2_model(num_class, pretrained=True):
+    if pretrained:
+        model = mixed_arch.inceptionresnetv2(pretrained='imagenet')
+    else:
+        model = mixed_arch.inceptionresnetv2(pretrained=None)
+  
+    in_features = model.last_linear.in_features
+    model.last_linear = torch.nn.Linear(in_features, num_class)
 
     return model

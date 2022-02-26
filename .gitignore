@@ -1,7 +1,9 @@
 # Visual Studio dirs and files
 3rdparty/gdcm/*
+.ipynb_checkpoints/
 debug/
 release/
+dataset/
 .vs/
 
 # C++ objects and libs

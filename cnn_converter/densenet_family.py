@@ -69,7 +69,46 @@ class _Transition(nn.Sequential):
                                           kernel_size=1, stride=1, bias=False))
         self.add_module('pool', nn.AvgPool2d(kernel_size=2, stride=2))
 
+class DenseNet(nn.Module):
+    def __init__(self, num_classes):
+        super(DenseNet, self).__init__()
+        
+        # get the pretrained DenseNet201 network
+        self.densenet = models.densenet121(pretrained=True)
+        
+        # add the average global pool
+        self.global_avg_pool = nn.AvgPool2d(kernel_size=7, stride=1)
+        
+        # get the classifier of the vgg19
+        in_features = self.densenet.classifier.in_features
+        self.densenet.classifier = torch.nn.Linear(in_features, num_classes)
+    
+        # placeholder for the gradients
+        self.gradients = None
+    
+    # hook for the gradients of the activations
+    def activations_hook(self, grad):
+        self.gradients = grad
+        
+    def forward(self, x):
+        x = self.densenet.features(x)
+        x = F.relu(x, inplace=True)
+        
+        # register the hook
+        h = x.register_hook(self.activations_hook)
 
+        x = F.adaptive_avg_pool2d(x, (1, 1))
+        x = torch.flatten(x, 1)
+        x = self.densenet.classifier(x)
+        
+        return x
+    
+    def get_activations_gradient(self):
+        return self.gradients
+    
+    def get_activations(self, x):
+        return self.densenet.features(x)
+    
 class SEDenseNet(nn.Module):
     r"""Densenet-BC model class, based on
     `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_
@@ -171,13 +210,8 @@ def se_densenet121(pretrained=False, is_strict=False, **kwargs):
     return model
     
 # base DenseNet-121
-def densenet121_model(num_class, use_pretrained = False):
-    model = models.densenet121(pretrained = use_pretrained)
-
-    in_features = model.classifier.in_features
-    model.classifier = torch.nn.Linear(in_features, num_class)
-
-    return model 
+def densenet121_model(num_class, use_pretrained = True):
+    return DenseNet(num_classes=num_class)  
 
 # SE-DenseNet-121
 def se_densenet121_model(num_class, use_pretrained = True):
@@ -186,5 +220,5 @@ def se_densenet121_model(num_class, use_pretrained = True):
     in_features = model.classifier.in_features
     model.classifier = torch.nn.Linear(in_features, num_class)
     
-    return model 
+    return model
 
