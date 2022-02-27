@@ -4,6 +4,7 @@
 debug/
 release/
 dataset/
+oai224/
 .vs/
 
 # C++ objects and libs

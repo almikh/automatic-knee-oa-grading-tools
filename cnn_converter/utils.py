@@ -21,10 +21,11 @@ def load_model(arch_name, num_classes, filename = None, pretrained=True, device 
         if arch_name == "resnet18": cnn_model = resnet_family.resnet18_model(num_classes, pretrained)
         elif arch_name == "resnet34": cnn_model = resnet_family.resnet34_model(num_classes, pretrained)
         elif arch_name == "resnet50": cnn_model = resnet_family.resnet50_model(num_classes, pretrained)
+        elif arch_name == "resnext50": cnn_model = resnet_family.resnext50_model(num_classes, pretrained)
         elif arch_name == "se_resnet18": cnn_model = resnet_family.se_resnet18_model(num_classes, pretrained)
         elif arch_name == "se_resnet34": cnn_model = resnet_family.se_resnet34_model(num_classes, pretrained)
         elif arch_name == "se_resnet50": cnn_model = resnet_family.se_resnet50_model(num_classes, pretrained)
-        elif arch_name == "resnext": cnn_model = resnet_family.resnext50_model(num_classes, pretrained)
+        elif arch_name == "se_resnext50": cnn_model = resnet_family.se_resnext50_model(num_classes, pretrained)    
         
     elif "dense" in arch_name:
         frame_size=(224, 224)
@@ -56,6 +57,8 @@ def compute_accuracy(model, loader):
     total_samples = 0
     correct_samples = 0
     for i_step, (x, y) in enumerate(loader):
+        print("step #" + str(i_step))
+        
         x_gpu = x
         y_gpu = y
         
