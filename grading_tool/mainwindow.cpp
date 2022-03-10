@@ -92,6 +92,10 @@ MainWindow::MainWindow(QWidget* parent) :
   // makeToolbar();
 
   connect(this, &MainWindow::itemProcessed, this, &MainWindow::showItem, Qt::QueuedConnection);
+  connect(viewport_, &Viewport::mousePosChanged, this, &MainWindow::mousePosChanged);
+  connect(viewport_, &Viewport::mousePosOutOfImage, this, &MainWindow::mousePosOutOfImage);
+
+  void mousePosChanged(const QPointF&);
 
   setCentralWidget(splitter);
   resize(800, 600);
@@ -346,5 +350,18 @@ void MainWindow::openSample(bool) {
     item->image = sample;
 
     view_queue_->addItem(item);
+  }
+}
+
+void MainWindow::mousePosChanged(const QPoint& pt) {
+  if (current_item_) {
+    auto val = current_item_->image.at<cv::Vec3b>(pt.y(), pt.x());
+    viewport_->setLabelText(QString("X: %1 Y: %2 Val: %3").arg(pt.x()).arg(pt.y()).arg(val[0]));
+  }
+}
+
+void MainWindow::mousePosOutOfImage() {
+  if (current_item_) {
+    viewport_->setLabelVisible(false);
   }
 }

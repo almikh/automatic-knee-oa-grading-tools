@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <optional>
 #include <QGraphicsView>
 #include <QGraphicsScene>
 #include <QGraphicsTextItem>
@@ -28,26 +29,16 @@ public:
 
 protected:
   QPixmap last_pixmap_;
+  QGraphicsTextItem* label_ = nullptr;
   QGraphicsPixmapItem* pixmap_item_ = nullptr;
-  QGraphicsRectItem* roi_item_;
-  QGraphicsRectItem* scene_rect_item_;
-  QGraphicsEllipseItem* marker_item_;
-  QGraphicsEllipseItem* marker_center_item_;
   AutoscalePolicy autoscale_policy_;
-  QPushButton* save_image_ = nullptr;
 
-  QPoint origin_point_;
-  QPointF marker_pos_;
   bool autoscale_;
   qreal scale_factor_;
+  QPointF last_sent_pos_;
+  std::optional<QPointF> anchor_shift_;
 
   void updateScale();
-
-public:
-  QGraphicsTextItem* mouse_cursor_text; // текст под курсором мыши
-  bool editable_marker; // в окне есть пердвигаемый мышкой маркер
-  bool editable_roi; // в области можно мышкой выделять области интереса
-  QRect roi;
 
 public:
   explicit Viewport(QWidget* parent = nullptr);
@@ -55,17 +46,15 @@ public:
   double scaleFactor();
   QHBoxLayout* extraLayout();
 
-  void setBorderColor(QColor color);
-  void setBorderStyle(Qt::PenStyle style);
   void setAutoscalePolicy(AutoscalePolicy policy);
+
+  void setLabelText(const QString& text);
+  void setLabelVisible(bool visible);
 
   void clearScene();
   void setImage(const cv::Mat& image);
   void setImage(const QImage& image);
   void fitImageToViewport();
-
-  void resetROI();
-  void setROI(const QRect& rect);
 
   void resizeEvent(QResizeEvent* event) override;
   void wheelEvent(QWheelEvent* event) override;
@@ -77,15 +66,10 @@ protected:
 
 public:
   Q_SLOT void setAutoscaleEnabled(bool autoscale);
-  Q_SLOT void changeMarkerPos(const QPointF& pos);
-  Q_SLOT void changeROI(const QRect& new_roi);
-
   Q_SLOT void setScale(qreal scale);
 
   Q_SIGNAL void signalOnClick(const QPointF&);
-  Q_SIGNAL void markerPosChanged(const QPointF& pos);
-  Q_SIGNAL void roiSelected(const QRect& new_roi);
-  Q_SIGNAL void roiChanged(const QRect& new_roi);
-  Q_SIGNAL void mousePosChanged(const QPointF&);
+  Q_SIGNAL void mousePosChanged(const QPoint&);
+  Q_SIGNAL void mousePosOutOfImage();
   Q_SIGNAL void scaleChanged(qreal);
 };
