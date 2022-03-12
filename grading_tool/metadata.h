@@ -5,6 +5,7 @@
 
 #include <opencv2/opencv.hpp>
 #include "classifier.h"
+#include "viewport.h"
 
 struct Metadata {
   using HardPtr = std::shared_ptr<Metadata>;
@@ -18,5 +19,5 @@ public:
   QString filename;
   QVector<Joint> joints;
   bool already_display = false;
-  double viewport_scale = 1.0f;
+  Viewport::State viewport_state;
 };

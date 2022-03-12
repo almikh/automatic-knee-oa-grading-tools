@@ -21,32 +21,27 @@ class Viewport : public QGraphicsView {
   Q_OBJECT
 
 public:
-  enum class AutoscalePolicy {
-    MinFactor,
-    MaxFactor
+  struct State {
+    double scale = 1.0;
+    QPointF position;
   };
-  QHBoxLayout* extra_layout_ = nullptr;
 
 protected:
   QPixmap last_pixmap_;
   QGraphicsTextItem* label_ = nullptr;
   QGraphicsPixmapItem* pixmap_item_ = nullptr;
-  AutoscalePolicy autoscale_policy_;
 
-  bool autoscale_;
   qreal scale_factor_;
   QPointF last_sent_pos_;
   std::optional<QPointF> anchor_shift_;
 
-  void updateScale();
-
 public:
   explicit Viewport(QWidget* parent = nullptr);
 
-  double scaleFactor();
-  QHBoxLayout* extraLayout();
+  State state() const;
+  double scaleFactor() const;
 
-  void setAutoscalePolicy(AutoscalePolicy policy);
+  void setState(State state);
 
   void setLabelText(const QString& text);
   void setLabelVisible(bool visible);
@@ -54,7 +49,6 @@ public:
   void clearScene();
   void setImage(const cv::Mat& image);
   void setImage(const QImage& image);
-  void fitImageToViewport();
 
   void resizeEvent(QResizeEvent* event) override;
   void wheelEvent(QWheelEvent* event) override;
@@ -65,8 +59,8 @@ protected:
   void mouseMoveEvent(QMouseEvent* event) override;
 
 public:
-  Q_SLOT void setAutoscaleEnabled(bool autoscale);
   Q_SLOT void setScale(qreal scale);
+  Q_SLOT void fitImageToViewport();
 
   Q_SIGNAL void signalOnClick(const QPointF&);
   Q_SIGNAL void mousePosChanged(const QPoint&);

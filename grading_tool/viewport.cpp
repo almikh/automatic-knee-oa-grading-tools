@@ -16,9 +16,7 @@
 
 Viewport::Viewport(QWidget* parent) :
   QGraphicsView(parent),
-  autoscale_policy_(AutoscalePolicy::MinFactor),
   label_(new QGraphicsTextItem()),
-  autoscale_(false),
   scale_factor_(1.0) 
 {
   setMouseTracking(true);
@@ -29,12 +27,18 @@ Viewport::Viewport(QWidget* parent) :
   label_->setDefaultTextColor(QColor(206, 6, 52));
 }
 
-QHBoxLayout* Viewport::extraLayout() {
-  return extra_layout_;
+double Viewport::scaleFactor() const {
+  return scale_factor_;
 }
 
-double Viewport::scaleFactor() {
-  return scale_factor_;
+Viewport::State Viewport::state() const {
+  State s;
+  s.scale = scale_factor_;
+  if (pixmap_item_) {
+    s.position = pixmap_item_->pos();
+  }
+
+  return s;
 }
 
 void Viewport::setScale(qreal factor) {
@@ -44,8 +48,10 @@ void Viewport::setScale(qreal factor) {
   pixmap_item_->setScale(scale_factor_);
 }
 
-void Viewport::setAutoscalePolicy(Viewport::AutoscalePolicy policy) {
-  autoscale_policy_ = policy;
+void Viewport::setState(Viewport::State state) {
+  scale_factor_ = state.scale;
+  pixmap_item_->setScale(scale_factor_);
+  pixmap_item_->setPos(state.position);
 }
 
 void Viewport::setLabelText(const QString& text) {
@@ -66,36 +72,36 @@ void Viewport::setImage(const QImage& image) {
     clearScene();
   }
 
+  last_pixmap_ = QPixmap::fromImage(image);
+
   if (!scene()) {
     auto s = new QGraphicsScene();
     s->setBackgroundBrush(QBrush(qRgb(0, 0, 0)));
+    s->setSceneRect(0, 0, width(), height());
     QGraphicsView::setScene(s);
     setStyleSheet("");
 
-    //
-    last_pixmap_ = QPixmap::fromImage(image);
     pixmap_item_ = scene()->addPixmap(last_pixmap_);
-    pixmap_item_->setPos(-0.5, -0.5);
-
-    scene()->setSceneRect(0, 0, width(), height());
-    scene()->addItem(label_);
-
-    updateScale();
-    return;
+    s->addItem(label_);
+  }
+  else {
+    pixmap_item_->setPixmap(last_pixmap_);
   }
 
-  last_pixmap_ = QPixmap::fromImage(image);
-  pixmap_item_->setPixmap(last_pixmap_);
+  fitImageToViewport();
 }
 
 void Viewport::fitImageToViewport() {
   if (!last_pixmap_.isNull() && scene()) {
-    pixmap_item_->setScale(1.0 / scale_factor_);
-    scale_factor_ = double(width()) / scene()->width() * 0.95;
-    scale_factor_ = qMin(scale_factor_, double(height()) / scene()->height() * 0.95);
-    pixmap_item_->setScale(scale_factor_);
+    scale_factor_ = qMin(
+      double(width()) / last_pixmap_.width() * 0.95,
+      double(height()) / last_pixmap_.height() * 0.95);
 
-    scene()->setSceneRect(0, 0, width(), height());
+    auto w2 = last_pixmap_.width() * scale_factor_;
+    auto h2 = last_pixmap_.height() * scale_factor_;
+
+    pixmap_item_->setScale(scale_factor_);
+    pixmap_item_->setPos((width() - w2) * 0.5, (height() - h2) * 0.5);
   }
 }
 
@@ -106,30 +112,6 @@ void Viewport::setImage(const cv::Mat& image) {
     setImage(convert::cv2qt(rgb));
   }
   else setImage(convert::cv2qt(image));
-}
-
-void Viewport::updateScale() {
-  if (last_pixmap_.isNull() || !scene()) return;
-
-  if (autoscale_ && !size().isEmpty()) {
-    pixmap_item_->setScale(1.0 / scale_factor_);
-    scale_factor_ = double(width()) / last_pixmap_.width() * 0.95;
-    if (autoscale_policy_ == AutoscalePolicy::MinFactor) {
-      scale_factor_ = qMin(scale_factor_, double(height()) / last_pixmap_.height() * 0.95);
-    }
-    else {
-      scale_factor_ = qMax(scale_factor_, double(height()) / last_pixmap_.height() * 0.95);
-    }
-
-    auto w1 = width(), h1 = height();
-    auto w2 = last_pixmap_.width() * scale_factor_;
-    auto h2 = last_pixmap_.height() * scale_factor_;
-
-    pixmap_item_->setScale(scale_factor_);
-    pixmap_item_->setPos((w1 - w2) * 0.5, (h1 - h2) * 0.5);
-  }
-
-  scene()->setSceneRect(0, 0, width(), height());
 }
 
 void Viewport::clearScene() {
@@ -149,28 +131,26 @@ void Viewport::clearScene() {
 
 void Viewport::resizeEvent(QResizeEvent* event) {
   QGraphicsView::resizeEvent(event);
-  updateScale();
 }
 
 void Viewport::wheelEvent(QWheelEvent* event) {
   if (!scene()) return;
 
   if (QApplication::keyboardModifiers() == Qt::ControlModifier) {
-    if (!autoscale_) {
-      qreal factor = std::pow(1.001, event->delta());
-      scale_factor_ *= factor;
+    auto w1 = width(), h1 = height();
+    auto prev_pos = QPoint((w1 - last_pixmap_.width() * scale_factor_) * 0.5, (h1 - last_pixmap_.height() * scale_factor_) * 0.5);
 
-      auto w1 = width(), h1 = height();
-      auto w2 = last_pixmap_.width() * scale_factor_;
-      auto h2 = last_pixmap_.height() * scale_factor_;
+    qreal factor = std::pow(1.001, event->delta());
+    scale_factor_ *= factor;
 
-      pixmap_item_->setScale(scale_factor_);
-      pixmap_item_->setPos((w1 - w2) * 0.5, (h1 - h2)*0.5);
+    auto new_pos = QPoint((w1 - last_pixmap_.width() * scale_factor_) * 0.5, (h1 - last_pixmap_.height() * scale_factor_) * 0.5);
 
-      scene()->setSceneRect(0, 0, width(), height());
+    pixmap_item_->setScale(scale_factor_);
+    pixmap_item_->setPos(pixmap_item_->pos() + (new_pos - prev_pos));
 
-      emit scaleChanged(scale_factor_);
-    }
+    scene()->setSceneRect(0, 0, width(), height());
+
+    emit scaleChanged(scale_factor_);
   }
   else QGraphicsView::wheelEvent(event);
 }
@@ -230,9 +210,4 @@ void Viewport::mouseMoveEvent(QMouseEvent* event) {
     }
   }
   else emit mousePosOutOfImage();
-}
-
-void Viewport::setAutoscaleEnabled(bool autoscale) {
-  autoscale_ = autoscale;
-  updateScale();
 }

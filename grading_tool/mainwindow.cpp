@@ -5,6 +5,7 @@
 #include <QBarCategoryAxis>
 #include <QGraphicsLayout>
 #include <QStackedWidget>
+#include <QPushButton>
 #include <QValueAxis>
 #include <QtConcurrent>
 #include <QBarSet>
@@ -51,9 +52,19 @@ MainWindow::MainWindow(QWidget* parent) :
   auto layout = new QHBoxLayout(w);
 
   // sample's viewport
-  viewport_->setAutoscaleEnabled(false);
-  viewport_->setAutoscalePolicy(Viewport::AutoscalePolicy::MinFactor);
   working_area_->addWidget(viewport_);
+
+  // reset viewport state
+  auto ll = new QHBoxLayout(viewport_);
+  auto reset = new QPushButton(QIcon(), "");
+  reset->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: yellow; }");
+  reset->setFocusPolicy(Qt::NoFocus);
+  reset->setFixedSize(24, 24);
+  reset->setCheckable(true);
+  reset->setChecked(false);
+
+  ll->addWidget(reset, 0, Qt::AlignTop | Qt::AlignLeft);
+  connect(reset, &QPushButton::clicked, viewport_, &Viewport::fitImageToViewport);
 
   // loading area
   working_area_->addWidget(loading_area_);
@@ -171,7 +182,7 @@ void MainWindow::setItemAsCurrent(Metadata::HardPtr data) {
   }
 
   if (current_item_ && current_item_ != data) {
-    current_item_->viewport_scale = viewport_->scaleFactor();
+    current_item_->viewport_state = viewport_->state();
   }
 
   // is already calculating - just wait for it
@@ -224,27 +235,27 @@ void MainWindow::showItem(Metadata::HardPtr data) {
     right_panel_->setCellWidget(k, 0, graph);
   }
 
-  // предыдущий
+  // previous item
   if (current_item_) {
-    current_item_->viewport_scale = viewport_->scaleFactor();
+    current_item_->viewport_state = viewport_->state();
   }
 
-  // текущий
+  // currentn item
   current_item_ = data;
-  if (!current_item_->already_display) {
-    current_item_->already_display = true;
-    viewport_->setAutoscaleEnabled(true);
-  }
-  else {
-    viewport_->setScale(current_item_->viewport_scale);
-  }
 
   loading_ind_->stopAnimation();
   working_area_->setCurrentWidget(viewport_);
   viewport_->setImage(sample);
-  view_queue_->updateView();
 
-  viewport_->setAutoscaleEnabled(false);
+  // set actual image position and scale
+  if (!current_item_->already_display) {
+    current_item_->already_display = true;
+  }
+  else {
+    viewport_->setState(current_item_->viewport_state);
+  }
+
+  view_queue_->updateView();
 }
 
 void MainWindow::runOnData(Metadata::HardPtr data) {
@@ -355,8 +366,10 @@ void MainWindow::openSample(bool) {
 
 void MainWindow::mousePosChanged(const QPoint& pt) {
   if (current_item_) {
-    auto val = current_item_->image.at<cv::Vec3b>(pt.y(), pt.x());
-    viewport_->setLabelText(QString("X: %1 Y: %2 Val: %3").arg(pt.x()).arg(pt.y()).arg(val[0]));
+    if (0 <= pt.x() && pt.x() < current_item_->image.cols && 0 <= pt.y() && pt.y() < current_item_->image.rows) {
+      auto val = current_item_->image.at<cv::Vec3b>(pt.y(), pt.x());
+      viewport_->setLabelText(QString("X: %1 Y: %2 Val: %3").arg(pt.x()).arg(pt.y()).arg(val[0]));
+    }
   }
 }
 
