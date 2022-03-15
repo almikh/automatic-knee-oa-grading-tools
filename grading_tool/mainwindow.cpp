@@ -56,15 +56,16 @@ MainWindow::MainWindow(QWidget* parent) :
 
   // reset viewport state
   auto ll = new QHBoxLayout(viewport_);
-  auto reset = new QPushButton(QIcon(), "");
-  reset->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: yellow; }");
-  reset->setFocusPolicy(Qt::NoFocus);
-  reset->setFixedSize(24, 24);
-  reset->setCheckable(true);
-  reset->setChecked(false);
-
+  auto reset = createOptionButton(QIcon());
   ll->addWidget(reset, 0, Qt::AlignTop | Qt::AlignLeft);
+
+  zoom_menu_ = createOptionButton(QIcon(), false);
+  ll->addWidget(zoom_menu_, 0, Qt::AlignTop | Qt::AlignLeft);
+
+  ll->addWidget(new QWidget(), 1, Qt::AlignTop | Qt::AlignLeft);
+
   connect(reset, &QPushButton::clicked, viewport_, &Viewport::fitImageToViewport);
+  connect(zoom_menu_, &QPushButton::clicked, this, &MainWindow::showZoomMenu);
 
   // loading area
   working_area_->addWidget(loading_area_);
@@ -106,8 +107,6 @@ MainWindow::MainWindow(QWidget* parent) :
   connect(viewport_, &Viewport::mousePosChanged, this, &MainWindow::mousePosChanged);
   connect(viewport_, &Viewport::mousePosOutOfImage, this, &MainWindow::mousePosOutOfImage);
 
-  void mousePosChanged(const QPointF&);
-
   setCentralWidget(splitter);
   resize(800, 600);
 }
@@ -126,8 +125,64 @@ void MainWindow::makeMenuFile() {
   connect(open_dicom, &QAction::triggered, this, &MainWindow::openDICOM);
 }
 
+void MainWindow::showZoomMenu() {
+  auto menu = new QMenu();
+
+  auto fill_viewport = new QAction("Fill viewport", menu);
+  fill_viewport->setShortcut(QKeySequence("CTRL+0"));
+  fill_viewport->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+  fill_viewport->setStatusTip("Scale the current image to the viewport size");
+  connect(fill_viewport, &QAction::triggered, this, &MainWindow::fillViewport);
+
+  menu->addAction(fill_viewport);
+  menu->addSeparator();
+
+  auto zoom200 = new QAction("200%", menu);
+  auto zoom400 = new QAction("400%", menu);
+  auto zoom800 = new QAction("800%", menu);
+  zoom200->setShortcut(QKeySequence("CTRL+2"));
+  zoom400->setShortcut(QKeySequence("CTRL+3"));
+  zoom800->setShortcut(QKeySequence("CTRL+4"));
+  connect(zoom200, &QAction::triggered, this, &MainWindow::zoom200);
+  connect(zoom400, &QAction::triggered, this, &MainWindow::zoom400);
+  connect(zoom800, &QAction::triggered, this, &MainWindow::zoom800);
+
+  menu->addAction(zoom200);
+  menu->addAction(zoom400);
+  menu->addAction(zoom800);
+  menu->addSeparator();
+
+  auto zoom_in = new QAction("Zoon in", menu);
+  auto zoom_out = new QAction("Zoom out", menu);
+  zoom_in->setShortcut(QKeySequence("CTRL + +"));
+  zoom_out->setShortcut(QKeySequence("CTRL + -"));
+  connect(zoom_in, &QAction::triggered, this, &MainWindow::zoomIn);
+  connect(zoom_out, &QAction::triggered, this, &MainWindow::zoomOut);
+
+  menu->addAction(zoom_in);
+  menu->addAction(zoom_out);
+
+  menu->setShortcutEnabled(0, true);
+  menu->exec(zoom_menu_->mapToGlobal(QPoint(0, 28)));
+}
+
 void MainWindow::makeToolbar() {
   auto toolbar = addToolBar("main");
+}
+
+QPushButton* MainWindow::createOptionButton(QIcon icon, bool enabled) {
+  auto button = new QPushButton(icon, "");
+  button->setFocusPolicy(Qt::NoFocus);
+  button->setFixedSize(24, 24);
+  button->setCheckable(true);
+  button->setChecked(false);
+  button->setEnabled(enabled);
+
+  button->setStyleSheet(
+    "QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: yellow; } "
+    "QPushButton:!enabled { border-width: 1px; border-style: outset; border-color: black; background-color: gray;");
+
+  return button;
 }
 
 QChartView* MainWindow::makeGraph(const QString& title, QColor color, const QVector<Classifier::Item>& data) {
@@ -256,6 +311,7 @@ void MainWindow::showItem(Metadata::HardPtr data) {
   }
 
   view_queue_->updateView();
+  zoom_menu_->setEnabled(true);
 }
 
 void MainWindow::runOnData(Metadata::HardPtr data) {
@@ -377,4 +433,34 @@ void MainWindow::mousePosOutOfImage() {
   if (current_item_) {
     viewport_->setLabelVisible(false);
   }
+}
+
+void MainWindow::fillViewport() {
+  viewport_->fitImageToViewport();
+  current_item_->viewport_state = viewport_->state();
+}
+
+void MainWindow::zoomIn() {
+  viewport_->scaleBy(1.1);
+  current_item_->viewport_state = viewport_->state();
+}
+
+void MainWindow::zoomOut() {
+  viewport_->scaleBy(0.9);
+  current_item_->viewport_state = viewport_->state();
+}
+
+void MainWindow::zoom200() {
+  viewport_->scaleTo(2.0);
+  current_item_->viewport_state = viewport_->state();
+}
+
+void MainWindow::zoom400() {
+  viewport_->scaleTo(4.0);
+  current_item_->viewport_state = viewport_->state();
+}
+
+void MainWindow::zoom800() {
+  viewport_->scaleTo(8.0);
+  current_item_->viewport_state = viewport_->state();
 }

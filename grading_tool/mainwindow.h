@@ -32,6 +32,8 @@ protected:
   QStackedWidget* working_area_;
   QTableWidget* right_panel_;
 
+  QPushButton* zoom_menu_ = nullptr;
+
   Metadata::HardPtr current_item_;
   std::shared_ptr<tfdetect::Detector> detector_;
   QSet<Metadata*> in_process_;
@@ -41,6 +43,7 @@ protected:
   void makeMenuFile();
   void makeToolbar();
 
+  QPushButton* createOptionButton(QIcon icon, bool enabled = true);
   QtCharts::QChartView* makeGraph(const QString& title, QColor color, const QVector<Classifier::Item>& data);
   
   Q_SLOT void openSample(bool);
@@ -59,6 +62,15 @@ protected:
   Q_SLOT void mousePosOutOfImage();
   
   Q_SIGNAL void itemProcessed(Metadata::HardPtr data);
+
+  // zoom menu
+  Q_SLOT void showZoomMenu();
+  Q_SLOT void fillViewport();
+  Q_SLOT void zoomIn();
+  Q_SLOT void zoomOut();
+  Q_SLOT void zoom200();
+  Q_SLOT void zoom400();
+  Q_SLOT void zoom800();
 
 public:
   MainWindow(QWidget* parent = nullptr);

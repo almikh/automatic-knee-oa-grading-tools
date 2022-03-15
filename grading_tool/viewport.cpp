@@ -41,11 +41,21 @@ Viewport::State Viewport::state() const {
   return s;
 }
 
-void Viewport::setScale(qreal factor) {
-  pixmap_item_->setScale(1.0 / scale_factor_);
+void Viewport::scaleTo(qreal factor) {
+  auto prev_pos = QPoint((width() - last_pixmap_.width() * scale_factor_) * 0.5, (height() - last_pixmap_.height() * scale_factor_) * 0.5);
+
   scale_factor_ = factor;
 
+  auto new_pos = QPoint((width() - last_pixmap_.width() * scale_factor_) * 0.5, (height() - last_pixmap_.height() * scale_factor_) * 0.5);
+
   pixmap_item_->setScale(scale_factor_);
+  pixmap_item_->setPos(pixmap_item_->pos() + (new_pos - prev_pos));
+
+  emit scaleChanged(scale_factor_);
+}
+
+void Viewport::scaleBy(qreal mult) {
+  scaleTo(scale_factor_ * mult);
 }
 
 void Viewport::setState(Viewport::State state) {
@@ -131,26 +141,18 @@ void Viewport::clearScene() {
 
 void Viewport::resizeEvent(QResizeEvent* event) {
   QGraphicsView::resizeEvent(event);
+
+  if (scene()) {
+    scene()->setSceneRect(0, 0, width(), height());
+  }
 }
 
 void Viewport::wheelEvent(QWheelEvent* event) {
   if (!scene()) return;
 
   if (QApplication::keyboardModifiers() == Qt::ControlModifier) {
-    auto w1 = width(), h1 = height();
-    auto prev_pos = QPoint((w1 - last_pixmap_.width() * scale_factor_) * 0.5, (h1 - last_pixmap_.height() * scale_factor_) * 0.5);
-
     qreal factor = std::pow(1.001, event->delta());
-    scale_factor_ *= factor;
-
-    auto new_pos = QPoint((w1 - last_pixmap_.width() * scale_factor_) * 0.5, (h1 - last_pixmap_.height() * scale_factor_) * 0.5);
-
-    pixmap_item_->setScale(scale_factor_);
-    pixmap_item_->setPos(pixmap_item_->pos() + (new_pos - prev_pos));
-
-    scene()->setSceneRect(0, 0, width(), height());
-
-    emit scaleChanged(scale_factor_);
+    scaleBy(factor);
   }
   else QGraphicsView::wheelEvent(event);
 }

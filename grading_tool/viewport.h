@@ -47,6 +47,8 @@ public:
   void setLabelVisible(bool visible);
 
   void clearScene();
+  void scaleBy(qreal mult);
+  void scaleTo(qreal mult);
   void setImage(const cv::Mat& image);
   void setImage(const QImage& image);
 
@@ -59,7 +61,6 @@ protected:
   void mouseMoveEvent(QMouseEvent* event) override;
 
 public:
-  Q_SLOT void setScale(qreal scale);
   Q_SLOT void fitImageToViewport();
 
   Q_SIGNAL void signalOnClick(const QPointF&);
