@@ -56,10 +56,10 @@ MainWindow::MainWindow(QWidget* parent) :
 
   // reset viewport state
   auto ll = new QHBoxLayout(viewport_);
-  auto reset = createOptionButton(QIcon());
+  auto reset = createOptionButton(QIcon(":/ic_reset"));
   ll->addWidget(reset, 0, Qt::AlignTop | Qt::AlignLeft);
 
-  zoom_menu_ = createOptionButton(QIcon(), false);
+  zoom_menu_ = createOptionButton(QIcon(":/ic_zoom"), false);
   ll->addWidget(zoom_menu_, 0, Qt::AlignTop | Qt::AlignLeft);
 
   ll->addWidget(new QWidget(), 1, Qt::AlignTop | Qt::AlignLeft);

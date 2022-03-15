@@ -37,6 +37,9 @@
     <Filter Include="Source Files\tfdetect">
       <UniqueIdentifier>{88f5423d-3181-4976-893f-92fe878b1305}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resources">
+      <UniqueIdentifier>{efe3d3d4-9e13-406f-9582-8903b204e8eb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="classifier.cpp">
@@ -92,6 +95,9 @@
     <ClInclude Include="metadata.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="debug\moc_predefs.h.cbt">
@@ -111,5 +117,13 @@
     <QtMoc Include="progress_indicator.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="grading_tool.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <QtRcc Include="resources.qrc">
+      <Filter>Resources</Filter>
+    </QtRcc>
   </ItemGroup>
 </Project>

@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file alias="ic_reset">res/ic_reset.png</file>
+        <file alias="ic_zoom">res/ic_zoom.png</file>
+    </qresource>
+</RCC>

@@ -203,6 +203,7 @@
     <QtMoc Include="view_queue.h" />
     <ClInclude Include="metadata.h" />
     <QtMoc Include="progress_indicator.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="tfdetect\tfdetect.h" />
     <ClInclude Include="tfdetect\tfwrapper.h" />
     <QtMoc Include="viewport.h" />
@@ -227,6 +228,12 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">release\moc_predefs.h;%(Outputs)</Outputs>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="grading_tool.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <QtRcc Include="resources.qrc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">
