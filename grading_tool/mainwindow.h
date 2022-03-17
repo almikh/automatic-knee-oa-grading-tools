@@ -33,6 +33,7 @@ protected:
   QTableWidget* right_panel_;
 
   QPushButton* zoom_menu_ = nullptr;
+  QPushButton* draw_line_ = nullptr;
 
   Metadata::HardPtr current_item_;
   std::shared_ptr<tfdetect::Detector> detector_;
@@ -62,6 +63,8 @@ protected:
   Q_SLOT void mousePosOutOfImage();
   
   Q_SIGNAL void itemProcessed(Metadata::HardPtr data);
+
+  Q_SLOT void drawLine();
 
   // zoom menu
   Q_SLOT void showZoomMenu();

@@ -62,11 +62,15 @@ MainWindow::MainWindow(QWidget* parent) :
   zoom_menu_ = createOptionButton(QIcon(":/ic_zoom"), false);
   ll->addWidget(zoom_menu_, 0, Qt::AlignTop | Qt::AlignLeft);
 
+  draw_line_ = createOptionButton(QIcon(":/ic_line"));
+  ll->addWidget(draw_line_, 0, Qt::AlignTop | Qt::AlignLeft);
+
   ll->addWidget(new QWidget(), 1, Qt::AlignTop | Qt::AlignLeft);
 
   connect(reset, &QPushButton::clicked, viewport_, &Viewport::fitImageToViewport);
   connect(zoom_menu_, &QPushButton::clicked, this, &MainWindow::showZoomMenu);
-
+  connect(draw_line_, &QPushButton::clicked, this, &MainWindow::drawLine);
+  
   // loading area
   working_area_->addWidget(loading_area_);
   working_area_->setStyleSheet("background-color: black");
@@ -432,6 +436,17 @@ void MainWindow::mousePosChanged(const QPoint& pt) {
 void MainWindow::mousePosOutOfImage() {
   if (current_item_) {
     viewport_->setLabelVisible(false);
+  }
+}
+
+void MainWindow::drawLine() {
+  if (viewport_->mode() == Viewport::Mode::View) {
+    viewport_->setMode(Viewport::Mode::DrawLine);
+    draw_line_->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: green; } ");
+  }
+  else {
+    viewport_->setMode(Viewport::Mode::View);
+    draw_line_->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: yellow; } ");
   }
 }
 

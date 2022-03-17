@@ -31,6 +31,10 @@ double Viewport::scaleFactor() const {
   return scale_factor_;
 }
 
+Viewport::Mode Viewport::mode() const {
+  return mode_;
+}
+
 Viewport::State Viewport::state() const {
   State s;
   s.scale = scale_factor_;
@@ -43,6 +47,7 @@ Viewport::State Viewport::state() const {
 
 void Viewport::scaleTo(qreal factor) {
   auto prev_pos = QPoint((width() - last_pixmap_.width() * scale_factor_) * 0.5, (height() - last_pixmap_.height() * scale_factor_) * 0.5);
+  auto prev_scale_factor = scale_factor_;
 
   scale_factor_ = factor;
 
@@ -51,11 +56,19 @@ void Viewport::scaleTo(qreal factor) {
   pixmap_item_->setScale(scale_factor_);
   pixmap_item_->setPos(pixmap_item_->pos() + (new_pos - prev_pos));
 
+  for (auto line : lines_) {
+    line->setPen(QPen(Qt::red, 2 / scale_factor_));
+  }
+
   emit scaleChanged(scale_factor_);
 }
 
 void Viewport::scaleBy(qreal mult) {
   scaleTo(scale_factor_ * mult);
+}
+
+void Viewport::setMode(Viewport::Mode mode) {
+  mode_ = mode;
 }
 
 void Viewport::setState(Viewport::State state) {
@@ -170,6 +183,16 @@ void Viewport::mousePressEvent(QMouseEvent* event) {
       anchor_shift_ = pixmap_item_->pos() - point;
       setCursor(Qt::ClosedHandCursor);
     }
+    else if (mode_ == Mode::DrawLine) {
+      auto coord = QPointF(point - pixmap_item_->pos()) / scale_factor_;
+      auto line = new QGraphicsLineItem(QLineF(coord, coord), pixmap_item_);
+      line->setPen(QPen(Qt::red, 2 / scale_factor_));
+      line->setFlag(QGraphicsItem::GraphicsItemFlag::ItemIsMovable, true);
+      line->setFlag(QGraphicsItem::GraphicsItemFlag::ItemIsSelectable, true);
+      line->setAcceptTouchEvents(true);
+      lines_.push_back(line);
+      drawing_ = true;
+    }
   }
 }
 
@@ -186,6 +209,18 @@ void Viewport::mouseReleaseEvent(QMouseEvent* event) {
       anchor_shift_ = std::nullopt;
     }
   }
+  else if (drawing_) {
+    if (mode_ == Mode::DrawLine) {
+      auto item = lines_.last();
+      if (item->line().length() < 3) {
+        scene()->removeItem(item);
+        lines_.pop_back();
+        delete item;
+      }
+    }
+
+    drawing_ = false;
+  }
 }
 
 void Viewport::mouseMoveEvent(QMouseEvent* event) {
@@ -199,15 +234,26 @@ void Viewport::mouseMoveEvent(QMouseEvent* event) {
     if (pixmap_item_ && anchor_shift_) {
       auto pt = anchor_shift_.value() + point;
       if ((pt - pixmap_item_->pos()).manhattanLength() > 3) {
+        auto shift = pt - pixmap_item_->pos();
         pixmap_item_->setPos(pt);
         repaint();
       }
     }
     else {
       auto coord = QPointF(point - pixmap_item_->pos()) / scale_factor_;
-      if ((last_sent_pos_ - coord).manhattanLength() > 2) {
-        emit mousePosChanged(coord.toPoint());
-        last_sent_pos_ = coord;
+      if (drawing_) {
+        if (mode_ == Mode::DrawLine && !lines_.isEmpty()) {
+          auto line = lines_.last()->line();
+          line.setP2(QPointF(coord));
+          lines_.last()->setLine(line);
+          repaint();
+        }
+      }
+      else {
+        if ((last_sent_pos_ - coord).manhattanLength() > 2) {
+          emit mousePosChanged(coord.toPoint());
+          last_sent_pos_ = coord;
+        }
       }
     }
   }

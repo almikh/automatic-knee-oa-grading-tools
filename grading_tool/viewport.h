@@ -21,15 +21,22 @@ class Viewport : public QGraphicsView {
   Q_OBJECT
 
 public:
+  enum class Mode {
+    View,
+    DrawLine
+  };
   struct State {
     double scale = 1.0;
     QPointF position;
   };
 
 protected:
+  Mode mode_ = Mode::View;
   QPixmap last_pixmap_;
   QGraphicsTextItem* label_ = nullptr;
   QGraphicsPixmapItem* pixmap_item_ = nullptr;
+  QList<QGraphicsLineItem*> lines_;
+  bool drawing_ = false;
 
   qreal scale_factor_;
   QPointF last_sent_pos_;
@@ -38,9 +45,11 @@ protected:
 public:
   explicit Viewport(QWidget* parent = nullptr);
 
+  Mode mode() const;
   State state() const;
   double scaleFactor() const;
 
+  void setMode(Mode mode);
   void setState(State state);
 
   void setLabelText(const QString& text);
