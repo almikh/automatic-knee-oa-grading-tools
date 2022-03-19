@@ -56,8 +56,12 @@ void Viewport::scaleTo(qreal factor) {
   pixmap_item_->setScale(scale_factor_);
   pixmap_item_->setPos(pixmap_item_->pos() + (new_pos - prev_pos));
 
+  for (auto item : plates_.values())
+    item->setFont(QFont("Arial", 11 / scale_factor_));
+
   for (auto line : lines_) {
     line->setPen(QPen(Qt::red, 2 / scale_factor_));
+    plates_[line]->setPos((line->line().p1().x() > line->line().p2().x() ? line->line().p1() : line->line().p2()) + QPointF(7, -10 / scale_factor_));
   }
 
   emit scaleChanged(scale_factor_);
@@ -184,12 +188,36 @@ void Viewport::mousePressEvent(QMouseEvent* event) {
       setCursor(Qt::ClosedHandCursor);
     }
     else if (mode_ == Mode::DrawLine) {
+      // try find existent line
+      GraphicsLineItem* line = nullptr;
       auto coord = QPointF(point - pixmap_item_->pos()) / scale_factor_;
-      auto line = new QGraphicsLineItem(QLineF(coord, coord), pixmap_item_);
-      line->setPen(QPen(Qt::red, 2 / scale_factor_));
-      line->setFlag(QGraphicsItem::GraphicsItemFlag::ItemIsMovable, true);
-      line->setFlag(QGraphicsItem::GraphicsItemFlag::ItemIsSelectable, true);
-      line->setAcceptTouchEvents(true);
+      for (int k = 0; k < lines_.size() && !line; ++k) {
+        auto data = lines_[k]->line();
+        if (std::sqrt(std::pow(coord.x() - data.p1().x(), 2) + std::pow(coord.y() - data.p1().y(), 2)) < 7) {
+          line = lines_.takeAt(k);
+          line->setLine(QLineF(data.p2(), data.p1()));
+        }
+        else if (std::sqrt(std::pow(coord.x() - data.p2().x(), 2) + std::pow(coord.y() - data.p2().y(), 2)) < 7) {
+          line = lines_.takeAt(k);
+        }
+      }
+
+      // create new if no selected line
+      if (!line) { 
+        line = new GraphicsLineItem(QLineF(coord, coord), pixmap_item_);
+        line->setPen(QPen(Qt::red, 2 / scale_factor_));
+        line->setAcceptTouchEvents(true);
+
+        plates_[line] = new GraphicsTextItem("", pixmap_item_);
+        plates_[line]->setBackgroundColor(QColor(214, 169, 56, 88));
+        plates_[line]->setFont(QFont("Arial", 11 / scale_factor_));
+        plates_[line]->setPos(coord + QPointF(7, -10 / scale_factor_));
+      }
+      else {
+        line->setPen(QPen(Qt::green, 2 / scale_factor_));
+        repaint();
+      }
+
       lines_.push_back(line);
       drawing_ = true;
     }
@@ -216,7 +244,17 @@ void Viewport::mouseReleaseEvent(QMouseEvent* event) {
         scene()->removeItem(item);
         lines_.pop_back();
         delete item;
+
+        if (plates_.contains(item)) {
+          scene()->removeItem(plates_[item]);
+          plates_.remove(item);
+        }
       }
+      else {
+        item->setPen(QPen(Qt::red, 2 / scale_factor_));
+      }
+
+      repaint();
     }
 
     drawing_ = false;
@@ -243,9 +281,16 @@ void Viewport::mouseMoveEvent(QMouseEvent* event) {
       auto coord = QPointF(point - pixmap_item_->pos()) / scale_factor_;
       if (drawing_) {
         if (mode_ == Mode::DrawLine && !lines_.isEmpty()) {
-          auto line = lines_.last()->line();
+          auto item = lines_.last();
+          auto line = item->line();
           line.setP2(QPointF(coord));
-          lines_.last()->setLine(line);
+          item->setLine(line);
+
+          if (plates_.contains(item)) {
+            plates_[item]->setPlainText(QString::number(line.length(), 'f', 2) + " px");
+            plates_[item]->setPos((line.p1().x() > line.p2().x() ? line.p1() : line.p2()) + QPointF(7, -10 / scale_factor_));
+          }
+
           repaint();
         }
       }

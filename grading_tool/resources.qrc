@@ -3,5 +3,6 @@
         <file alias="ic_reset">res/ic_reset.png</file>
         <file alias="ic_zoom">res/ic_zoom.png</file>
         <file alias="ic_line">res/ic_line.png</file>
+        <file alias="ic_calibrate">res/ic_calibrate.png</file>
     </qresource>
 </RCC>

@@ -13,6 +13,7 @@
 #include <QHeaderView>
 #include <QMessageBox>
 #include <QTableWidget>
+#include <QToolBar>
 #include <QSplitter>
 #include <QMenuBar>
 #include <QDebug>
@@ -28,6 +29,14 @@
 #include "progress_indicator.h"
 
 using namespace QtCharts;
+
+QAction* nameAction(QToolBar* bar, QAction* action, const char* name = nullptr) {
+  if (name && action->objectName().isEmpty())
+    action->setObjectName(name);
+
+  bar->widgetForAction(action)->setObjectName(action->objectName());
+  return action;
+}
 
 const std::tuple<QString, QColor, cv::Scalar> joint_colors[] = {
   {QString("Red Area"), QColor(Qt::red), cv::Scalar(200, 0, 0)},
@@ -172,6 +181,12 @@ void MainWindow::showZoomMenu() {
 
 void MainWindow::makeToolbar() {
   auto toolbar = addToolBar("main");
+
+  auto line = nameAction(toolbar, toolbar->addAction(QIcon(":/ic_line"), "Draw Line"), "line");
+  auto calibrate = nameAction(toolbar, toolbar->addAction(QIcon(":/ic_calibrate"), "Calibrate"), "calibrate");
+  toolbar->setStyleSheet(
+    "QToolButton#calibrate { background:green }"
+    "QToolButton#line { background:blue }");
 }
 
 QPushButton* MainWindow::createOptionButton(QIcon icon, bool enabled) {
