@@ -187,6 +187,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="classifier.cpp" />
+    <ClCompile Include="graphics_item.cpp" />
     <ClCompile Include="graphics_line_item.cpp" />
     <ClCompile Include="graphics_text_item.cpp" />
     <ClCompile Include="progress_indicator.cpp" />
@@ -203,6 +204,7 @@
     <QtMoc Include="mainwindow.h">
     </QtMoc>
     <QtMoc Include="view_queue.h" />
+    <ClInclude Include="graphics_item.h" />
     <ClInclude Include="graphics_line_item.h" />
     <ClInclude Include="graphics_text_item.h" />
     <ClInclude Include="metadata.h" />

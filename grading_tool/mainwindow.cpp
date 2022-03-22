@@ -187,6 +187,9 @@ void MainWindow::makeToolbar() {
   toolbar->setStyleSheet(
     "QToolButton#calibrate { background:green }"
     "QToolButton#line { background:blue }");
+
+  Q_UNUSED(calibrate);
+  Q_UNUSED(line);
 }
 
 QPushButton* MainWindow::createOptionButton(QIcon icon, bool enabled) {
@@ -457,7 +460,7 @@ void MainWindow::mousePosOutOfImage() {
 void MainWindow::drawLine() {
   if (viewport_->mode() == Viewport::Mode::View) {
     viewport_->setMode(Viewport::Mode::DrawLine);
-    draw_line_->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: green; } ");
+    draw_line_->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: rgb(28, 244, 19); } ");
   }
   else {
     viewport_->setMode(Viewport::Mode::View);

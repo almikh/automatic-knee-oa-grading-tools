@@ -6,8 +6,7 @@
 #include <QVector>
 
 #include <opencv2/opencv.hpp>
-#include "graphics_text_item.h"
-#include "graphics_line_item.h"
+#include "graphics_item.h"
 
 class QPushButton;
 class QHBoxLayout;
@@ -37,8 +36,7 @@ protected:
   QPixmap last_pixmap_;
   QGraphicsTextItem* label_ = nullptr;
   QGraphicsPixmapItem* pixmap_item_ = nullptr;
-  QList<GraphicsLineItem*> lines_;
-  QMap<QGraphicsItem*, GraphicsTextItem*> plates_;
+  QList<GraphicsItem*> graphics_items_;
   bool drawing_ = false;
 
   qreal scale_factor_;
