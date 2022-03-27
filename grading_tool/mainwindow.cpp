@@ -11,6 +11,7 @@
 #include <QBarSet>
 #include <QChart>
 #include <QHeaderView>
+#include <QInputDialog>
 #include <QMessageBox>
 #include <QTableWidget>
 #include <QToolBar>
@@ -124,8 +125,17 @@ MainWindow::MainWindow(QWidget* parent) :
 
     auto calibrate = new QAction("Calibrate", menu);
     calibrate->setStatusTip("Unit Calibration");
-    connect(calibrate, &QAction::triggered, this, &MainWindow::calibrate);
+    connect(calibrate, &QAction::triggered, [=]() {
+      this->calibrate(item, pt);
+    });
     menu->addAction(calibrate);
+
+    auto remove = new QAction("Remove", menu);
+    remove->setStatusTip("Remove selected graphics item");
+    connect(remove, &QAction::triggered, [=]() {
+      viewport_->removeGraphicsItem(item);
+    });
+    menu->addAction(remove);
 
     menu->exec(viewport_->mapToGlobal(pt));
   });
@@ -383,7 +393,13 @@ void MainWindow::runOnData(Metadata::HardPtr data) {
 }
 
 void MainWindow::calibrate(GraphicsItem* item, const QPoint& pt) {
-
+  bool ok;
+  auto desc = "Enter new distance for current item:";
+  auto new_length = QInputDialog::getDouble(this, "Length calibration", desc, 0.0, 0.0, DBL_MAX, 2, &ok);
+  if (ok) {
+    auto coef = new_length / item->length();
+    viewport_->setCalibrationCoef(coef);
+  }
 }
 
 QVector<Classifier::Item> MainWindow::runClassifier(const cv::Mat& joint_area) {

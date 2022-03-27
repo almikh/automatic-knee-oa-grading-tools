@@ -45,6 +45,17 @@ Viewport::State Viewport::state() const {
   return s;
 }
 
+void Viewport::removeGraphicsItem(GraphicsItem* item) {
+  auto idx = graphics_items_.indexOf(item);
+  if (idx >= 0) {
+    graphics_items_.removeAt(idx);
+    scene()->removeItem(item);
+    delete item;
+
+    repaint();
+  }
+}
+
 void Viewport::scaleTo(qreal factor) {
   auto prev_pos = QPoint((width() - last_pixmap_.width() * scale_factor_) * 0.5, (height() - last_pixmap_.height() * scale_factor_) * 0.5);
   auto prev_scale_factor = scale_factor_;
@@ -65,6 +76,14 @@ void Viewport::scaleTo(qreal factor) {
 
 void Viewport::scaleBy(qreal mult) {
   scaleTo(scale_factor_ * mult);
+}
+
+void Viewport::setCalibrationCoef(qreal coef) {
+  calib_coef_ = coef;
+
+  for (auto item : graphics_items_) {
+    item->setCalibrationCoef(coef);
+  }
 }
 
 void Viewport::setMode(Viewport::Mode mode) {
@@ -217,6 +236,7 @@ void Viewport::mousePressEvent(QMouseEvent* event) {
       }
       else if (mode_ == Mode::DrawLine) {
         item = GraphicsItem::makeLine(coord, coord, pixmap_item_);
+        item->setCalibrationCoef(calib_coef_);
         item->setScaleFactor(scale_factor_);
         item->setPen(Qt::red);
         graphics_items_.push_back(item);

@@ -37,6 +37,7 @@ protected:
   QGraphicsTextItem* label_ = nullptr;
   QGraphicsPixmapItem* pixmap_item_ = nullptr;
   QList<GraphicsItem*> graphics_items_;
+  std::optional<qreal> calib_coef_;
   bool drawing_ = false;
 
   qreal scale_factor_;
@@ -59,6 +60,8 @@ public:
   void clearScene();
   void scaleBy(qreal mult);
   void scaleTo(qreal mult);
+  void setCalibrationCoef(qreal coef);
+  void removeGraphicsItem(GraphicsItem* item);
   void setImage(const cv::Mat& image);
   void setImage(const QImage& image);
 

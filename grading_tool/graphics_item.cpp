@@ -27,6 +27,14 @@ QRectF GraphicsItem::boundingRect() const {
   return line_->boundingRect();
 }
 
+double GraphicsItem::length() const {
+  if (type_ == Type::Line) {
+    return line_->line().length();
+  }
+
+  return 0.0;
+}
+
 bool GraphicsItem::isSelected() const {
   return highlighted_;
 }
@@ -54,6 +62,11 @@ bool GraphicsItem::isPartUnderPos(const QPointF& coord) const {
 
 void GraphicsItem::setPen(const QColor& color) {
   line_->setPen(QPen(color, 2 / scale_factor_));
+}
+
+void GraphicsItem::setCalibrationCoef(std::optional<qreal> coef) {
+  calib_coef_ = coef;
+  updateCaption();
 }
 
 void GraphicsItem::setScaleFactor(float scale_factor) {
@@ -98,6 +111,18 @@ bool GraphicsItem::checkSelection(const QPointF& pos) {
   return highlighted_;
 }
 
+void GraphicsItem::updateCaption() {
+  auto line = line_->line();
+  if (calib_coef_) {
+    item_->setPlainText(QString::number(line.length() * calib_coef_.value(), 'f', 2) + " mm");
+    item_->setPos((line.p1().x() > line.p2().x() ? line.p1() : line.p2()) + QPointF(7, -10 / scale_factor_));
+  }
+  else {
+    item_->setPlainText(QString::number(line.length(), 'f', 2) + " px");
+    item_->setPos((line.p1().x() > line.p2().x() ? line.p1() : line.p2()) + QPointF(7, -10 / scale_factor_));
+  }
+}
+
 void GraphicsItem::mousePressEvent(const QPointF& pos) {
 
 }
@@ -111,6 +136,5 @@ void GraphicsItem::mouseMoveEvent(const QPointF& pos) {
   line.setP2(QPointF(pos));
   line_->setLine(line);
 
-  item_->setPlainText(QString::number(line.length(), 'f', 2) + " px");
-  item_->setPos((line.p1().x() > line.p2().x() ? line.p1() : line.p2()) + QPointF(7, -10 / scale_factor_));
+  updateCaption();
 }

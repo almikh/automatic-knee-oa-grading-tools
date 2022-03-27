@@ -1,5 +1,6 @@
 #pragma once
 #include <QGraphicsItem>
+#include <optional>
 
 #include "graphics_text_item.h"
 #include "graphics_line_item.h"
@@ -13,6 +14,7 @@ private:
   Type type_ = Type::Line;
   bool highlighted_ = false;
   float scale_factor_ = 1.0f;
+  std::optional<qreal> calib_coef_;
 
   QList<QPointF> points_;
   GraphicsLineItem* line_ = nullptr;
@@ -26,17 +28,20 @@ public:
   GraphicsItem(const QLineF& line, QGraphicsItem* parent = nullptr);
   ~GraphicsItem();
 
+  double length() const;
   bool isSelected() const;
   bool isPartUnderPos(const QPointF& point) const;
   bool isUnderPos(const QPointF& point) const;
   bool isValid() const;
 
   void setPen(const QColor& color);
+  void setCalibrationCoef(std::optional<qreal> coef);
   void setScaleFactor(float scale_factor);
   void setHighlighted(bool selected);
   void setSelected(bool selected);
   
   bool checkSelection(const QPointF& pos);
+  void updateCaption();
 
   void mousePressEvent(const QPointF& pos);
   void mouseReleaseEvent(const QPointF& pos);
