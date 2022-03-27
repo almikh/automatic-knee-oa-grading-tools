@@ -59,6 +59,9 @@ protected:
   /// run models to localize joints and classify AO grades
   Q_SLOT void runOnData(Metadata::HardPtr data);
 
+  /// calibrate measuring units over selected item
+  Q_SLOT void calibrate(GraphicsItem* item, const QPoint& pt);
+
   Q_SLOT void mousePosChanged(const QPoint&);
   Q_SLOT void mousePosOutOfImage();
   

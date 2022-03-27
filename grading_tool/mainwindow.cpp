@@ -119,7 +119,17 @@ MainWindow::MainWindow(QWidget* parent) :
   connect(this, &MainWindow::itemProcessed, this, &MainWindow::showItem, Qt::QueuedConnection);
   connect(viewport_, &Viewport::mousePosChanged, this, &MainWindow::mousePosChanged);
   connect(viewport_, &Viewport::mousePosOutOfImage, this, &MainWindow::mousePosOutOfImage);
+  connect(viewport_, &Viewport::menuForItemRequested, [=](GraphicsItem* item, const QPoint& pt) {
+    auto menu = new QMenu();
 
+    auto calibrate = new QAction("Calibrate", menu);
+    calibrate->setStatusTip("Unit Calibration");
+    connect(calibrate, &QAction::triggered, this, &MainWindow::calibrate);
+    menu->addAction(calibrate);
+
+    menu->exec(viewport_->mapToGlobal(pt));
+  });
+  
   setCentralWidget(splitter);
   resize(800, 600);
 }
@@ -370,6 +380,10 @@ void MainWindow::runOnData(Metadata::HardPtr data) {
   if (current_item_ == data) {
     emit itemProcessed(data);
   }
+}
+
+void MainWindow::calibrate(GraphicsItem* item, const QPoint& pt) {
+
 }
 
 QVector<Classifier::Item> MainWindow::runClassifier(const cv::Mat& joint_area) {

@@ -243,20 +243,24 @@ void Viewport::mouseReleaseEvent(QMouseEvent* event) {
   setCursor(Qt::ArrowCursor);
 
   auto point = mapToScene(event->pos());
-  // for (int k = 0; k < graphics_items_.size(); ++k) {
-  //   if (graphics_items_[k]->isPartUnderPos(coord)) {
-  //     item = graphics_items_.takeAt(k);
-  //     break;
-  //   }
-
+  auto coord = QPointF(point - pixmap_item_->pos()) / scale_factor_;
   if (event->button() == Qt::RightButton) {
     if (pixmap_item_ && anchor_shift_) {
+      auto next_shift = pixmap_item_->pos() - point;
+      if ((next_shift - anchor_shift_.value()).manhattanLength() <= 2) {
+        for (int k = 0; k < graphics_items_.size(); ++k) {
+          if (graphics_items_[k]->isPartUnderPos(coord)) {
+            emit menuForItemRequested(graphics_items_[k], event->pos());
+            break;
+          }
+        }
+      }
+      
       pixmap_item_->setPos(anchor_shift_.value() + point);
       anchor_shift_ = std::nullopt;
     }
   }
   else if (drawing_) {
-    auto coord = QPointF(point - pixmap_item_->pos()) / scale_factor_;
     if (mode_ == Mode::DrawLine) {
       auto item = graphics_items_.last();
       if (!item->isValid()) {

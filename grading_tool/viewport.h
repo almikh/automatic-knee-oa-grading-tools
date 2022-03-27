@@ -76,5 +76,6 @@ public:
   Q_SIGNAL void signalOnClick(const QPointF&);
   Q_SIGNAL void mousePosChanged(const QPoint&);
   Q_SIGNAL void mousePosOutOfImage();
+  Q_SIGNAL void menuForItemRequested(GraphicsItem* item, const QPoint& pos);
   Q_SIGNAL void scaleChanged(qreal);
 };
