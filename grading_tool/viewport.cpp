@@ -178,59 +178,61 @@ void Viewport::mousePressEvent(QMouseEvent* event) {
   auto rect = QRectF(pixmap_item_->pos() + QPointF(1, 1), (last_pixmap_.size() - QSize(2, 2)) * scale_factor_);
   if (rect.contains(point)) {
     emit signalOnClick(point - pixmap_item_->pos());
+  }
 
-    if (event->button() == Qt::RightButton) {
+  if (event->button() == Qt::RightButton) {
+    if (rect.contains(point)) {
       anchor_shift_ = pixmap_item_->pos() - point;
       setCursor(Qt::ClosedHandCursor);
     }
-    else if (event->button() == Qt::LeftButton) {
-      GraphicsItem* item = nullptr;
-      GraphicsItem* under_selection = nullptr;
-      auto coord = QPointF(point - pixmap_item_->pos()) / scale_factor_;
-      for (int k = 0; k < graphics_items_.size(); ++k) {
-        if (graphics_items_[k]->isPartUnderPos(coord)) {
-          item = graphics_items_.takeAt(k);
-          break;
+  }
+  else if (event->button() == Qt::LeftButton) {
+    GraphicsItem* item = nullptr;
+    GraphicsItem* under_selection = nullptr;
+    auto coord = QPointF(point - pixmap_item_->pos()) / scale_factor_;
+    for (int k = 0; k < graphics_items_.size(); ++k) {
+      if (graphics_items_[k]->isPartUnderPos(coord)) {
+        item = graphics_items_.takeAt(k);
+        break;
+      }
+      else if (graphics_items_[k]->isUnderPos(coord)) {
+        under_selection = graphics_items_[k];
+        break;
+      }
+    }
+
+    // create new if no selected line
+    if (!item) {
+      if (under_selection) {
+        if (under_selection->isSelected()) {
+          under_selection->setSelected(false);
         }
-        else if (graphics_items_[k]->isUnderPos(coord)) {
-          under_selection = graphics_items_[k];
-          break;
+        else {
+          for (auto item : graphics_items_) {
+            item->setSelected(false);
+          }
+
+          under_selection->setSelected(true);
         }
       }
-
-      // create new if no selected line
-      if (!item) {
-        if (under_selection) {
-          if (under_selection->isSelected()) {
-            under_selection->setSelected(false);
-          }
-          else {
-            for (auto item : graphics_items_) {
-              item->setSelected(false);
-            }
-
-            under_selection->setSelected(true);
-          }
-        }
-        else if (mode_ == Mode::DrawLine) {
-          item = GraphicsItem::makeLine(coord, coord, pixmap_item_);
-          item->setScaleFactor(scale_factor_);
-          item->setPen(Qt::red);
-          graphics_items_.push_back(item);
-          drawing_ = true;
-        }
-      }
-      else {
-        if (!item->isSelected()) {
-          item->setPen(Qt::red);
-        }
-
+      else if (mode_ == Mode::DrawLine) {
+        item = GraphicsItem::makeLine(coord, coord, pixmap_item_);
+        item->setScaleFactor(scale_factor_);
+        item->setPen(Qt::red);
         graphics_items_.push_back(item);
         drawing_ = true;
       }
-
-      repaint();
     }
+    else {
+      if (!item->isSelected()) {
+        item->setPen(Qt::red);
+      }
+
+      graphics_items_.push_back(item);
+      drawing_ = true;
+    }
+
+    repaint();
   }
 }
 
@@ -241,6 +243,12 @@ void Viewport::mouseReleaseEvent(QMouseEvent* event) {
   setCursor(Qt::ArrowCursor);
 
   auto point = mapToScene(event->pos());
+  // for (int k = 0; k < graphics_items_.size(); ++k) {
+  //   if (graphics_items_[k]->isPartUnderPos(coord)) {
+  //     item = graphics_items_.takeAt(k);
+  //     break;
+  //   }
+
   if (event->button() == Qt::RightButton) {
     if (pixmap_item_ && anchor_shift_) {
       pixmap_item_->setPos(anchor_shift_.value() + point);
@@ -275,9 +283,8 @@ void Viewport::mouseMoveEvent(QMouseEvent* event) {
 
   auto point = mapToScene(event->pos());
   auto rect = QRectF(pixmap_item_->pos() + QPointF(1, 1), (last_pixmap_.size() - QSize(2, 2)) * scale_factor_);
-  if (rect.contains(point)) {
-    // point = convert::adjustToRect(point, scene()->sceneRect());
-    if (pixmap_item_ && anchor_shift_) {
+  if (pixmap_item_ && anchor_shift_) {
+    if (rect.contains(point)) {
       auto pt = anchor_shift_.value() + point;
       if ((pt - pixmap_item_->pos()).manhattanLength() > 3) {
         auto shift = pt - pixmap_item_->pos();
@@ -285,29 +292,31 @@ void Viewport::mouseMoveEvent(QMouseEvent* event) {
         repaint();
       }
     }
+  }
+  else {
+    auto coord = QPointF(point - pixmap_item_->pos()) / scale_factor_;
+    if (drawing_) {
+      if (/*mode_ == Mode::DrawLine && */!graphics_items_.isEmpty()) {
+        auto item = graphics_items_.last();
+        item->mouseMoveEvent(coord);
+      }
+    }
     else {
-      auto coord = QPointF(point - pixmap_item_->pos()) / scale_factor_;
       for (int k = 0; k < graphics_items_.size(); ++k) {
         if (!graphics_items_[k]->isSelected()) {
           graphics_items_[k]->checkSelection(coord);
         }
       }
 
-      if (drawing_) {
-        if (/*mode_ == Mode::DrawLine && */!graphics_items_.isEmpty()) {
-          auto item = graphics_items_.last();
-          item->mouseMoveEvent(coord);
-        }
-      }
-      else {
+      if (rect.contains(point)) {
         if ((last_sent_pos_ - coord).manhattanLength() > 2) {
           emit mousePosChanged(coord.toPoint());
           last_sent_pos_ = coord;
         }
       }
-
-      repaint();
+      else emit mousePosOutOfImage();
     }
+
+    repaint();
   }
-  else emit mousePosOutOfImage();
 }
