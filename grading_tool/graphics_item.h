@@ -26,7 +26,7 @@ public:
   GraphicsItem(const QLineF& line, QGraphicsItem* parent = nullptr);
   ~GraphicsItem();
 
-  bool isHighlighted() const;
+  bool isSelected() const;
   bool isPartUnderPos(const QPointF& point) const;
   bool isUnderPos(const QPointF& point) const;
   bool isValid() const;
@@ -34,8 +34,9 @@ public:
   void setPen(const QColor& color);
   void setScaleFactor(float scale_factor);
   void setHighlighted(bool selected);
+  void setSelected(bool selected);
   
-  void checkSelection(const QPointF& pos);
+  bool checkSelection(const QPointF& pos);
 
   void mousePressEvent(const QPointF& pos);
   void mouseReleaseEvent(const QPointF& pos);

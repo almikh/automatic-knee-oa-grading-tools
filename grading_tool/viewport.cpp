@@ -183,36 +183,53 @@ void Viewport::mousePressEvent(QMouseEvent* event) {
       anchor_shift_ = pixmap_item_->pos() - point;
       setCursor(Qt::ClosedHandCursor);
     }
-    else if (mode_ == Mode::DrawLine) {
-      bool has_selected = false;
-      for (auto item : graphics_items_) {
-        has_selected |= item->isHighlighted();
+    else if (event->button() == Qt::LeftButton) {
+      GraphicsItem* item = nullptr;
+      GraphicsItem* under_selection = nullptr;
+      auto coord = QPointF(point - pixmap_item_->pos()) / scale_factor_;
+      for (int k = 0; k < graphics_items_.size(); ++k) {
+        if (graphics_items_[k]->isPartUnderPos(coord)) {
+          item = graphics_items_.takeAt(k);
+          break;
+        }
+        else if (graphics_items_[k]->isUnderPos(coord)) {
+          under_selection = graphics_items_[k];
+          break;
+        }
       }
 
-      // try find existent line
-      if (!has_selected) {
-        GraphicsItem* item = nullptr;
-        auto coord = QPointF(point - pixmap_item_->pos()) / scale_factor_;
-        for (int k = 0; k < graphics_items_.size(); ++k) {
-          if (graphics_items_[k]->isPartUnderPos(coord)) {
-            item = graphics_items_.takeAt(k);
-            break;
+      // create new if no selected line
+      if (!item) {
+        if (under_selection) {
+          if (under_selection->isSelected()) {
+            under_selection->setSelected(false);
+          }
+          else {
+            for (auto item : graphics_items_) {
+              item->setSelected(false);
+            }
+
+            under_selection->setSelected(true);
           }
         }
-
-        // create new if no selected line
-        if (!item) {
+        else if (mode_ == Mode::DrawLine) {
           item = GraphicsItem::makeLine(coord, coord, pixmap_item_);
           item->setScaleFactor(scale_factor_);
+          item->setPen(Qt::red);
+          graphics_items_.push_back(item);
+          drawing_ = true;
         }
-        else {
-          item->setPen(Qt::green);
-          repaint();
+      }
+      else {
+        if (!item->isSelected()) {
+          item->setPen(Qt::red);
         }
 
         graphics_items_.push_back(item);
         drawing_ = true;
       }
+
+      repaint();
     }
   }
 }
@@ -234,22 +251,21 @@ void Viewport::mouseReleaseEvent(QMouseEvent* event) {
     auto coord = QPointF(point - pixmap_item_->pos()) / scale_factor_;
     if (mode_ == Mode::DrawLine) {
       auto item = graphics_items_.last();
-      if (item->isValid()) {
-        item->setPen(Qt::red);
-      }
-      else {
+      if (!item->isValid()) {
         scene()->removeItem(item);
         graphics_items_.pop_back();
         delete item;
       }
 
-      repaint();
     }
-    else for (auto item : graphics_items_) {
-      item->checkSelection(coord);
+    else {
+      for (auto item : graphics_items_) {
+        item->checkSelection(coord);
+      }
     }
 
     drawing_ = false;
+    repaint();
   }
 }
 
@@ -271,32 +287,26 @@ void Viewport::mouseMoveEvent(QMouseEvent* event) {
     }
     else {
       auto coord = QPointF(point - pixmap_item_->pos()) / scale_factor_;
+      for (int k = 0; k < graphics_items_.size(); ++k) {
+        if (!graphics_items_[k]->isSelected()) {
+          graphics_items_[k]->checkSelection(coord);
+        }
+      }
+
       if (drawing_) {
-        if (mode_ == Mode::DrawLine && !graphics_items_.isEmpty()) {
+        if (/*mode_ == Mode::DrawLine && */!graphics_items_.isEmpty()) {
           auto item = graphics_items_.last();
           item->mouseMoveEvent(coord);
-          repaint();
         }
       }
       else {
-        for (int k = 0; k < graphics_items_.size(); ++k) {
-          graphics_items_[k]->checkSelection(coord);
-
-          if (graphics_items_[k]->isUnderPos(coord)) {
-            graphics_items_[k]->setPen(Qt::yellow);
-          }
-          else {
-            graphics_items_[k]->setPen(Qt::green);
-          }
-        }
-
-        repaint();
-
         if ((last_sent_pos_ - coord).manhattanLength() > 2) {
           emit mousePosChanged(coord.toPoint());
           last_sent_pos_ = coord;
         }
       }
+
+      repaint();
     }
   }
   else emit mousePosOutOfImage();

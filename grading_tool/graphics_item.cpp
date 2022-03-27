@@ -27,12 +27,12 @@ QRectF GraphicsItem::boundingRect() const {
   return line_->boundingRect();
 }
 
-bool GraphicsItem::isHighlighted() const {
+bool GraphicsItem::isSelected() const {
   return highlighted_;
 }
 
 bool GraphicsItem::isUnderPos(const QPointF& p) const {
-  return line_->isUnderPos(p);
+  return line_->isUnderPos(p) || item_->isUnderMouse();
 }
 
 bool GraphicsItem::isValid() const {
@@ -67,7 +67,21 @@ void GraphicsItem::setScaleFactor(float scale_factor) {
 }
 
 void GraphicsItem::setHighlighted(bool selected) {
+  if (selected) {
+    item_->setBackgroundColor(QColor(250, 250, 0, 88));
+    setPen(Qt::yellow);
+  }
+  else {
+    item_->setBackgroundColor(QColor(214, 169, 56, 88));
+    setPen(Qt::red);
+  }
+
+  update();
+}
+
+void GraphicsItem::setSelected(bool selected) {
   highlighted_ = selected;
+  setHighlighted(selected);
 }
 
 void GraphicsItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* o, QWidget* w) {
@@ -79,15 +93,9 @@ void GraphicsItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* o, Q
   }
 }
 
-void GraphicsItem::checkSelection(const QPointF& pos) {
-  if (item_->isUnderMouse()) {
-    item_->setBackgroundColor(QColor(250, 250, 0, 88));
-    update();
-  }
-  else {
-    item_->setBackgroundColor(QColor(214, 169, 56, 88));
-    update();
-  }
+bool GraphicsItem::checkSelection(const QPointF& pos) {
+  setHighlighted(isUnderPos(pos));
+  return highlighted_;
 }
 
 void GraphicsItem::mousePressEvent(const QPointF& pos) {
