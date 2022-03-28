@@ -9,9 +9,9 @@ GraphicsItem::GraphicsItem(const QLineF& line, QGraphicsItem* parent):
   type_(Type::Line)
 {
   item_->setFont(QFont("Arial", 12 / scale_factor_));
-  item_->setBackgroundColor(QColor(214, 169, 56, 88));
-  
+
   mouseMoveEvent(line.p2());
+  updateColors();
 }
 
 GraphicsItem::~GraphicsItem() {
@@ -36,7 +36,11 @@ double GraphicsItem::length() const {
 }
 
 bool GraphicsItem::isSelected() const {
-  return highlighted_;
+  return selected_;
+}
+
+bool GraphicsItem::isItemUnderMouse() const {
+  return item_->isUnderMouse();
 }
 
 bool GraphicsItem::isUnderPos(const QPointF& p) const {
@@ -60,10 +64,6 @@ bool GraphicsItem::isPartUnderPos(const QPointF& coord) const {
   return false;
 }
 
-void GraphicsItem::setPen(const QColor& color) {
-  line_->setPen(QPen(color, 2 / scale_factor_));
-}
-
 void GraphicsItem::setCalibrationCoef(std::optional<qreal> coef) {
   calib_coef_ = coef;
   updateCaption();
@@ -72,29 +72,16 @@ void GraphicsItem::setCalibrationCoef(std::optional<qreal> coef) {
 void GraphicsItem::setScaleFactor(float scale_factor) {
   scale_factor_ = scale_factor;
 
-  line_->setPen(QPen(Qt::red, 2 / scale_factor_));
   item_->setFont(QFont("Arial", 12 / scale_factor_));
   item_->setPos((line_->line().p1().x() > line_->line().p2().x() ? line_->line().p1() : line_->line().p2()) + QPointF(7, -10 / scale_factor_));
 
-  update();
-}
-
-void GraphicsItem::setHighlighted(bool selected) {
-  if (selected) {
-    item_->setBackgroundColor(QColor(250, 250, 0, 88));
-    setPen(Qt::yellow);
-  }
-  else {
-    item_->setBackgroundColor(QColor(214, 169, 56, 88));
-    setPen(Qt::red);
-  }
-
+  updateColors();
   update();
 }
 
 void GraphicsItem::setSelected(bool selected) {
-  highlighted_ = selected;
-  setHighlighted(selected);
+  selected_ = selected;
+  updateColors();
 }
 
 void GraphicsItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* o, QWidget* w) {
@@ -107,8 +94,28 @@ void GraphicsItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* o, Q
 }
 
 bool GraphicsItem::checkSelection(const QPointF& pos) {
-  setHighlighted(isUnderPos(pos));
+  highlighted_ = isUnderPos(pos);
+  
+  updateColors();
+
   return highlighted_;
+}
+
+void GraphicsItem::updateColors() {
+  if (highlighted_ || selected_) {
+    item_->setBackgroundColor(QColor(250, 250, 0, 88));
+    line_->setPen(QPen(Qt::yellow, 2 / scale_factor_));
+  }
+  else if (calib_coef_) {
+    item_->setBackgroundColor(QColor(0, 255, 0, 88));
+    line_->setPen(QPen(Qt::green, 2 / scale_factor_));
+  }
+  else {
+    item_->setBackgroundColor(QColor(255, 0, 0, 88));
+    line_->setPen(QPen(Qt::red, 2 / scale_factor_));
+  }
+
+  update();
 }
 
 void GraphicsItem::updateCaption() {
@@ -121,6 +128,8 @@ void GraphicsItem::updateCaption() {
     item_->setPlainText(QString::number(line.length(), 'f', 2) + " px");
     item_->setPos((line.p1().x() > line.p2().x() ? line.p1() : line.p2()) + QPointF(7, -10 / scale_factor_));
   }
+
+  update();
 }
 
 void GraphicsItem::mousePressEvent(const QPointF& pos) {

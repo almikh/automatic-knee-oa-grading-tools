@@ -12,6 +12,7 @@ class GraphicsItem : public QGraphicsItem {
 
 private:
   Type type_ = Type::Line;
+  bool selected_ = false;
   bool highlighted_ = false;
   float scale_factor_ = 1.0f;
   std::optional<qreal> calib_coef_;
@@ -32,16 +33,16 @@ public:
   bool isSelected() const;
   bool isPartUnderPos(const QPointF& point) const;
   bool isUnderPos(const QPointF& point) const;
+  bool isItemUnderMouse() const;
   bool isValid() const;
 
-  void setPen(const QColor& color);
   void setCalibrationCoef(std::optional<qreal> coef);
   void setScaleFactor(float scale_factor);
-  void setHighlighted(bool selected);
   void setSelected(bool selected);
   
   bool checkSelection(const QPointF& pos);
   void updateCaption();
+  void updateColors();
 
   void mousePressEvent(const QPointF& pos);
   void mouseReleaseEvent(const QPointF& pos);

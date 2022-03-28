@@ -84,6 +84,8 @@ void Viewport::setCalibrationCoef(qreal coef) {
   for (auto item : graphics_items_) {
     item->setCalibrationCoef(coef);
   }
+
+  repaint();
 }
 
 void Viewport::setMode(Viewport::Mode mode) {
@@ -238,16 +240,11 @@ void Viewport::mousePressEvent(QMouseEvent* event) {
         item = GraphicsItem::makeLine(coord, coord, pixmap_item_);
         item->setCalibrationCoef(calib_coef_);
         item->setScaleFactor(scale_factor_);
-        item->setPen(Qt::red);
         graphics_items_.push_back(item);
         drawing_ = true;
       }
     }
     else {
-      if (!item->isSelected()) {
-        item->setPen(Qt::red);
-      }
-
       graphics_items_.push_back(item);
       drawing_ = true;
     }
@@ -269,7 +266,7 @@ void Viewport::mouseReleaseEvent(QMouseEvent* event) {
       auto next_shift = pixmap_item_->pos() - point;
       if ((next_shift - anchor_shift_.value()).manhattanLength() <= 2) {
         for (int k = 0; k < graphics_items_.size(); ++k) {
-          if (graphics_items_[k]->isPartUnderPos(coord)) {
+          if (graphics_items_[k]->isItemUnderMouse()) {
             emit menuForItemRequested(graphics_items_[k], event->pos());
             break;
           }
