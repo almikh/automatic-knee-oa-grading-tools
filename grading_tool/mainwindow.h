@@ -34,6 +34,7 @@ protected:
 
   QPushButton* zoom_menu_ = nullptr;
   QPushButton* draw_line_ = nullptr;
+  QPushButton* draw_circle_ = nullptr;
 
   Metadata::HardPtr current_item_;
   std::shared_ptr<tfdetect::Detector> detector_;
@@ -68,6 +69,7 @@ protected:
   Q_SIGNAL void itemProcessed(Metadata::HardPtr data);
 
   Q_SLOT void drawLine();
+  Q_SLOT void drawCircle();
 
   // zoom menu
   Q_SLOT void showZoomMenu();

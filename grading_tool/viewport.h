@@ -24,6 +24,7 @@ class Viewport : public QGraphicsView {
 public:
   enum class Mode {
     View,
+    DrawCircle,
     DrawLine
   };
   struct State {

@@ -4,5 +4,6 @@
         <file alias="ic_zoom">res/ic_zoom.png</file>
         <file alias="ic_line">res/ic_line.png</file>
         <file alias="ic_calibrate">res/ic_calibrate.png</file>
+        <file alias="ic_circle">res/ic_circle.png</file>
     </qresource>
 </RCC>

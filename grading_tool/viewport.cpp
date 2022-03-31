@@ -50,7 +50,7 @@ void Viewport::removeGraphicsItem(GraphicsItem* item) {
   if (idx >= 0) {
     graphics_items_.removeAt(idx);
     scene()->removeItem(item);
-    delete item;
+    // delete item;
 
     repaint();
   }
@@ -243,8 +243,16 @@ void Viewport::mousePressEvent(QMouseEvent* event) {
         graphics_items_.push_back(item);
         drawing_ = true;
       }
+      else if (mode_ == Mode::DrawCircle) {
+        item = GraphicsItem::makeEllipse(coord, coord, pixmap_item_);
+        item->setCalibrationCoef(calib_coef_);
+        item->setScaleFactor(scale_factor_);
+        graphics_items_.push_back(item);
+        drawing_ = true;
+      }
     }
     else {
+      item->mousePressEvent(coord);
       graphics_items_.push_back(item);
       drawing_ = true;
     }
@@ -278,14 +286,13 @@ void Viewport::mouseReleaseEvent(QMouseEvent* event) {
     }
   }
   else if (drawing_) {
-    if (mode_ == Mode::DrawLine) {
+    if (mode_ == Mode::DrawLine || mode_ == Mode::DrawLine) {
       auto item = graphics_items_.last();
       if (!item->isValid()) {
         scene()->removeItem(item);
         graphics_items_.pop_back();
         delete item;
       }
-
     }
     else {
       for (auto item : graphics_items_) {
@@ -304,7 +311,7 @@ void Viewport::mouseMoveEvent(QMouseEvent* event) {
 
   auto point = mapToScene(event->pos());
   auto rect = QRectF(pixmap_item_->pos() + QPointF(1, 1), (last_pixmap_.size() - QSize(2, 2)) * scale_factor_);
-  if (pixmap_item_ && anchor_shift_) {
+  if (pixmap_item_ && anchor_shift_) { // move image
     if (rect.contains(point)) {
       auto pt = anchor_shift_.value() + point;
       if ((pt - pixmap_item_->pos()).manhattanLength() > 3) {
@@ -314,7 +321,7 @@ void Viewport::mouseMoveEvent(QMouseEvent* event) {
       }
     }
   }
-  else {
+  else if (pixmap_item_) {
     auto coord = QPointF(point - pixmap_item_->pos()) / scale_factor_;
     if (drawing_) {
       if (/*mode_ == Mode::DrawLine && */!graphics_items_.isEmpty()) {

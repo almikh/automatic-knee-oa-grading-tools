@@ -4,9 +4,11 @@
 
 #include "graphics_text_item.h"
 #include "graphics_line_item.h"
+#include "graphics_ellipse_item.h"
 
 class GraphicsItem : public QGraphicsItem {
   enum class Type {
+    Ellipse,
     Line
   };
 
@@ -19,10 +21,15 @@ private:
 
   QList<QPointF> points_;
   GraphicsLineItem* line_ = nullptr;
+  GraphicsEllipseItem* ellipse_ = nullptr;
   GraphicsTextItem* item_ = nullptr;
+
+  bool h_anchor_ = false;
+  bool v_anchor_ = false;
 
 public:
   static GraphicsItem* makeLine(const QPointF& p1, const QPointF& p2, QGraphicsItem* parent);
+  static GraphicsItem* makeEllipse(const QPointF& p1, const QPointF& p2, QGraphicsItem* parent);
 
 public:
   GraphicsItem(QGraphicsItem* parent = nullptr);
