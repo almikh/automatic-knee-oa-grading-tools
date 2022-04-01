@@ -4,7 +4,7 @@
 GraphicsTextItem::GraphicsTextItem(const QString& text, QGraphicsItem* parent) :
   QGraphicsTextItem(text, parent) 
 {
-  
+  setDefaultTextColor(Qt::yellow);
 }
 
 void GraphicsTextItem::setBackgroundColor(QColor color) {

@@ -5,8 +5,10 @@
 #include "graphics_text_item.h"
 #include "graphics_line_item.h"
 #include "graphics_ellipse_item.h"
+#include <opencv2/opencv.hpp>
 
 class GraphicsItem : public QGraphicsItem {
+public:
   enum class Type {
     Ellipse,
     Line
@@ -18,6 +20,7 @@ private:
   bool highlighted_ = false;
   float scale_factor_ = 1.0f;
   std::optional<qreal> calib_coef_;
+  std::optional<qreal> avg_, min_, max_;
 
   QList<QPointF> points_;
   GraphicsLineItem* line_ = nullptr;
@@ -36,6 +39,7 @@ public:
   GraphicsItem(const QLineF& line, QGraphicsItem* parent = nullptr);
   ~GraphicsItem();
 
+  Type getType() const;
   double length() const;
   bool isSelected() const;
   bool isPartUnderPos(const QPointF& point) const;
@@ -53,7 +57,7 @@ public:
 
   void mousePressEvent(const QPointF& pos);
   void mouseReleaseEvent(const QPointF& pos);
-  void mouseMoveEvent(const QPointF& pos);
+  void mouseMoveEvent(const QPointF& pos, const cv::Mat& image);
 
   QRectF boundingRect() const override;
   void paint(QPainter* painter, const QStyleOptionGraphicsItem* o, QWidget* w) override;

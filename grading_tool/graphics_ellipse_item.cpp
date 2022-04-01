@@ -37,14 +37,20 @@ void GraphicsEllipseItem::paint(QPainter* painter, const QStyleOptionGraphicsIte
   QGraphicsEllipseItem::paint(painter, o, w);
 
   auto r = rect();
-  painter->setPen(QPen(Qt::black, 1.0));
+  painter->setPen(QPen(Qt::red, 1.0 / scale_factor_));
 
-  painter->setBrush(QBrush(Qt::NoBrush));
-  painter->drawRect(r);
+  // painter->setBrush(QBrush(Qt::NoBrush));
+  // painter->drawRect(r);
 
-  painter->setBrush(QBrush(pen().color()));
-  painter->drawEllipse(r.bottomLeft(), 4 / scale_factor_, 4 / scale_factor_);
-  painter->drawEllipse(r.bottomRight(), 4 / scale_factor_, 4 / scale_factor_);
-  painter->drawEllipse(r.topLeft(), 4 / scale_factor_, 4 / scale_factor_);
-  painter->drawEllipse(r.topRight(), 4 / scale_factor_, 4 / scale_factor_);
+  painter->drawLine(QLine(r.bottomLeft().toPoint() - QPoint(5 / scale_factor_, 0), r.bottomLeft().toPoint() + QPoint(5 / scale_factor_, 0)));
+  painter->drawLine(QLine(r.bottomLeft().toPoint() - QPoint(0, 5 / scale_factor_), r.bottomLeft().toPoint() + QPoint(0, 5 / scale_factor_)));
+
+  painter->drawLine(QLine(r.bottomRight().toPoint() - QPoint(5 / scale_factor_, 0), r.bottomRight().toPoint() + QPoint(5 / scale_factor_, 0)));
+  painter->drawLine(QLine(r.bottomRight().toPoint() - QPoint(0, 5 / scale_factor_), r.bottomRight().toPoint() + QPoint(0, 5 / scale_factor_)));
+
+  painter->drawLine(QLine(r.topLeft().toPoint() - QPoint(5 / scale_factor_, 0), r.topLeft().toPoint() + QPoint(5 / scale_factor_, 0)));
+  painter->drawLine(QLine(r.topLeft().toPoint() - QPoint(0, 5 / scale_factor_), r.topLeft().toPoint() + QPoint(0, 5 / scale_factor_)));
+
+  painter->drawLine(QLine(r.topRight().toPoint() - QPoint(5 / scale_factor_, 0), r.topRight().toPoint() + QPoint(5 / scale_factor_, 0)));
+  painter->drawLine(QLine(r.topRight().toPoint() - QPoint(0, 5 / scale_factor_), r.topRight().toPoint() + QPoint(0, 5 / scale_factor_)));
 }

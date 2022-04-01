@@ -127,12 +127,14 @@ MainWindow::MainWindow(QWidget* parent) :
   connect(viewport_, &Viewport::menuForItemRequested, [=](GraphicsItem* item, const QPoint& pt) {
     auto menu = new QMenu();
 
-    auto calibrate = new QAction("Calibrate", menu);
-    calibrate->setStatusTip("Unit Calibration");
-    connect(calibrate, &QAction::triggered, [=]() {
-      this->calibrate(item, pt);
-    });
-    menu->addAction(calibrate);
+    if (item->getType() == GraphicsItem::Type::Line) {
+      auto calibrate = new QAction("Calibrate", menu);
+      calibrate->setStatusTip("Unit Calibration");
+      connect(calibrate, &QAction::triggered, [=]() {
+        this->calibrate(item, pt);
+      });
+      menu->addAction(calibrate);
+    }
 
     auto remove = new QAction("Remove", menu);
     remove->setStatusTip("Remove selected graphics item");

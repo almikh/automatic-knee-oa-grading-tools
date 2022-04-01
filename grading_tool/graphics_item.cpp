@@ -11,7 +11,7 @@ GraphicsItem::GraphicsItem(const QLineF& line, QGraphicsItem* parent):
   QGraphicsItem(parent),
   item_(new GraphicsTextItem("", this))
 {
-  item_->setFont(QFont("Arial", 12 / scale_factor_));
+  item_->setFont(QFont("Arial", 10 / scale_factor_));
 }
 
 GraphicsItem::~GraphicsItem() {
@@ -24,7 +24,7 @@ GraphicsItem* GraphicsItem::makeLine(const QPointF& p1, const QPointF& p2, QGrap
   item->line_ = new GraphicsLineItem(QLineF(p1, p2), item);
   item->type_ = Type::Line;
 
-  item->mouseMoveEvent(p2);
+  item->mouseMoveEvent(p2, cv::Mat());
   item->updateColors();
 
   return item;
@@ -35,7 +35,7 @@ GraphicsItem* GraphicsItem::makeEllipse(const QPointF& p1, const QPointF& p2, QG
   item->ellipse_ = new GraphicsEllipseItem(QRect(p1.toPoint(), p2.toPoint()), item);
   item->type_ = Type::Ellipse;
 
-  item->mouseMoveEvent(p2);
+  item->mouseMoveEvent(p2, cv::Mat());
   item->updateColors();
 
   return item;
@@ -50,6 +50,10 @@ QRectF GraphicsItem::boundingRect() const {
   }
 
   return QRectF();
+}
+
+GraphicsItem::Type GraphicsItem::getType() const {
+  return type_;
 }
 
 double GraphicsItem::length() const {
@@ -73,7 +77,7 @@ bool GraphicsItem::isUnderPos(const QPointF& p) const {
     return line_->isUnderPos(p) || item_->isUnderMouse();
   }
   else if (type_ == Type::Ellipse) {
-    return ellipse_->isUnderPos(p) || item_->isUnderMouse();
+    return  item_->isUnderMouse(); // || ellipse_->isUnderPos(p);
   }
 
   return false;
@@ -84,7 +88,8 @@ bool GraphicsItem::isValid() const {
     return line_->line().length() >= 3;
   }
   else if (type_ == Type::Ellipse) {
-    return ellipse_->rect().width() * ellipse_->rect().height() > 25;
+    auto sq = qAbs(ellipse_->rect().width() * ellipse_->rect().height());
+    return sq > 40;
   }
 
   return false;
@@ -122,6 +127,9 @@ void GraphicsItem::setScaleFactor(float scale_factor) {
   scale_factor_ = scale_factor;
   item_->setFont(QFont("Arial", 12 / scale_factor_));
 
+  if (line_) line_->setScaleFactor(scale_factor_);
+  if (ellipse_) ellipse_->setScaleFactor(scale_factor_);
+
   updateCaption();
   updateColors();
   update();
@@ -130,18 +138,6 @@ void GraphicsItem::setScaleFactor(float scale_factor) {
 void GraphicsItem::setSelected(bool selected) {
   selected_ = selected;
   updateColors();
-}
-
-void GraphicsItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* o, QWidget* w) {
-  if (type_ == Type::Line) {
-    painter->setPen(QPen(Qt::black, 1.0));
-    painter->setBrush(QBrush(line_->pen().color()));
-    painter->drawEllipse(line_->line().p1(), 4 / scale_factor_, 4 / scale_factor_);
-    painter->drawEllipse(line_->line().p2(), 4 / scale_factor_, 4 / scale_factor_);
-  }
-  else if (type_ == Type::Line) {
-    // TODO:
-  }
 }
 
 bool GraphicsItem::checkSelection(const QPointF& pos) {
@@ -154,17 +150,17 @@ bool GraphicsItem::checkSelection(const QPointF& pos) {
 
 void GraphicsItem::updateColors() {
   if (highlighted_ || selected_) {
-    item_->setBackgroundColor(QColor(250, 250, 0, 88));
+    item_->setBackgroundColor(QColor(80, 80, 0, 200));
     if (line_) line_->setPen(QPen(Qt::yellow, 2 / scale_factor_));
     if (ellipse_) ellipse_->setPen(QPen(Qt::yellow, 2 / scale_factor_));
   }
   else if (calib_coef_) {
-    item_->setBackgroundColor(QColor(0, 255, 0, 88));
-    if (line_) line_->setPen(QPen(Qt::green, 2 / scale_factor_));
-    if (ellipse_) ellipse_->setPen(QPen(Qt::green, 2 / scale_factor_));
+    item_->setBackgroundColor(QColor(0, 100, 0, 200));
+    if (line_) line_->setPen(QPen(QColor(0, 200, 0), 2 / scale_factor_));
+    if (ellipse_) ellipse_->setPen(QPen(QColor(0, 200, 0), 2 / scale_factor_));
   }
   else {
-    item_->setBackgroundColor(QColor(255, 0, 0, 88));
+    item_->setBackgroundColor(QColor(80, 80, 0, 200));
     if (line_) line_->setPen(QPen(Qt::red, 2 / scale_factor_));
     if (ellipse_) ellipse_->setPen(QPen(Qt::red, 2 / scale_factor_));
   }
@@ -187,10 +183,16 @@ void GraphicsItem::updateCaption() {
   else if (type_ == Type::Ellipse) {
     auto rect = ellipse_->rect();
     if (calib_coef_) {
-      item_->setPlainText("Sq: " + QString::number(M_PI * qAbs(rect.width()/2 * rect.height()/2) * calib_coef_.value(), 'f', 2) + " mm");
+      item_->setPlainText(
+        "Sq: " + QString::number(M_PI * qAbs(rect.width()/2 * rect.height()/2) * calib_coef_.value(), 'f', 2) + " mm\n"
+        "Min: " + QString::number(min_ ? min_.value() : 0.0, 'f', 2) + " Max: " + QString::number(max_ ? max_.value() : 0.0, 'f', 2) + "\n"
+        "Avg: " + QString::number(avg_ ? avg_.value() : 0.0, 'f', 2));
     }
     else {
-      item_->setPlainText("Sq: " + QString::number(M_PI * qAbs(rect.width() / 2 * rect.height() / 2), 'f', 2) + " px");
+      item_->setPlainText(
+        "Area: " + QString::number(M_PI * qAbs(rect.width() / 2 * rect.height() / 2), 'f', 2) + " px\n"
+        "Min: " + QString::number(min_ ? min_.value() : 0.0, 'f', 2) + " Max: " + QString::number(max_ ? max_.value() : 0.0, 'f', 2) + "\n"
+        "Avg: " + QString::number(avg_ ? avg_.value() : 0.0, 'f', 2));
     }
 
     auto y = (rect.bottomRight().y() + rect.topRight().y()) / 2;
@@ -230,7 +232,7 @@ void GraphicsItem::mouseReleaseEvent(const QPointF& pos) {
 
 }
 
-void GraphicsItem::mouseMoveEvent(const QPointF& pos) {
+void GraphicsItem::mouseMoveEvent(const QPointF& pos, const cv::Mat& image) {
   if (type_ == Type::Line) {
     auto line = line_->line();
     line.setP2(QPointF(pos));
@@ -251,8 +253,31 @@ void GraphicsItem::mouseMoveEvent(const QPointF& pos) {
       rect.setTopRight(pos);
     }
 
+    int sum = 0, count = 0, max = 0, min = INT_MAX;
+    int left = qMax<int>(0, qMin(rect.x(), rect.x() + rect.width()));
+    int bottom = qMax<int>(0, qMin(rect.y(), rect.y() + rect.height()));
+    int right = qMin(left + qAbs<int>(rect.width()), image.cols - 1), top = qMin<int>(bottom + qAbs(rect.height()), image.rows - 1);
+    for (int i = left; i <= right; ++i) {
+      for (int j = bottom; j <= top; ++j) {
+        auto px = image.at<cv::Vec2b>(j, i);
+        min = qMin<int>(px[0], min);
+        max = qMax<int>(px[0], max);
+        sum += px[0];
+        count += 1;
+      }
+    }
+
+    min_ = min;
+    max_ = max;
+    avg_ = double(sum) / count;
+    updateCaption();
+
     ellipse_->setRect(rect);
   }
 
   updateCaption();
+}
+
+void GraphicsItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* o, QWidget* w) {
+
 }

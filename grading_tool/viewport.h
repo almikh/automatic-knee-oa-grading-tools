@@ -34,6 +34,7 @@ public:
 
 protected:
   Mode mode_ = Mode::View;
+  cv::Mat image_;
   QPixmap last_pixmap_;
   QGraphicsTextItem* label_ = nullptr;
   QGraphicsPixmapItem* pixmap_item_ = nullptr;

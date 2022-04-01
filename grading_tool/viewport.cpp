@@ -146,16 +146,22 @@ void Viewport::fitImageToViewport() {
 
     pixmap_item_->setScale(scale_factor_);
     pixmap_item_->setPos((width() - w2) * 0.5, (height() - h2) * 0.5);
+
+    for (auto item : graphics_items_) {
+      item->setScaleFactor(scale_factor_);
+    }
   }
 }
 
 void Viewport::setImage(const cv::Mat& image) {
   if (image.type() != CV_8UC3) {
-    cv::Mat rgb;
-    cv::cvtColor(image, rgb, cv::COLOR_GRAY2RGB);
-    setImage(convert::cv2qt(rgb));
+    cv::cvtColor(image, image_, cv::COLOR_GRAY2RGB);
+    setImage(convert::cv2qt(image_));
   }
-  else setImage(convert::cv2qt(image));
+  else {
+    image_ = image;
+    setImage(convert::cv2qt(image));
+  }
 }
 
 void Viewport::clearScene() {
@@ -286,7 +292,7 @@ void Viewport::mouseReleaseEvent(QMouseEvent* event) {
     }
   }
   else if (drawing_) {
-    if (mode_ == Mode::DrawLine || mode_ == Mode::DrawLine) {
+    if (mode_ == Mode::DrawLine || mode_ == Mode::DrawCircle) {
       auto item = graphics_items_.last();
       if (!item->isValid()) {
         scene()->removeItem(item);
@@ -326,7 +332,7 @@ void Viewport::mouseMoveEvent(QMouseEvent* event) {
     if (drawing_) {
       if (/*mode_ == Mode::DrawLine && */!graphics_items_.isEmpty()) {
         auto item = graphics_items_.last();
-        item->mouseMoveEvent(coord);
+        item->mouseMoveEvent(coord, image_);
       }
     }
     else {
