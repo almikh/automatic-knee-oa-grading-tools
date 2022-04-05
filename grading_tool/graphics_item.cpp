@@ -241,11 +241,16 @@ void GraphicsItem::updateCaption() {
     item_->setPos(QPointF(qMax(rect.left(), rect.right()), y) + QPointF(11, -10 / scale_factor_));
   }
   else if (type_ == Type::Angle) {
-    auto rect = angle_->boundingRect();
-    auto y = (rect.bottomRight().y() + rect.topRight().y()) / 2;
+    auto poly = angle_->polygon();
+    auto rightest_pt = poly.first();
+    for (int k = 1; k < poly.count(); ++k) {
+      if (poly[k].x() > rightest_pt.x()) {
+        rightest_pt = poly[k];
+      }
+    }
 
     item_->setPlainText("Angle: " + QString::number(angle_->angle()));
-    item_->setPos(QPointF(qMax(rect.left(), rect.right()), y) + QPointF(11, -10 / scale_factor_));
+    item_->setPos(rightest_pt + QPointF(11, -10 / scale_factor_));
   }
 
   update();
