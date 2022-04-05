@@ -249,6 +249,13 @@ void Viewport::mousePressEvent(QMouseEvent* event) {
         graphics_items_.push_back(item);
         drawing_ = true;
       }
+      else if (mode_ == Mode::DrawAngle) {
+        item = GraphicsItem::makeAngle(coord, pixmap_item_);
+        item->setCalibrationCoef(calib_coef_);
+        item->setScaleFactor(scale_factor_);
+        graphics_items_.push_back(item);
+        drawing_ = true;
+      }
       else if (mode_ == Mode::DrawCircle) {
         item = GraphicsItem::makeEllipse(coord, coord, pixmap_item_);
         item->setCalibrationCoef(calib_coef_);
@@ -292,7 +299,27 @@ void Viewport::mouseReleaseEvent(QMouseEvent* event) {
     }
   }
   else if (drawing_) {
-    if (mode_ == Mode::DrawLine || mode_ == Mode::DrawCircle) {
+    if (mode_ == Mode::DrawAngle) {
+      auto item = graphics_items_.last();
+      auto poly = item->polygon();
+      if (poly.count() < 3) {
+        if (dist(poly[0], poly[1]) > 7) {
+          poly.append(coord);
+          item->setPolygon(poly);
+        }
+
+        // NOTE:
+        // continue drawing
+        repaint();
+        return;
+      }
+      else if (!item->isValid()) {
+        scene()->removeItem(item);
+        graphics_items_.pop_back();
+        delete item;
+      }
+    }
+    else if (mode_ == Mode::DrawLine || mode_ == Mode::DrawCircle) {
       auto item = graphics_items_.last();
       if (!item->isValid()) {
         scene()->removeItem(item);

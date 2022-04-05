@@ -25,7 +25,8 @@ public:
   enum class Mode {
     View,
     DrawCircle,
-    DrawLine
+    DrawLine,
+    DrawAngle
   };
   struct State {
     double scale = 1.0;

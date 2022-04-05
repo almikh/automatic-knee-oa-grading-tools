@@ -11,6 +11,16 @@ GraphicsEllipseItem::GraphicsEllipseItem(const QRectF& rect, QGraphicsItem* pare
   setAcceptedMouseButtons(Qt::LeftButton);
 }
 
+void GraphicsEllipseItem::setPoint(int idx, const QPointF& pt) {
+  auto r = rect();
+  if (idx == 0) r.setBottomLeft(pt);
+  else if (idx == 1) r.setTopLeft(pt);
+  else if (idx == 2) r.setTopRight(pt);
+  else if (idx == 3) r.setBottomRight(pt);
+
+  setRect(r);
+}
+
 bool GraphicsEllipseItem::isHighlighted() const {
   return highlighted_;
 }

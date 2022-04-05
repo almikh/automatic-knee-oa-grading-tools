@@ -78,12 +78,16 @@ MainWindow::MainWindow(QWidget* parent) :
   draw_circle_ = createOptionButton(QIcon(":/ic_circle"));
   ll->addWidget(draw_circle_, 0, Qt::AlignTop | Qt::AlignLeft);
 
+  draw_angle_ = createOptionButton(QIcon(":/ic_angle"));
+  ll->addWidget(draw_angle_, 0, Qt::AlignTop | Qt::AlignLeft);
+
   ll->addWidget(new QWidget(), 1, Qt::AlignTop | Qt::AlignLeft);
 
   connect(reset, &QPushButton::clicked, viewport_, &Viewport::fitImageToViewport);
   connect(zoom_menu_, &QPushButton::clicked, this, &MainWindow::showZoomMenu);
   connect(draw_line_, &QPushButton::clicked, this, &MainWindow::drawLine);
   connect(draw_circle_, &QPushButton::clicked, this, &MainWindow::drawCircle);
+  connect(draw_angle_, &QPushButton::clicked, this, &MainWindow::drawAngle);
   
   // loading area
   working_area_->addWidget(loading_area_);
@@ -498,6 +502,7 @@ void MainWindow::drawLine() {
     viewport_->setMode(Viewport::Mode::DrawLine);
     draw_line_->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: rgb(28, 244, 19); } ");
     draw_circle_->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: yellow; } ");
+    draw_angle_->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: yellow; } ");
   }
   else {
     viewport_->setMode(Viewport::Mode::View);
@@ -509,11 +514,25 @@ void MainWindow::drawCircle() {
   if (viewport_->mode() != Viewport::Mode::DrawCircle) {
     viewport_->setMode(Viewport::Mode::DrawCircle);
     draw_circle_->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: rgb(28, 244, 19); } ");
+    draw_angle_->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: yellow; } ");
     draw_line_->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: yellow; } ");
   }
   else {
     viewport_->setMode(Viewport::Mode::View);
     draw_circle_->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: yellow; } ");
+  }
+}
+
+void MainWindow::drawAngle() {
+  if (viewport_->mode() != Viewport::Mode::DrawAngle) {
+    viewport_->setMode(Viewport::Mode::DrawAngle);
+    draw_angle_->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: rgb(28, 244, 19); } ");
+    draw_circle_->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: yellow; } ");
+    draw_line_->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: yellow; } ");
+  }
+  else {
+    viewport_->setMode(Viewport::Mode::View);
+    draw_angle_->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: yellow; } ");
   }
 }
 

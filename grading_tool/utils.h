@@ -10,3 +10,5 @@ namespace convert
 
   QPointF adjustToRect(QPointF point, const QRectF& rect);
 }
+
+qreal dist(const QPointF& p1, const QPointF& p2);

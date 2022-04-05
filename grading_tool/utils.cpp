@@ -1,6 +1,7 @@
 #include "utils.h"
 
-namespace convert {
+namespace convert 
+{
   QImage cv2qt(cv::Mat image) {
     const auto format = QImage::Format::Format_RGB888;
     const auto image_step = static_cast<int>(image.step);
@@ -27,3 +28,6 @@ namespace convert {
   }
 }
 
+qreal dist(const QPointF& p1, const QPointF& p2) {
+  return std::sqrt((p1.x() - p2.x()) * (p1.x() - p2.x()) + (p1.y() - p2.y()) * (p1.y() - p2.y()));
+}
