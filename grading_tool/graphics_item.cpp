@@ -354,8 +354,25 @@ void GraphicsItem::updateCaption() {
       }
     }
 
-    item_->setPlainText("Length: " + QString::number(poly_->polygon().length()));
-    item_->setPos(rightest_pt + QPointF(11, -10) / scale_factor_);
+    if (poly.size() < 3) {
+      item_->setVisible(false);
+    }
+    else {
+      item_->setVisible(true);
+      item_->setPos(rightest_pt + QPointF(11, -10) / scale_factor_);
+      if (calib_coef_) {
+        item_->setPlainText(
+          "Area: " + QString::number(area_.value_or(0) * calib_coef_.value()) + " mm\n"
+          "Min: " + QString::number(min_.value_or(0)) + "  Max: " + QString::number(max_.value_or(0)) + "\n"
+          "Avg: " + QString::number(avg_.value_or(0)));
+      }
+      else {
+        item_->setPlainText(
+          "Area: " + QString::number(area_.value_or(0)) + " px\n"
+          "Min: " + QString::number(min_.value_or(0)) + "  Max: " + QString::number(max_.value_or(0)) + "\n"
+          "Avg: " + QString::number(avg_.value_or(0)));
+      }
+    }
   }
 
   update();
@@ -457,7 +474,6 @@ void GraphicsItem::mouseMoveEvent(const QPointF& pos, const cv::Mat& image) {
     max_ = max;
     area_ = count;
     avg_ = double(sum) / count;
-    ellipse_->setRect(rect);
   }
   else if (type_ == Type::Angle) {
     if (anchor_index_ >= 0) {
@@ -474,6 +490,29 @@ void GraphicsItem::mouseMoveEvent(const QPointF& pos, const cv::Mat& image) {
     else {
       poly_->setPoint(poly_->polygon().count() - 1, pos);
     }
+
+    auto poly = poly_->polygon();
+    auto rect = poly.boundingRect();
+    int sum = 0, count = 0, max = 0, min = INT_MAX;
+    int left = qMax<int>(0, qMin(rect.x(), rect.x() + rect.width()));
+    int bottom = qMax<int>(0, qMin(rect.y(), rect.y() + rect.height()));
+    int right = qMin(left + qAbs<int>(rect.width()), image.cols - 1), top = qMin<int>(bottom + qAbs(rect.height()), image.rows - 1);
+    for (int i = left; i <= right; ++i) {
+      for (int j = bottom; j <= top; ++j) {
+        if (poly.containsPoint(QPointF(i, j), Qt::FillRule::OddEvenFill)) {
+          auto px = image.at<cv::Vec2b>(j, i);
+          min = qMin<int>(px[0], min);
+          max = qMax<int>(px[0], max);
+          sum += px[0];
+          count += 1;
+        }
+      }
+    }
+
+    min_ = min;
+    max_ = max;
+    area_ = count;
+    avg_ = double(sum) / count;
   }
 
   updateCaption();
