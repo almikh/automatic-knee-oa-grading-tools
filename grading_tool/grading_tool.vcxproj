@@ -191,6 +191,7 @@
     <ClCompile Include="graphics_ellipse_item.cpp" />
     <ClCompile Include="graphics_item.cpp" />
     <ClCompile Include="graphics_line_item.cpp" />
+    <ClCompile Include="graphics_poly_item.cpp" />
     <ClCompile Include="graphics_text_item.cpp" />
     <ClCompile Include="progress_indicator.cpp" />
     <ClCompile Include="utils.cpp" />
@@ -210,6 +211,7 @@
     <ClInclude Include="graphics_ellipse_item.h" />
     <ClInclude Include="graphics_item.h" />
     <ClInclude Include="graphics_line_item.h" />
+    <ClInclude Include="graphics_poly_item.h" />
     <ClInclude Include="graphics_text_item.h" />
     <ClInclude Include="metadata.h" />
     <QtMoc Include="progress_indicator.h" />

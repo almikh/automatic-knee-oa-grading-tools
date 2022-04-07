@@ -4,6 +4,7 @@
 class GraphicsAngleItem : public QGraphicsLineItem {
   bool highlighted_ = false;
   float scale_factor_ = 1.0f;
+  int part_under_mouse_ = -1;
   QGraphicsLineItem second_line_;
   QPolygonF polygon_;
 
@@ -18,6 +19,7 @@ public:
   double angle() const;
 
   void setPolygon(const QPolygonF& poly);
+  void setPartUnderMouse(int idx);
   void setScaleFactor(float scale_factor);
   void setHighlighted(bool selected);
   void setPen(const QPen& pen);

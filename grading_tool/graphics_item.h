@@ -6,14 +6,18 @@
 #include "graphics_line_item.h"
 #include "graphics_ellipse_item.h"
 #include "graphics_angle_item.h"
+#include "graphics_poly_item.h"
 #include <opencv2/opencv.hpp>
 
 class GraphicsItem : public QGraphicsItem {
 public:
+  static float base_touch_radius;
+
   enum class Type {
     Ellipse,
     Line,
-    Angle
+    Angle,
+    Poly
   };
 
 private:
@@ -23,11 +27,13 @@ private:
   float scale_factor_ = 1.0f;
   std::optional<qreal> calib_coef_;
   std::optional<int> avg_, min_, max_, area_;
+  bool created_ = false;
 
   QList<QPointF> points_;
   GraphicsLineItem* line_ = nullptr;
   GraphicsEllipseItem* ellipse_ = nullptr;
   GraphicsAngleItem* angle_ = nullptr;
+  GraphicsPolyItem* poly_ = nullptr;
   GraphicsTextItem* item_ = nullptr;
 
   int anchor_index_ = -1;
@@ -36,10 +42,10 @@ public:
   static GraphicsItem* makeLine(const QPointF& p1, const QPointF& p2, QGraphicsItem* parent);
   static GraphicsItem* makeEllipse(const QPointF& p1, const QPointF& p2, QGraphicsItem* parent);
   static GraphicsItem* makeAngle(const QPointF& pt, QGraphicsItem* parent);
+  static GraphicsItem* makePoly(const QPointF& pt, QGraphicsItem* parent);
 
 public:
   GraphicsItem(QGraphicsItem* parent = nullptr);
-  GraphicsItem(const QLineF& line, QGraphicsItem* parent = nullptr);
   ~GraphicsItem();
 
   Type getType() const;
@@ -50,14 +56,17 @@ public:
   bool isPartUnderPos(const QPointF& point) const;
   bool isUnderPos(const QPointF& point) const;
   bool isItemUnderMouse() const;
+  bool isCreated() const;
   bool isValid() const;
 
   void setPolygon(const QPolygonF& poly);
   void setCalibrationCoef(std::optional<qreal> coef);
   void setScaleFactor(float scale_factor);
   void setSelected(bool selected);
-  
+  void setCreated(bool created);
+
   bool checkSelection(const QPointF& pos);
+  void checkPartUnderPos(const QPointF& pos);
   void updateCaption();
   void updateColors();
 

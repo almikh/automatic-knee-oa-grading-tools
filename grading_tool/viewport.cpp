@@ -197,6 +197,34 @@ void Viewport::wheelEvent(QWheelEvent* event) {
   else QGraphicsView::wheelEvent(event);
 }
 
+void Viewport::mouseDoubleClickEvent(QMouseEvent* event) {
+  QGraphicsView::mouseDoubleClickEvent(event);
+  if (!scene()) return;
+
+  auto point = mapToScene(event->pos());
+  auto coord = QPointF(point - pixmap_item_->pos()) / scale_factor_;
+  if (drawing_ && event->button() == Qt::LeftButton) {
+    if (mode_ == Mode::DrawPoly) {
+      auto item = graphics_items_.last();
+      auto poly = item->polygon();
+      if (poly.size() > 2 && dist(poly[poly.count() - 2], poly.back()) <= 7) {
+        poly.pop_back();
+        item->setPolygon(poly);
+      }
+
+      if (!item->isValid()) {
+        scene()->removeItem(item);
+        graphics_items_.pop_back();
+        delete item;
+      }
+      else item->setCreated(true);
+
+      drawing_ = false;
+      repaint();
+    }
+  }
+}
+
 void Viewport::mousePressEvent(QMouseEvent* event) {
   QGraphicsView::mousePressEvent(event);
   if (!scene()) return;
@@ -251,6 +279,13 @@ void Viewport::mousePressEvent(QMouseEvent* event) {
       }
       else if (mode_ == Mode::DrawAngle) {
         item = GraphicsItem::makeAngle(coord, pixmap_item_);
+        item->setCalibrationCoef(calib_coef_);
+        item->setScaleFactor(scale_factor_);
+        graphics_items_.push_back(item);
+        drawing_ = true;
+      }
+      else if (mode_ == Mode::DrawPoly) {
+        item = GraphicsItem::makePoly(coord, pixmap_item_);
         item->setCalibrationCoef(calib_coef_);
         item->setScaleFactor(scale_factor_);
         graphics_items_.push_back(item);
@@ -318,6 +353,22 @@ void Viewport::mouseReleaseEvent(QMouseEvent* event) {
         graphics_items_.pop_back();
         delete item;
       }
+      else item->setCreated(true);
+    }
+    else if (mode_ == Mode::DrawPoly) {
+      auto item = graphics_items_.last();
+      if (!item->isCreated()) {
+        auto poly = item->polygon();
+        if (dist(poly[0], poly[1]) > 7) {
+          poly.append(coord);
+          item->setPolygon(poly);
+        }
+
+        // NOTE:
+        // continue drawing
+        repaint();
+        return;
+      }
     }
     else if (mode_ == Mode::DrawLine || mode_ == Mode::DrawCircle) {
       auto item = graphics_items_.last();
@@ -326,6 +377,7 @@ void Viewport::mouseReleaseEvent(QMouseEvent* event) {
         graphics_items_.pop_back();
         delete item;
       }
+      else item->setCreated(true);
     }
     else {
       for (auto item : graphics_items_) {
@@ -363,6 +415,10 @@ void Viewport::mouseMoveEvent(QMouseEvent* event) {
       }
     }
     else {
+      for (int k = 0; k < graphics_items_.size(); ++k) {
+        graphics_items_[k]->checkPartUnderPos(coord);
+      }
+
       for (int k = 0; k < graphics_items_.size(); ++k) {
         if (!graphics_items_[k]->isSelected()) {
           graphics_items_[k]->checkSelection(coord);

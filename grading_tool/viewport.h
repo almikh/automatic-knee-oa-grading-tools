@@ -26,7 +26,8 @@ public:
     View,
     DrawCircle,
     DrawLine,
-    DrawAngle
+    DrawAngle,
+    DrawPoly
   };
   struct State {
     double scale = 1.0;
@@ -73,9 +74,10 @@ public:
 
 protected:
   void mousePressEvent(QMouseEvent* event) override;
+  void mouseDoubleClickEvent(QMouseEvent* event) override;
   void mouseReleaseEvent(QMouseEvent* event) override;
   void mouseMoveEvent(QMouseEvent* event) override;
-
+  
 public:
   Q_SLOT void fitImageToViewport();
 

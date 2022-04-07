@@ -36,6 +36,7 @@ protected:
   QPushButton* draw_line_ = nullptr;
   QPushButton* draw_circle_ = nullptr;
   QPushButton* draw_angle_ = nullptr;
+  QPushButton* draw_poly_ = nullptr;
 
   Metadata::HardPtr current_item_;
   std::shared_ptr<tfdetect::Detector> detector_;
@@ -72,6 +73,7 @@ protected:
   Q_SLOT void drawLine();
   Q_SLOT void drawCircle();
   Q_SLOT void drawAngle();
+  Q_SLOT void drawPoly();
 
   // zoom menu
   Q_SLOT void showZoomMenu();

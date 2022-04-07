@@ -6,5 +6,6 @@
         <file alias="ic_calibrate">res/ic_calibrate.png</file>
         <file alias="ic_circle">res/ic_circle.png</file>
         <file alias="ic_angle">res/ic_angle.png</file>
+        <file alias="ic_poly">res/ic_poly.png</file>
     </qresource>
 </RCC>

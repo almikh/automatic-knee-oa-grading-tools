@@ -45,6 +45,10 @@ bool GraphicsAngleItem::isUnderPos(const QPointF& p) const {
   return false;
 }
 
+void GraphicsAngleItem::setPartUnderMouse(int idx) {
+  part_under_mouse_ = idx;
+}
+
 void GraphicsAngleItem::setScaleFactor(float scale_factor) {
   scale_factor_ = scale_factor;
   update();
@@ -67,6 +71,7 @@ void GraphicsAngleItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*
   auto poly = polygon();
   for (int k = 0; k < poly.count(); ++k) {
     const auto pt = poly[k].toPoint();
+    painter->setPen(QPen(part_under_mouse_ == k ? Qt::green : Qt::red, 1.0 / scale_factor_));
     painter->drawLine(QLine(pt - QPoint(5 / scale_factor_, 0), pt + QPoint(5 / scale_factor_, 0)));
     painter->drawLine(QLine(pt - QPoint(0, 5 / scale_factor_), pt + QPoint(0, 5 / scale_factor_)));
   }

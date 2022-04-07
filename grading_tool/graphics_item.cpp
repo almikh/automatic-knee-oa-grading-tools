@@ -5,7 +5,9 @@
 
 #include "utils.h"
 
-GraphicsItem::GraphicsItem(const QLineF& line, QGraphicsItem* parent):
+float GraphicsItem::base_touch_radius = 7.0f;
+
+GraphicsItem::GraphicsItem(QGraphicsItem* parent):
   QGraphicsItem(parent),
   item_(new GraphicsTextItem("", this))
 {
@@ -18,7 +20,7 @@ GraphicsItem::~GraphicsItem() {
 }
 
 GraphicsItem* GraphicsItem::makeLine(const QPointF& p1, const QPointF& p2, QGraphicsItem* parent) {
-  auto item = new GraphicsItem(QLineF(p1, p2), parent);
+  auto item = new GraphicsItem(parent);
   item->line_ = new GraphicsLineItem(QLineF(p1, p2), item);
   item->type_ = Type::Line;
 
@@ -29,7 +31,7 @@ GraphicsItem* GraphicsItem::makeLine(const QPointF& p1, const QPointF& p2, QGrap
 }
 
 GraphicsItem* GraphicsItem::makeEllipse(const QPointF& p1, const QPointF& p2, QGraphicsItem* parent) {
-  auto item = new GraphicsItem(QLineF(p1, p2), parent);
+  auto item = new GraphicsItem(parent);
   item->ellipse_ = new GraphicsEllipseItem(QRect(p1.toPoint(), p2.toPoint()), item);
   item->type_ = Type::Ellipse;
   item->anchor_index_ = -1;
@@ -41,9 +43,21 @@ GraphicsItem* GraphicsItem::makeEllipse(const QPointF& p1, const QPointF& p2, QG
 }
 
 GraphicsItem* GraphicsItem::makeAngle(const QPointF& pt, QGraphicsItem* parent) {
-  auto item = new GraphicsItem(QLineF(pt, pt), parent);
+  auto item = new GraphicsItem(parent);
   item->angle_ = new GraphicsAngleItem(QPolygonF({ pt, pt }), item);
   item->type_ = Type::Angle;
+  item->anchor_index_ = -1;
+
+  item->mouseMoveEvent(pt, cv::Mat());
+  item->updateColors();
+
+  return item;
+}
+
+GraphicsItem* GraphicsItem::makePoly(const QPointF& pt, QGraphicsItem* parent) {
+  auto item = new GraphicsItem(parent);
+  item->poly_ = new GraphicsPolyItem(QPolygonF({ pt, pt }), item);
+  item->type_ = Type::Poly;
   item->anchor_index_ = -1;
 
   item->mouseMoveEvent(pt, cv::Mat());
@@ -59,12 +73,16 @@ QRectF GraphicsItem::boundingRect() const {
   else if(type_ == Type::Ellipse) {
     return ellipse_->boundingRect();
   }
+  else if (type_ == Type::Poly) {
+    return poly_->boundingRect();
+  }
 
   return QRectF();
 }
 
 QPolygonF GraphicsItem::polygon() const {
   if (angle_) return angle_->polygon();
+  else if (poly_) return poly_->polygon();
   else return QPolygonF();
 }
 
@@ -75,6 +93,9 @@ GraphicsItem::Type GraphicsItem::getType() const {
 double GraphicsItem::length() const {
   if (type_ == Type::Line) {
     return line_->line().length();
+  }
+  else if (type_ == Type::Poly) {
+    return poly_->polygon().length();
   }
 
   return 0.0;
@@ -88,11 +109,15 @@ bool GraphicsItem::isItemUnderMouse() const {
   return item_->isUnderMouse();
 }
 
+bool GraphicsItem::isCreated() const {
+  return created_;
+}
+
 bool GraphicsItem::isUnderPos(const QPointF& p) const {
   if (type_ == Type::Line) {
     return line_->isUnderPos(p) || item_->isUnderMouse();
   }
-  else if (type_ == Type::Ellipse || type_ == Type::Angle) {
+  else if (type_ == Type::Ellipse || type_ == Type::Angle || type_ == Type::Poly) {
     return  item_->isUnderMouse(); // || ellipse_->isUnderPos(p);
   }
 
@@ -111,25 +136,26 @@ bool GraphicsItem::isValid() const {
     auto poly = angle_->polygon();
     return poly.count() > 2 && dist(poly[0], poly[1]) > 7 && dist(poly[1], poly[2]) > 7;
   }
+  else if (type_ == Type::Poly) {
+    auto poly = poly_->polygon();
+    return poly.count() > 2;
+  }
 
   return false;
 }
 
 bool GraphicsItem::isPartUnderPos(const QPointF& coord) const {
+  const auto r = base_touch_radius / scale_factor_;
   if (type_ == Type::Line) {
     auto data = line_->line();
-    if (dist(coord, data.p1()) < 7) {
-      line_->setLine(QLineF(data.p2(), data.p1()));
-      return true;
-    }
-    else if (dist(coord, data.p2()) < 7) {
+    if (dist(coord, data.p1()) < r || dist(coord, data.p2()) < r) {
       return true;
     }
   }
   else if (type_ == Type::Ellipse) {
     auto rect = ellipse_->rect();
     for (auto pt : { rect.topLeft(), rect.topRight(), rect.bottomLeft(), rect.bottomRight() }) {
-      if (dist(coord, pt) < 7) {
+      if (dist(coord, pt) < r) {
         return true;
       }
     }
@@ -137,7 +163,15 @@ bool GraphicsItem::isPartUnderPos(const QPointF& coord) const {
   else if (type_ == Type::Angle) {
     auto poly = angle_->polygon();
     for (int k = 0; k < poly.count(); ++k) {
-      if (dist(coord, poly[k].toPoint()) < 7) {
+      if (dist(coord, poly[k].toPoint()) < r) {
+        return true;
+      }
+    }
+  }
+  else if (type_ == Type::Poly) {
+    auto poly = poly_->polygon();
+    for (int k = 0; k < poly.count(); ++k) {
+      if (dist(coord, poly[k].toPoint()) < r) {
         return true;
       }
     }
@@ -154,6 +188,9 @@ void GraphicsItem::setPolygon(const QPolygonF& poly) {
 
     angle_->setPolygon(poly);
   }
+  else if (poly_) {
+    poly_->setPolygon(poly);
+  }
 }
 
 void GraphicsItem::setCalibrationCoef(std::optional<qreal> coef) {
@@ -168,6 +205,7 @@ void GraphicsItem::setScaleFactor(float scale_factor) {
   if (line_) line_->setScaleFactor(scale_factor_);
   if (ellipse_) ellipse_->setScaleFactor(scale_factor_);
   if (angle_) angle_->setScaleFactor(scale_factor_);
+  if (poly_) poly_->setScaleFactor(scale_factor_);
 
   updateCaption();
   updateColors();
@@ -177,6 +215,58 @@ void GraphicsItem::setScaleFactor(float scale_factor) {
 void GraphicsItem::setSelected(bool selected) {
   selected_ = selected;
   updateColors();
+}
+
+void GraphicsItem::setCreated(bool created) {
+  created_ = created;
+}
+
+void GraphicsItem::checkPartUnderPos(const QPointF& coord) {
+  const auto r = base_touch_radius / scale_factor_;
+  if (type_ == Type::Line) {
+    auto data = line_->line();
+    if (dist(coord, data.p1()) < r) {
+      line_->setPartUnderMouse(0);
+    }
+    else if (dist(coord, data.p2()) < r) {
+      line_->setPartUnderMouse(1);
+    }
+    else line_->setPartUnderMouse(-1);
+  }
+  else if (type_ == Type::Ellipse) {
+    auto rect = ellipse_->rect();
+    QPointF points[] = { rect.bottomLeft(), rect.topLeft(), rect.topRight(), rect.bottomRight() };
+    for (int k = 0; k < 4; ++k) {
+      if (dist(coord, points[k]) < r) {
+        ellipse_->setPartUnderMouse(k);
+        return;
+      }
+    }
+
+    ellipse_->setPartUnderMouse(-1);
+  }
+  else if (type_ == Type::Angle) {
+    auto poly = angle_->polygon();
+    for (int k = 0; k < poly.count(); ++k) {
+      if (dist(coord, poly[k].toPoint()) < r) {
+        angle_->setPartUnderMouse(k);
+        return;
+      }
+    }
+
+    angle_->setPartUnderMouse(-1);
+  }
+  else if (type_ == Type::Poly) {
+    auto poly = poly_->polygon();
+    for (int k = 0; k < poly.count(); ++k) {
+      if (dist(coord, poly[k].toPoint()) < r) {
+        poly_->setPartUnderMouse(k);
+        return;
+      }
+    }
+
+    poly_->setPartUnderMouse(-1);
+  }
 }
 
 bool GraphicsItem::checkSelection(const QPointF& pos) {
@@ -193,18 +283,21 @@ void GraphicsItem::updateColors() {
     if (line_) line_->setPen(QPen(Qt::yellow, 2 / scale_factor_));
     if (ellipse_) ellipse_->setPen(QPen(Qt::yellow, 2 / scale_factor_));
     if (angle_) angle_->setPen(QPen(Qt::yellow, 2 / scale_factor_));
+    if (poly_) poly_->setPen(QPen(Qt::yellow, 2 / scale_factor_));
   }
   else if (calib_coef_) {
     item_->setBackgroundColor(QColor(0, 88, 0, 200));
     if (line_) line_->setPen(QPen(QColor(0, 150, 0), 2 / scale_factor_));
     if (ellipse_) ellipse_->setPen(QPen(QColor(0, 150, 0), 2 / scale_factor_));
     if (angle_) angle_->setPen(QPen(QColor(0, 150, 0), 2 / scale_factor_));
+    if (poly_) poly_->setPen(QPen(QColor(0, 150, 0), 2 / scale_factor_));
   }
   else {
     item_->setBackgroundColor(QColor(80, 80, 0, 200));
     if (line_) line_->setPen(QPen(Qt::red, 2 / scale_factor_));
     if (ellipse_) ellipse_->setPen(QPen(Qt::red, 2 / scale_factor_));
     if (angle_) angle_->setPen(QPen(Qt::red, 2 / scale_factor_));
+    if (poly_) poly_->setPen(QPen(Qt::red, 2 / scale_factor_));
   }
 
   update();
@@ -220,7 +313,7 @@ void GraphicsItem::updateCaption() {
       item_->setPlainText(QString::number(line.length(), 'f', 2) + " px");
     }
 
-    item_->setPos((line.p1().x() > line.p2().x() ? line.p1() : line.p2()) + QPointF(7, -10 / scale_factor_));
+    item_->setPos((line.p1().x() > line.p2().x() ? line.p1() : line.p2()) + QPointF(8, -10) / scale_factor_);
   }
   else if (type_ == Type::Ellipse) {
     auto rect = ellipse_->rect();
@@ -238,7 +331,7 @@ void GraphicsItem::updateCaption() {
         "Avg: " + QString::number(avg_.value_or(0)));
     }
 
-    item_->setPos(QPointF(qMax(rect.left(), rect.right()), y) + QPointF(11, -10 / scale_factor_));
+    item_->setPos(QPointF(qMax(rect.left(), rect.right()), y) + QPointF(11, -10) / scale_factor_);
   }
   else if (type_ == Type::Angle) {
     auto poly = angle_->polygon();
@@ -250,21 +343,46 @@ void GraphicsItem::updateCaption() {
     }
 
     item_->setPlainText("Angle: " + QString::number(angle_->angle()));
-    item_->setPos(rightest_pt + QPointF(11, -10 / scale_factor_));
+    item_->setPos(rightest_pt + QPointF(11, -10) / scale_factor_);
+  }
+  else if (type_ == Type::Poly) {
+    auto poly = poly_->polygon();
+    auto rightest_pt = poly.first();
+    for (int k = 1; k < poly.count(); ++k) {
+      if (poly[k].x() > rightest_pt.x()) {
+        rightest_pt = poly[k];
+      }
+    }
+
+    item_->setPlainText("Length: " + QString::number(poly_->polygon().length()));
+    item_->setPos(rightest_pt + QPointF(11, -10) / scale_factor_);
   }
 
   update();
 }
 
 void GraphicsItem::mousePressEvent(const QPointF& pos) {
+  if (!created_)
+    return;
+
   anchor_index_ = -1;
 
-  if (type_ == Type::Ellipse) {
+  const auto r = base_touch_radius / scale_factor_;
+  if (type_ == Type::Line) {
+    auto line = line_->line();
+    if (dist(pos, line.p1()) < r) {
+      anchor_index_ = 0;
+    }
+    else if (dist(pos, line.p2()) < r) {
+      anchor_index_ = 1;
+    }
+  }
+  else if (type_ == Type::Ellipse) {
     auto rect = ellipse_->rect();
-    if (dist(rect.bottomLeft(), pos) < 7) anchor_index_ = 0;
-    else if (dist(rect.topLeft(), pos) < 7) anchor_index_ = 1;
-    else if (dist(rect.topRight(), pos) < 7) anchor_index_ = 2;
-    else if (dist(rect.bottomRight(), pos) < 7) anchor_index_ = 3;
+    if (dist(rect.bottomLeft(), pos) < r) anchor_index_ = 0;
+    else if (dist(rect.topLeft(), pos) < r) anchor_index_ = 1;
+    else if (dist(rect.topRight(), pos) < r) anchor_index_ = 2;
+    else if (dist(rect.bottomRight(), pos) < r) anchor_index_ = 3;
   }
   else if (type_ == Type::Angle) {
     auto poly = angle_->polygon();   
@@ -279,7 +397,16 @@ void GraphicsItem::mousePressEvent(const QPointF& pos) {
 
     // when angle item created
     for (int k = 0; k < poly.count(); ++k) {
-      if (dist(poly[k], pos) < 7) {
+      if (dist(poly[k], pos) < r) {
+        anchor_index_ = k;
+        break;
+      }
+    }
+  }
+  else if (type_ == Type::Poly) {
+    auto poly = poly_->polygon();
+    for (int k = poly.count() - 1; k >= 0; --k) {
+      if (dist(poly[k], pos) < r) {
         anchor_index_ = k;
         break;
       }
@@ -293,8 +420,10 @@ void GraphicsItem::mouseReleaseEvent(const QPointF& pos) {
 
 void GraphicsItem::mouseMoveEvent(const QPointF& pos, const cv::Mat& image) {
   if (type_ == Type::Line) {
-    auto line = line_->line();
-    line.setP2(QPointF(pos));
+    auto line = line_->line(); 
+    if (anchor_index_ == 0) line.setP1(pos);
+    else line.setP2(pos);
+    
     line_->setLine(line);
   }
   else if (type_ == Type::Ellipse) {
@@ -336,6 +465,14 @@ void GraphicsItem::mouseMoveEvent(const QPointF& pos, const cv::Mat& image) {
     }
     else {
       angle_->setPoint(angle_->polygon().count() - 1, pos);
+    }
+  }
+  else if (type_ == Type::Poly) {
+    if (anchor_index_ >= 0) {
+      poly_->setPoint(anchor_index_, pos);
+    }
+    else {
+      poly_->setPoint(poly_->polygon().count() - 1, pos);
     }
   }
 
