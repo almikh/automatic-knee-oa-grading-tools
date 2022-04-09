@@ -200,7 +200,7 @@ void GraphicsItem::setCalibrationCoef(std::optional<qreal> coef) {
 
 void GraphicsItem::setScaleFactor(float scale_factor) {
   scale_factor_ = scale_factor;
-  item_->setFont(QFont("Arial", 12 / scale_factor_));
+  item_->setFont(QFont("Arial", 10 / scale_factor_));
 
   if (line_) line_->setScaleFactor(scale_factor_);
   if (ellipse_) ellipse_->setScaleFactor(scale_factor_);
