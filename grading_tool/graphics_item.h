@@ -26,7 +26,7 @@ private:
   bool highlighted_ = false;
   float scale_factor_ = 1.0f;
   std::optional<qreal> calib_coef_;
-  std::optional<int> avg_, min_, max_, area_;
+  std::optional<int> avg_, min_, max_, area_, perimeter_;
   bool created_ = false;
 
   QList<QPointF> points_;

@@ -320,15 +320,15 @@ void GraphicsItem::updateCaption() {
     auto y = (rect.bottomRight().y() + rect.topRight().y()) / 2;
     if (calib_coef_) {
       item_->setPlainText(
-        "Area: " + QString::number(area_.value_or(0) * calib_coef_.value()) + " mm\n"
-        "Min: " + QString::number(min_.value_or(0)) + "  Max: " + QString::number(max_.value_or(0)) + "\n"
-        "Avg: " + QString::number(avg_.value_or(0)));
+        "Area=" + QString::number(area_.value_or(0) * calib_coef_.value()) + " mm\n"
+        "Min=" + QString::number(min_.value_or(0)) + "  Max=" + QString::number(max_.value_or(0)) + "\n"
+        "Avg=" + QString::number(avg_.value_or(0)));
     }
     else {
       item_->setPlainText(
-        "Area: " + QString::number(area_.value_or(0)) + " px\n"
-        "Min: " + QString::number(min_.value_or(0)) + "  Max: " + QString::number(max_.value_or(0)) + "\n"
-        "Avg: " + QString::number(avg_.value_or(0)));
+        "Area=" + QString::number(area_.value_or(0)) + " px\n"
+        "Min=" + QString::number(min_.value_or(0)) + "  Max=" + QString::number(max_.value_or(0)) + "\n"
+        "Avg=" + QString::number(avg_.value_or(0)));
     }
 
     item_->setPos(QPointF(qMax(rect.left(), rect.right()), y) + QPointF(11, -10) / scale_factor_);
@@ -362,15 +362,15 @@ void GraphicsItem::updateCaption() {
       item_->setPos(rightest_pt + QPointF(11, -10) / scale_factor_);
       if (calib_coef_) {
         item_->setPlainText(
-          "Area: " + QString::number(area_.value_or(0) * calib_coef_.value()) + " mm\n"
-          "Min: " + QString::number(min_.value_or(0)) + "  Max: " + QString::number(max_.value_or(0)) + "\n"
-          "Avg: " + QString::number(avg_.value_or(0)));
+          "Area=" + QString::number(area_.value_or(0) * calib_coef_.value()) + "mm P=" + QString::number(perimeter_.value_or(0) * calib_coef_.value()) + "mm\n"
+          "Min=" + QString::number(min_.value_or(0)) + "  Max=" + QString::number(max_.value_or(0)) + "\n"
+          "Avg=" + QString::number(avg_.value_or(0)));
       }
       else {
         item_->setPlainText(
-          "Area: " + QString::number(area_.value_or(0)) + " px\n"
-          "Min: " + QString::number(min_.value_or(0)) + "  Max: " + QString::number(max_.value_or(0)) + "\n"
-          "Avg: " + QString::number(avg_.value_or(0)));
+          "Area=" + QString::number(area_.value_or(0)) + +"px P=" + QString::number(perimeter_.value_or(0)) + "px\n"
+          "Min=" + QString::number(min_.value_or(0)) + "  Max=" + QString::number(max_.value_or(0)) + "\n"
+          "Avg=" + QString::number(avg_.value_or(0)));
       }
     }
   }
@@ -509,9 +509,15 @@ void GraphicsItem::mouseMoveEvent(const QPointF& pos, const cv::Mat& image) {
       }
     }
 
+    int p = dist(poly.first(), poly.back());
+    for (int k = 0; k < poly.size()-1; ++k) {
+      p += dist(poly[k], poly[k + 1]);
+    }
+
     min_ = min;
     max_ = max;
     area_ = count;
+    perimeter_ = p;
     avg_ = double(sum) / count;
   }
 
