@@ -37,6 +37,7 @@ protected:
   QPushButton* draw_circle_ = nullptr;
   QPushButton* draw_angle_ = nullptr;
   QPushButton* draw_poly_ = nullptr;
+  QPushButton* proc_menu_ = nullptr;
 
   Metadata::HardPtr current_item_;
   std::shared_ptr<tfdetect::Detector> detector_;
@@ -65,6 +66,8 @@ protected:
   /// calibrate measuring units over selected item
   Q_SLOT void calibrate(GraphicsItem* item, const QPoint& pt);
 
+  void applyFilterForCurrent(cv::Mat filter, float delta = 0.0f, bool apply_to_gray = false);
+
   Q_SLOT void mousePosChanged(const QPoint&);
   Q_SLOT void mousePosOutOfImage();
   
@@ -77,6 +80,7 @@ protected:
 
   // zoom menu
   Q_SLOT void showZoomMenu();
+  Q_SLOT void showProcMenu();
   Q_SLOT void fillViewport();
   Q_SLOT void zoomIn();
   Q_SLOT void zoomOut();

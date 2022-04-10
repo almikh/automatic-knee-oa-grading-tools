@@ -84,6 +84,15 @@ MainWindow::MainWindow(QWidget* parent) :
   draw_poly_ = createOptionButton(QIcon(":/ic_poly"));
   ll->addWidget(draw_poly_, 0, Qt::AlignTop | Qt::AlignLeft);
 
+  auto frame = new QFrame();
+  frame->setFrameShape(QFrame::Shape::VLine);
+  frame->setFrameShadow(QFrame::Shadow::Sunken);
+  frame->setContentsMargins(0, 2, 0, 2);
+  ll->addWidget(frame, 0, Qt::AlignTop | Qt::AlignLeft);
+
+  proc_menu_ = createOptionButton(QIcon(":/ic_filter"));
+  ll->addWidget(proc_menu_, 0, Qt::AlignTop | Qt::AlignLeft);
+  
   ll->addWidget(new QWidget(), 1, Qt::AlignTop | Qt::AlignLeft);
 
   connect(reset, &QPushButton::clicked, viewport_, &Viewport::fitImageToViewport);
@@ -92,6 +101,7 @@ MainWindow::MainWindow(QWidget* parent) :
   connect(draw_circle_, &QPushButton::clicked, this, &MainWindow::drawCircle);
   connect(draw_angle_, &QPushButton::clicked, this, &MainWindow::drawAngle);
   connect(draw_poly_, &QPushButton::clicked, this, &MainWindow::drawPoly);
+  connect(proc_menu_, &QPushButton::clicked, this, &MainWindow::showProcMenu);
   
   // loading area
   working_area_->addWidget(loading_area_);
@@ -208,6 +218,111 @@ void MainWindow::showZoomMenu() {
 
   menu->addAction(zoom_in);
   menu->addAction(zoom_out);
+
+  menu->setShortcutEnabled(0, true);
+  menu->exec(zoom_menu_->mapToGlobal(QPoint(0, 28)));
+}
+
+void MainWindow::showProcMenu() {
+  auto menu = new QMenu();
+
+  auto none = new QAction("None", menu);
+  connect(none, &QAction::triggered, [this]() {
+    current_item_->image = current_item_->src_image.clone();
+    showItem(current_item_);
+  });
+
+  auto inv = new QAction("Invert", menu);
+  connect(inv, &QAction::triggered, [this]() {
+    cv::Mat tmp;
+    cv::cvtColor(current_item_->src_image, tmp, cv::COLOR_RGB2GRAY);
+    tmp = 255 - tmp;
+    cv::cvtColor(tmp, current_item_->image, cv::COLOR_GRAY2RGB);
+    showItem(current_item_);
+  });
+
+  auto sharpen_1 = new QAction("Sharpen 1", menu);
+  connect(sharpen_1, &QAction::triggered, [this]() {
+    applyFilterForCurrent((cv::Mat_<double>(3, 3) <<
+      0, -1, 0,
+      -1, 5, -1,
+      0, -1, 0));
+  });
+
+  auto sharpen_2 = new QAction("Sharpen 2", menu);
+  connect(sharpen_2, &QAction::triggered, [this]() {
+    applyFilterForCurrent((cv::Mat_<double>(3, 3) <<
+      -1, -1, -1,
+      -1, 9, -1,
+      -1, -1, -1));
+  });
+
+  auto sharpen_3 = new QAction("Sharpen 3", menu);
+  connect(sharpen_3, &QAction::triggered, [this]() {
+    if (current_item_) {
+      cv::Mat blurred;
+      double sigma = 1, threshold = 5, amount = 1;
+      cv::GaussianBlur(current_item_->image, blurred, cv::Size(), sigma, sigma);
+      cv::Mat lowContrastMask = abs(current_item_->image - blurred) < threshold;
+      cv::Mat sharpened = current_item_->image * (1 + amount) + blurred * (-amount);
+      current_item_->image.copyTo(sharpened, lowContrastMask);
+      current_item_->image = sharpened;
+      showItem(current_item_);
+    }
+  });
+
+  auto edge = new QAction("Edge 1", menu);
+  connect(edge, &QAction::triggered, [this]() {
+    applyFilterForCurrent((cv::Mat_<double>(3, 3) <<
+      0, -1, 0,
+      -1, 4, -1,
+      0, -1, 0), 128.0f, true);
+  });
+
+  auto edge_2 = new QAction("Edge 2", menu);
+  connect(edge_2, &QAction::triggered, [this]() {
+    applyFilterForCurrent((cv::Mat_<double>(3, 3) <<
+      -1, -2, -1,
+      -2, 12, -2,
+      -1, -2, -1), 128.0f, true);
+  });
+
+  auto emboss_n = new QAction("Emboss N", menu);
+  connect(emboss_n, &QAction::triggered, [this]() {
+    applyFilterForCurrent((cv::Mat_<double>(3, 3) <<
+      1, 1, 1,
+      0, 0, 0,
+      -1, -1, -1), 128.0f, true);
+  });
+
+  auto emboss_w = new QAction("Emboss W", menu);
+  connect(emboss_w, &QAction::triggered, [this]() {
+    applyFilterForCurrent((cv::Mat_<double>(3, 3) <<
+      1, 0, -1,
+      1, 0, -1,
+      1, 0, -1), 128.0f, true);
+  });
+
+  auto emboss_d = new QAction("Emboss D", menu);
+  connect(emboss_d, &QAction::triggered, [this]() {
+    applyFilterForCurrent((cv::Mat_<double>(3, 3) <<
+       0, 1, 1,
+      -1, 0, 1,
+      -1, -1, 0), 128.0f, true);
+  });
+
+  menu->addAction(none);
+  menu->addSeparator();
+  menu->addAction(inv);
+  menu->addSeparator();
+  menu->addAction(sharpen_1);
+  menu->addAction(sharpen_2);
+  menu->addAction(sharpen_3);
+  menu->addAction(edge);
+  menu->addAction(edge_2);
+  menu->addAction(emboss_n);
+  menu->addAction(emboss_w);
+  menu->addAction(emboss_d);
 
   menu->setShortcutEnabled(0, true);
   menu->exec(zoom_menu_->mapToGlobal(QPoint(0, 28)));
@@ -371,7 +486,7 @@ void MainWindow::showItem(Metadata::HardPtr data) {
 }
 
 void MainWindow::runOnData(Metadata::HardPtr data) {
-  auto sample = data->image.clone();
+  auto sample = data->src_image.clone();
 
   // init detector
   if (!detector_) {
@@ -403,6 +518,21 @@ void MainWindow::runOnData(Metadata::HardPtr data) {
   // if selected other item - just store processing results
   if (current_item_ == data) {
     emit itemProcessed(data);
+  }
+}
+
+void MainWindow::applyFilterForCurrent(cv::Mat filter, float delta, bool apply_to_gray) {
+  if (current_item_) {
+    cv::Mat tmp, output;
+    if (!apply_to_gray) tmp = current_item_->src_image;
+    else cv::cvtColor(current_item_->src_image, tmp, cv::COLOR_RGB2GRAY);
+
+    cv::filter2D(tmp, output, -1, filter, cv::Point(-1, -1), delta);
+
+    if (!apply_to_gray) current_item_->image = output;
+    else cv::cvtColor(output, current_item_->image, cv::COLOR_GRAY2RGB);
+
+    showItem(current_item_);
   }
 }
 
@@ -464,6 +594,7 @@ void MainWindow::openDICOM(bool) {
 
       auto item = std::make_shared<Metadata>();
       cv::cvtColor(img, item->image, cv::COLOR_GRAY2RGB);
+      item->src_image = item->image.clone();
       item->filename = filename;
 
       view_queue_->addItem(item);
@@ -480,6 +611,7 @@ void MainWindow::openSample(bool) {
 
     auto item = std::make_shared<Metadata>();
     item->filename = filename;
+    item->src_image = sample.clone();
     item->image = sample;
 
     view_queue_->addItem(item);
