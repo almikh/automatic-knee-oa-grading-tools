@@ -28,6 +28,7 @@
 #include "utils.h"
 #include "view_queue.h"
 #include "progress_indicator.h"
+#include "app_preferences.h"
 
 using namespace QtCharts;
 
@@ -561,7 +562,8 @@ QVector<Classifier::Item> MainWindow::runClassifier(const cv::Mat& joint_area) {
 
 void MainWindow::openDICOM(bool) {
   auto filters = "DICOM files (*.DICOM *.DCM);;";
-  auto path = QFileDialog::getOpenFileName(this, "Load DICOM file", "", filters);
+  auto default_path = AppPrefs::read("last-dicom-path", "").toString();
+  auto path = QFileDialog::getOpenFileName(this, "Load DICOM file", default_path, filters);
   if (!path.isEmpty()) {
     gdcm::ImageReader reader;
     reader.SetFileName(path.toStdString().c_str());
@@ -597,6 +599,7 @@ void MainWindow::openDICOM(bool) {
       item->src_image = item->image.clone();
       item->filename = filename;
 
+      AppPrefs::write("last-dicom-path", path.left(path.lastIndexOf('/')) + "/");
       view_queue_->addItem(item);
     }
   }
@@ -604,7 +607,8 @@ void MainWindow::openDICOM(bool) {
 
 void MainWindow::openSample(bool) {
   auto filters = "Image files (*.bmp *.png *.jpg *.jpeg);;";
-  auto path = QFileDialog::getOpenFileName(this, "Load image", "", filters);
+  auto default_path = AppPrefs::read("last-file-path", "").toString();
+  auto path = QFileDialog::getOpenFileName(this, "Load image", default_path, filters);
   if (!path.isEmpty()) {
     auto filename = QFileInfo(path).fileName();
     auto sample = cv::imread(path.toLocal8Bit().data(), cv::IMREAD_COLOR);
@@ -614,6 +618,7 @@ void MainWindow::openSample(bool) {
     item->src_image = sample.clone();
     item->image = sample;
 
+    AppPrefs::write("last-file-path", path.left(path.lastIndexOf('/')) + "/");
     view_queue_->addItem(item);
   }
 }

@@ -186,6 +186,7 @@
     </QtMoc>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="app_preferences.cpp" />
     <ClCompile Include="classifier.cpp" />
     <ClCompile Include="graphics_angle_item.cpp" />
     <ClCompile Include="graphics_ellipse_item.cpp" />
@@ -203,6 +204,7 @@
     <ClCompile Include="zip\qzip.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="app_preferences.h" />
     <ClInclude Include="classifier.h" />
     <QtMoc Include="mainwindow.h">
     </QtMoc>
