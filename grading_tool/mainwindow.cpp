@@ -171,7 +171,8 @@ MainWindow::MainWindow(QWidget* parent) :
 }
 
 MainWindow::~MainWindow() {
-  
+  AppPrefs::write("window/position", this->pos());
+  AppPrefs::write("window/size", this->size());
 }
 
 void MainWindow::makeMenuFile() {
@@ -417,6 +418,14 @@ QChartView* MainWindow::makeGraph(const QString& title, QColor color, const QVec
 }
 
 void MainWindow::init() {
+  if (AppPrefs::contains("window/position")) {
+    move(AppPrefs::read("window/position").toPoint());
+  }
+
+  if (AppPrefs::contains("window/size")) {
+    resize(AppPrefs::read("window/size").toSize());
+  }
+
   classifier_.initFromResource("D:\\Development\\automatic-knee-oa-grading-tools\\cnn_converter\\script.zip");
 }
 
