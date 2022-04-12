@@ -64,6 +64,7 @@ public:
   void clearScene();
   void scaleBy(qreal mult);
   void scaleTo(qreal mult);
+  void resetCalibrationCoef();
   void setCalibrationCoef(qreal coef);
   void removeGraphicsItem(GraphicsItem* item);
   void setImage(const cv::Mat& image);

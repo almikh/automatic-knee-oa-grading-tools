@@ -138,6 +138,7 @@ MainWindow::MainWindow(QWidget* parent) :
   }
 
   makeMenuFile();
+  makeMenuTools();
   // makeToolbar();
 
   connect(this, &MainWindow::itemProcessed, this, &MainWindow::showItem, Qt::QueuedConnection);
@@ -181,6 +182,22 @@ void MainWindow::makeMenuFile() {
 
   auto open_dicom = menu->addAction("Open DICOM");
   connect(open_dicom, &QAction::triggered, this, &MainWindow::openDICOM);
+}
+
+void MainWindow::makeMenuTools() {
+  auto menu = menuBar()->addMenu("Tools");
+
+  auto calib = menu->addAction("Calibration");
+  connect(calib, &QAction::triggered, this, &MainWindow::setCalibration);
+
+  reset_calib_ = menu->addAction("Reset Calibration");
+  connect(reset_calib_, &QAction::triggered, this, &MainWindow::resetCalibration); 
+  reset_calib_->setEnabled(false);
+
+  menu->addSeparator();
+
+  auto open_sample = menu->addAction("Options...");
+  connect(open_sample, &QAction::triggered, this, &MainWindow::showSettings);
 }
 
 void MainWindow::showZoomMenu() {
@@ -544,6 +561,7 @@ void MainWindow::calibrate(GraphicsItem* item, const QPoint& pt) {
   if (ok) {
     auto coef = new_length / item->length();
     viewport_->setCalibrationCoef(coef);
+    reset_calib_->setEnabled(true);
   }
 }
 
@@ -621,6 +639,19 @@ void MainWindow::openSample(bool) {
     AppPrefs::write("last-file-path", path.left(path.lastIndexOf('/')) + "/");
     view_queue_->addItem(item);
   }
+}
+
+void MainWindow::setCalibration() {
+
+}
+
+void MainWindow::resetCalibration() {
+  viewport_->resetCalibrationCoef();
+  reset_calib_->setEnabled(false);
+}
+
+void MainWindow::showSettings() {
+
 }
 
 void MainWindow::mousePosChanged(const QPoint& pt) {

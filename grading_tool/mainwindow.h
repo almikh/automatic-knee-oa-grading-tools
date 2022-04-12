@@ -38,6 +38,7 @@ protected:
   QPushButton* draw_angle_ = nullptr;
   QPushButton* draw_poly_ = nullptr;
   QPushButton* proc_menu_ = nullptr;
+  QAction* reset_calib_ = nullptr;
 
   Metadata::HardPtr current_item_;
   std::shared_ptr<tfdetect::Detector> detector_;
@@ -46,6 +47,7 @@ protected:
 
 protected:
   void makeMenuFile();
+  void makeMenuTools();
   void makeToolbar();
 
   QPushButton* createOptionButton(QIcon icon, bool enabled = true);
@@ -53,6 +55,10 @@ protected:
   
   Q_SLOT void openSample(bool);
   Q_SLOT void openDICOM(bool);
+
+  Q_SLOT void setCalibration();
+  Q_SLOT void resetCalibration();
+  Q_SLOT void showSettings();
 
   // process (or display) specified item
   Q_SLOT void setItemAsCurrent(Metadata::HardPtr data); 

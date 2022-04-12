@@ -78,6 +78,16 @@ void Viewport::scaleBy(qreal mult) {
   scaleTo(scale_factor_ * mult);
 }
 
+void Viewport::resetCalibrationCoef() {
+  calib_coef_ = std::nullopt;
+
+  for (auto item : graphics_items_) {
+    item->setCalibrationCoef(std::nullopt);
+  }
+
+  repaint();
+}
+
 void Viewport::setCalibrationCoef(qreal coef) {
   calib_coef_ = coef;
 
