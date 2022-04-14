@@ -66,6 +66,61 @@ GraphicsItem* GraphicsItem::makePoly(const QPointF& pt, QGraphicsItem* parent) {
   return item;
 }
 
+GraphicsItem* GraphicsItem::makeFromJson(const QJsonObject& json, QGraphicsItem* parent) {
+  auto item = new GraphicsItem(parent);
+  auto type = json["type"].toString();
+  if (type == "line") { 
+    auto p1 = str2point(json["p1"].toString());
+    auto p2 = str2point(json["p2"].toString());
+
+    item->line_ = new GraphicsLineItem(QLineF(p1, p2), item);
+    item->type_ = Type::Line;
+
+    item->mouseMoveEvent(p2, cv::Mat());
+    item->updateColors();
+  }
+  else if (type == "angle") {
+    auto p1 = str2point(json["p1"].toString());
+    auto p2 = str2point(json["p2"].toString());
+    auto p3 = str2point(json["p3"].toString());
+
+    item->angle_ = new GraphicsAngleItem(QPolygonF({ p1, p2 }), item);
+    item->type_ = Type::Angle;
+    item->anchor_index_ = -1;
+
+    item->angle_->setPolygon(QPolygonF({ p1, p2, p3 }));
+    item->mouseMoveEvent(p3, cv::Mat());
+    item->updateColors();
+  }
+  else if (type == "ellipse") {
+    auto tl = str2point(json["tl"].toString());
+    auto br = str2point(json["br"].toString());
+
+    item->ellipse_ = new GraphicsEllipseItem(QRect(tl.toPoint(), br.toPoint()), item);
+    item->type_ = Type::Ellipse;
+    item->anchor_index_ = -1;
+
+    item->mouseMoveEvent(br, cv::Mat());
+    item->updateColors();
+  }
+  else if (type == "poly") {
+    QPolygonF poly;
+    for (int k = 0; k < json["count"].toInt(); ++k) {
+      auto pt = str2point(json["p" + QString::number(k)].toString());
+      poly.push_back(pt);
+    }
+
+    item->poly_ = new GraphicsPolyItem(poly, item);
+    item->type_ = Type::Poly;
+    item->anchor_index_ = -1;
+
+    item->mouseMoveEvent(poly.back(), cv::Mat());
+    item->updateColors();
+  }
+
+  return item;
+}
+
 QRectF GraphicsItem::boundingRect() const {
   if (type_ == Type::Line) {
     return line_->boundingRect();
@@ -78,6 +133,41 @@ QRectF GraphicsItem::boundingRect() const {
   }
 
   return QRectF();
+}
+
+QJsonObject GraphicsItem::toJson() const {
+  QJsonObject json;
+  if (type_ == Type::Line) {
+    json["type"] = "line";
+    json["p1"] = point2str(line_->line().p1());
+    json["p2"] = point2str(line_->line().p2());
+  }
+  else if (type_ == Type::Angle) {
+    auto poly = angle_->polygon();
+
+    json["type"] = "angle";
+    json["p1"] = point2str(poly[0]);
+    json["p2"] = point2str(poly[1]);
+    json["p3"] = point2str(poly[2]);
+  }
+  else if (type_ == Type::Ellipse) {
+    auto rect = ellipse_->rect();
+
+    json["type"] = "ellipse";
+    json["tl"] = point2str(rect.topLeft());
+    json["br"] = point2str(rect.bottomRight());
+  }
+  else if (type_ == Type::Poly) {
+    auto poly = poly_->polygon();
+
+    json["type"] = "poly";
+    json["count"] = poly.size();
+    for (int k = 0; k < poly.size(); ++k) {
+      json["p" + QString::number(k)] = point2str(poly[k]);
+    }
+  }
+
+  return json;
 }
 
 QPolygonF GraphicsItem::polygon() const {

@@ -1,5 +1,6 @@
 #pragma once
 #include <memory>
+#include <optional>
 #include <QString>
 #include <QVector>
 
@@ -21,4 +22,6 @@ public:
   QVector<Joint> joints;
   bool already_display = false;
   Viewport::State viewport_state;
+  std::optional<qreal> calib_coef;
+  QJsonArray graphics_items;
 };

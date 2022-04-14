@@ -12,3 +12,5 @@ namespace convert
 }
 
 qreal dist(const QPointF& p1, const QPointF& p2);
+QString point2str(const QPointF& pt);
+QPointF str2point(const QString& str);

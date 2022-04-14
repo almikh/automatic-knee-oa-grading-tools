@@ -15,6 +15,7 @@ class QCustomPlot;
 class QStackedWidget;
 class ProgressIndicator;
 class ViewQueue;
+class QLabel;
 
 namespace tfdetect {
   class Detector;
@@ -29,7 +30,8 @@ protected:
   ViewQueue* view_queue_;
   QWidget* loading_area_;
   ProgressIndicator* loading_ind_;
-  QStackedWidget* working_area_;
+  QLabel* calib_coef_;
+  QWidget* working_area_;
   QTableWidget* right_panel_;
 
   QPushButton* zoom_menu_ = nullptr;
@@ -63,8 +65,10 @@ protected:
   // process (or display) specified item
   Q_SLOT void setItemAsCurrent(Metadata::HardPtr data); 
 
-  // display all data of specified item
-  Q_SLOT void showItem(Metadata::HardPtr data); 
+  // update all data of current item
+  Q_SLOT void updateCurrentItem(); 
+
+  Q_SLOT void onItemProcessed(Metadata::HardPtr data);
 
   /// run models to localize joints and classify AO grades
   Q_SLOT void runOnData(Metadata::HardPtr data);

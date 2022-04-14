@@ -31,3 +31,12 @@ namespace convert
 qreal dist(const QPointF& p1, const QPointF& p2) {
   return std::sqrt((p1.x() - p2.x()) * (p1.x() - p2.x()) + (p1.y() - p2.y()) * (p1.y() - p2.y()));
 }
+
+QString point2str(const QPointF& pt) {
+  return QString::number(pt.x(), 'f', 2) + ";" + QString::number(pt.y(), 'f', 2);
+}
+
+QPointF str2point(const QString& str) {
+  auto vals = str.split(';');
+  return QPointF(vals[0].toDouble(), vals[1].toDouble());
+}

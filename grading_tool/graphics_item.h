@@ -1,5 +1,6 @@
 #pragma once
 #include <QGraphicsItem>
+#include <QJsonObject>
 #include <optional>
 
 #include "graphics_text_item.h"
@@ -44,12 +45,15 @@ public:
   static GraphicsItem* makeAngle(const QPointF& pt, QGraphicsItem* parent);
   static GraphicsItem* makePoly(const QPointF& pt, QGraphicsItem* parent);
 
+  static GraphicsItem* makeFromJson(const QJsonObject& data, QGraphicsItem* parent);
+
 public:
   GraphicsItem(QGraphicsItem* parent = nullptr);
   ~GraphicsItem();
 
   Type getType() const;
   QPolygonF polygon() const;
+  QJsonObject toJson() const;
 
   double length() const;
   bool isSelected() const;

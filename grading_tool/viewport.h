@@ -3,6 +3,7 @@
 #include <QGraphicsView>
 #include <QGraphicsScene>
 #include <QGraphicsTextItem>
+#include <QJsonArray>
 #include <QVector>
 
 #include <opencv2/opencv.hpp>
@@ -54,9 +55,12 @@ public:
   Mode mode() const;
   State state() const;
   double scaleFactor() const;
+  std::optional<qreal> calibCoef() const;
+  QJsonArray graphicsItems() const;
 
   void setMode(Mode mode);
   void setState(State state);
+  void setGraphicsItems(const QJsonArray& items);
 
   void setLabelText(const QString& text);
   void setLabelVisible(bool visible);
@@ -65,7 +69,7 @@ public:
   void scaleBy(qreal mult);
   void scaleTo(qreal mult);
   void resetCalibrationCoef();
-  void setCalibrationCoef(qreal coef);
+  void setCalibrationCoef(std::optional<qreal> coef);
   void removeGraphicsItem(GraphicsItem* item);
   void setImage(const cv::Mat& image);
   void setImage(const QImage& image);

@@ -31,6 +31,19 @@ double Viewport::scaleFactor() const {
   return scale_factor_;
 }
 
+std::optional<qreal> Viewport::calibCoef() const {
+  return calib_coef_;
+}
+
+QJsonArray Viewport::graphicsItems() const {
+  QJsonArray ans;
+  for (auto item : graphics_items_) {
+    ans.push_back(item->toJson());
+  }
+
+  return ans;
+}
+
 Viewport::Mode Viewport::mode() const {
   return mode_;
 }
@@ -88,7 +101,7 @@ void Viewport::resetCalibrationCoef() {
   repaint();
 }
 
-void Viewport::setCalibrationCoef(qreal coef) {
+void Viewport::setCalibrationCoef(std::optional<qreal> coef) {
   calib_coef_ = coef;
 
   for (auto item : graphics_items_) {
@@ -108,6 +121,17 @@ void Viewport::setState(Viewport::State state) {
   pixmap_item_->setPos(state.position);
 }
 
+void Viewport::setGraphicsItems(const QJsonArray& items) {
+  for (auto json : items) {
+    auto item = GraphicsItem::makeFromJson(json.toObject(), pixmap_item_);
+    item->setCalibrationCoef(calib_coef_);
+    item->setScaleFactor(scale_factor_);
+    graphics_items_.push_back(item);
+  }
+
+  repaint();
+}
+
 void Viewport::setLabelText(const QString& text) {
   label_->setPos(QPointF(8, height() - 40));
   label_->setPlainText(text);
@@ -121,6 +145,16 @@ void Viewport::setLabelVisible(bool visible) {
 }
 
 void Viewport::setImage(const QImage& image) {
+  resetCalibrationCoef();
+
+  // remove previous graphics items
+  for (auto item : graphics_items_) {
+    scene()->removeItem(item);
+  }
+
+  graphics_items_.clear();
+  drawing_ = false;
+
   // если изменился размер изображения
   if (!last_pixmap_.isNull() && last_pixmap_.size() != image.size()) {
     clearScene();

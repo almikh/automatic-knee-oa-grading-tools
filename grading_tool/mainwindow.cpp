@@ -17,6 +17,7 @@
 #include <QToolBar>
 #include <QSplitter>
 #include <QMenuBar>
+#include <QLabel>
 #include <QDebug>
 
 #undef slots
@@ -49,8 +50,9 @@ MainWindow::MainWindow(QWidget* parent) :
   QMainWindow(parent),
   viewport_(new Viewport()),
   loading_area_(new QWidget()),
+  working_area_(new QWidget()),
+  calib_coef_(new QLabel()),
   loading_ind_(new ProgressIndicator()),
-  working_area_(new QStackedWidget()),
   right_panel_(new QTableWidget()),
   view_queue_(new ViewQueue())
 {
@@ -62,8 +64,13 @@ MainWindow::MainWindow(QWidget* parent) :
   auto w = new QWidget();
   auto layout = new QHBoxLayout(w);
 
+  // working area
+  working_area_->setStyleSheet("background-color: black");
+  auto wl = new QVBoxLayout(working_area_);
+  wl->setContentsMargins(0, 0, 0, 0);
+
   // sample's viewport
-  working_area_->addWidget(viewport_);
+  wl->addWidget(viewport_, 1);
 
   // reset viewport state
   auto ll = new QHBoxLayout(viewport_);
@@ -105,14 +112,19 @@ MainWindow::MainWindow(QWidget* parent) :
   connect(proc_menu_, &QPushButton::clicked, this, &MainWindow::showProcMenu);
   
   // loading area
-  working_area_->addWidget(loading_area_);
-  working_area_->setStyleSheet("background-color: black");
+  loading_area_->setFixedHeight(20);
+  wl->addWidget(loading_area_, 0, Qt::AlignLeft);
+  
+  calib_coef_->setStyleSheet("background-color: black; color:white");
 
-  auto l = new QVBoxLayout(loading_area_); 
-  loading_ind_->setFixedSize(150, 150);
+  auto l = new QHBoxLayout(loading_area_); 
+  l->setContentsMargins(4, 1, 4, 1);
+
+  loading_ind_->setFixedSize(16, 16);
   loading_ind_->setColor(Qt::white);
-  l->addWidget(loading_ind_, 0, Qt::AlignCenter);
-
+  l->addWidget(loading_ind_, 0, Qt::AlignLeft);
+  l->addWidget(calib_coef_, 0, Qt::AlignLeft);
+  
   layout->addWidget(working_area_);
 
   // graphs area
@@ -141,7 +153,7 @@ MainWindow::MainWindow(QWidget* parent) :
   makeMenuTools();
   // makeToolbar();
 
-  connect(this, &MainWindow::itemProcessed, this, &MainWindow::showItem, Qt::QueuedConnection);
+  connect(this, &MainWindow::itemProcessed, this, &MainWindow::onItemProcessed, Qt::QueuedConnection);
   connect(viewport_, &Viewport::mousePosChanged, this, &MainWindow::mousePosChanged);
   connect(viewport_, &Viewport::mousePosOutOfImage, this, &MainWindow::mousePosOutOfImage);
   connect(viewport_, &Viewport::menuForItemRequested, [=](GraphicsItem* item, const QPoint& pt) {
@@ -248,7 +260,7 @@ void MainWindow::showProcMenu() {
   auto none = new QAction("None", menu);
   connect(none, &QAction::triggered, [this]() {
     current_item_->image = current_item_->src_image.clone();
-    showItem(current_item_);
+    updateCurrentItem();
   });
 
   auto inv = new QAction("Invert", menu);
@@ -257,7 +269,7 @@ void MainWindow::showProcMenu() {
     cv::cvtColor(current_item_->src_image, tmp, cv::COLOR_RGB2GRAY);
     tmp = 255 - tmp;
     cv::cvtColor(tmp, current_item_->image, cv::COLOR_GRAY2RGB);
-    showItem(current_item_);
+    updateCurrentItem();
   });
 
   auto sharpen_1 = new QAction("Sharpen 1", menu);
@@ -286,7 +298,7 @@ void MainWindow::showProcMenu() {
       cv::Mat sharpened = current_item_->image * (1 + amount) + blurred * (-amount);
       current_item_->image.copyTo(sharpened, lowContrastMask);
       current_item_->image = sharpened;
-      showItem(current_item_);
+      updateCurrentItem();
     }
   });
 
@@ -430,43 +442,47 @@ void MainWindow::init() {
 }
 
 void MainWindow::setItemAsCurrent(Metadata::HardPtr data) {
-  if (!current_item_) {
-    current_item_ = data;
-  }
-
+  // previous item
   if (current_item_ && current_item_ != data) {
     current_item_->viewport_state = viewport_->state();
+    current_item_->calib_coef = viewport_->calibCoef();
+    current_item_->graphics_items = viewport_->graphicsItems();
   }
+
+  current_item_ = data;
+  updateCurrentItem();
 
   // is already calculating - just wait for it
-  if (in_process_.contains(data.get())) {
-    current_item_ = data;
-    working_area_->setCurrentWidget(loading_area_);
-    loading_ind_->startAnimation();
-    return;
-  }
+  
+  // TODO
+  // if (in_process_.contains(data.get())) {
+  //   current_item_ = data;
+  //   loading_ind_->startAnimation();
+  //   return;
+  // }
 
-  if (data->joints.isEmpty()) {
-    working_area_->setCurrentWidget(loading_area_);
-    loading_ind_->startAnimation();
+  if (data->joints.isEmpty() && !in_process_.contains(data.get())) {
     in_process_.insert(data.get());
-    current_item_ = data;
+    loading_ind_->startAnimation();
 
     QtConcurrent::run(this, &MainWindow::runOnData, data);
   }
-  else {
-    showItem(data);
+}
+
+void MainWindow::onItemProcessed(Metadata::HardPtr data) {
+  if (current_item_ == data) {
+    updateCurrentItem();
   }
 }
 
-void MainWindow::showItem(Metadata::HardPtr data) {
-  auto sample = data->image.clone();
+void MainWindow::updateCurrentItem() {
+  auto sample = current_item_->image.clone();
 
   // remove previous graphs
   right_panel_->setRowCount(0);
-  right_panel_->setRowCount(data->joints.size());
-  for (int k = 0; k < data->joints.size(); ++k) {
-    const auto& joint = data->joints[k];
+  right_panel_->setRowCount(current_item_->joints.size());
+  for (int k = 0; k < current_item_->joints.size(); ++k) {
+    const auto& joint = current_item_->joints[k];
 
     // calc maximum
     int grade_idx = 0;
@@ -488,21 +504,24 @@ void MainWindow::showItem(Metadata::HardPtr data) {
     right_panel_->setCellWidget(k, 0, graph);
   }
 
-  // previous item
-  if (current_item_) {
-    current_item_->viewport_state = viewport_->state();
-  }
+  // store old data
+  current_item_->viewport_state = viewport_->state();
+  current_item_->calib_coef = viewport_->calibCoef();
+  current_item_->graphics_items = viewport_->graphicsItems();
 
   // currentn item
-  current_item_ = data;
-
-  loading_ind_->stopAnimation();
-  working_area_->setCurrentWidget(viewport_);
   viewport_->setImage(sample);
+  if (in_process_.isEmpty()) {
+    loading_ind_->stopAnimation();
+  }
 
   // set actual image position and scale
+  viewport_->setCalibrationCoef(current_item_->calib_coef);
+  viewport_->setGraphicsItems(current_item_->graphics_items);
+  calib_coef_->setText(current_item_->calib_coef ? QString::number(current_item_->calib_coef.value()) : "");
   if (!current_item_->already_display) {
     current_item_->already_display = true;
+    current_item_->viewport_state = viewport_->state();
   }
   else {
     viewport_->setState(current_item_->viewport_state);
@@ -559,7 +578,7 @@ void MainWindow::applyFilterForCurrent(cv::Mat filter, float delta, bool apply_t
     if (!apply_to_gray) current_item_->image = output;
     else cv::cvtColor(output, current_item_->image, cv::COLOR_GRAY2RGB);
 
-    showItem(current_item_);
+    updateCurrentItem();
   }
 }
 
@@ -570,6 +589,7 @@ void MainWindow::calibrate(GraphicsItem* item, const QPoint& pt) {
   if (ok) {
     auto coef = new_length / item->length();
     viewport_->setCalibrationCoef(coef);
+    calib_coef_->setText(QString::number(coef));
     reset_calib_->setEnabled(true);
   }
 }
@@ -655,6 +675,7 @@ void MainWindow::setCalibration() {
 }
 
 void MainWindow::resetCalibration() {
+  calib_coef_->setText("");
   viewport_->resetCalibrationCoef();
   reset_calib_->setEnabled(false);
 }
