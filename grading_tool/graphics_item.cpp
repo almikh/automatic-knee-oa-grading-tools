@@ -19,7 +19,7 @@ GraphicsItem::~GraphicsItem() {
   delete item_;
 }
 
-GraphicsItem* GraphicsItem::makeLine(const QPointF& p1, const QPointF& p2, QGraphicsItem* parent) {
+GraphicsItem* GraphicsItem::makeLine(const QPointF& p1, const QPointF& p2, QGraphicsPixmapItem* parent) {
   auto item = new GraphicsItem(parent);
   item->line_ = new GraphicsLineItem(QLineF(p1, p2), item);
   item->type_ = Type::Line;
@@ -30,7 +30,7 @@ GraphicsItem* GraphicsItem::makeLine(const QPointF& p1, const QPointF& p2, QGrap
   return item;
 }
 
-GraphicsItem* GraphicsItem::makeEllipse(const QPointF& p1, const QPointF& p2, QGraphicsItem* parent) {
+GraphicsItem* GraphicsItem::makeEllipse(const QPointF& p1, const QPointF& p2, QGraphicsPixmapItem* parent) {
   auto item = new GraphicsItem(parent);
   item->ellipse_ = new GraphicsEllipseItem(QRect(p1.toPoint(), p2.toPoint()), item);
   item->type_ = Type::Ellipse;
@@ -42,7 +42,7 @@ GraphicsItem* GraphicsItem::makeEllipse(const QPointF& p1, const QPointF& p2, QG
   return item;
 }
 
-GraphicsItem* GraphicsItem::makeAngle(const QPointF& pt, QGraphicsItem* parent) {
+GraphicsItem* GraphicsItem::makeAngle(const QPointF& pt, QGraphicsPixmapItem* parent) {
   auto item = new GraphicsItem(parent);
   item->angle_ = new GraphicsAngleItem(QPolygonF({ pt, pt }), item);
   item->type_ = Type::Angle;
@@ -54,7 +54,7 @@ GraphicsItem* GraphicsItem::makeAngle(const QPointF& pt, QGraphicsItem* parent) 
   return item;
 }
 
-GraphicsItem* GraphicsItem::makePoly(const QPointF& pt, QGraphicsItem* parent) {
+GraphicsItem* GraphicsItem::makePoly(const QPointF& pt, QGraphicsPixmapItem* parent) {
   auto item = new GraphicsItem(parent);
   item->poly_ = new GraphicsPolyItem(QPolygonF({ pt, pt }), item);
   item->type_ = Type::Poly;
@@ -66,12 +66,26 @@ GraphicsItem* GraphicsItem::makePoly(const QPointF& pt, QGraphicsItem* parent) {
   return item;
 }
 
-GraphicsItem* GraphicsItem::makeFromJson(const QJsonObject& json, QGraphicsItem* parent) {
+GraphicsItem* GraphicsItem::makeFromJson(const QJsonObject& json, const QVector<Transformation>& transforms, int r, QGraphicsPixmapItem* parent) {
+  Q_UNUSED(r);
+  
   auto item = new GraphicsItem(parent);
   auto type = json["type"].toString();
+  auto sz = parent->pixmap().size();
   if (type == "line") { 
     auto p1 = str2point(json["p1"].toString());
     auto p2 = str2point(json["p2"].toString());
+
+    for (auto t : transforms) {
+      if (t == Transformation::HFlip) {
+        p1.setX(sz.width() - p1.x());
+        p2.setX(sz.width() - p2.x());
+      }
+      else if (t == Transformation::VFlip) {
+        p1.setY(sz.height() - p1.y());
+        p2.setY(sz.height() - p2.y());
+      }
+    }
 
     item->line_ = new GraphicsLineItem(QLineF(p1, p2), item);
     item->type_ = Type::Line;
@@ -83,6 +97,19 @@ GraphicsItem* GraphicsItem::makeFromJson(const QJsonObject& json, QGraphicsItem*
     auto p1 = str2point(json["p1"].toString());
     auto p2 = str2point(json["p2"].toString());
     auto p3 = str2point(json["p3"].toString());
+
+    for (auto t : transforms) {
+      if (t == Transformation::HFlip) {
+        p1.setX(sz.width() - p1.x());
+        p2.setX(sz.width() - p2.x());
+        p3.setX(sz.width() - p3.x());
+      }
+      else if (t == Transformation::VFlip) {
+        p1.setY(sz.height() - p1.y());
+        p2.setY(sz.height() - p2.y());
+        p3.setY(sz.height() - p3.y());
+      }
+    }
 
     item->angle_ = new GraphicsAngleItem(QPolygonF({ p1, p2 }), item);
     item->type_ = Type::Angle;
@@ -96,6 +123,17 @@ GraphicsItem* GraphicsItem::makeFromJson(const QJsonObject& json, QGraphicsItem*
     auto tl = str2point(json["tl"].toString());
     auto br = str2point(json["br"].toString());
 
+    for (auto t : transforms) {
+      if (t == Transformation::HFlip) {
+        tl.setX(sz.width() - tl.x());
+        br.setX(sz.width() - br.x());
+      }
+      else if (t == Transformation::VFlip) {
+        tl.setY(sz.height() - tl.y());
+        br.setY(sz.height() - br.y());
+      }
+    }
+
     item->ellipse_ = new GraphicsEllipseItem(QRect(tl.toPoint(), br.toPoint()), item);
     item->type_ = Type::Ellipse;
     item->anchor_index_ = -1;
@@ -108,6 +146,19 @@ GraphicsItem* GraphicsItem::makeFromJson(const QJsonObject& json, QGraphicsItem*
     for (int k = 0; k < json["count"].toInt(); ++k) {
       auto pt = str2point(json["p" + QString::number(k)].toString());
       poly.push_back(pt);
+    }
+
+    for (auto t : transforms) {
+      if (t == Transformation::HFlip) {
+        for (int k = 0; k < poly.size(); ++k) {
+          poly[k].setX(sz.width() - poly[k].x());
+        }
+      }
+      else if (t == Transformation::VFlip) {
+        for (int k = 0; k < poly.size(); ++k) {
+          poly[k].setY(sz.height() - poly[k].y());
+        }
+      }
     }
 
     item->poly_ = new GraphicsPolyItem(poly, item);

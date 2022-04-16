@@ -1,8 +1,9 @@
 #pragma once
-#include <QGraphicsItem>
+#include <QGraphicsPixmapItem>
 #include <QJsonObject>
 #include <optional>
 
+#include "defs.h"
 #include "graphics_text_item.h"
 #include "graphics_line_item.h"
 #include "graphics_ellipse_item.h"
@@ -40,12 +41,12 @@ private:
   int anchor_index_ = -1;
 
 public:
-  static GraphicsItem* makeLine(const QPointF& p1, const QPointF& p2, QGraphicsItem* parent);
-  static GraphicsItem* makeEllipse(const QPointF& p1, const QPointF& p2, QGraphicsItem* parent);
-  static GraphicsItem* makeAngle(const QPointF& pt, QGraphicsItem* parent);
-  static GraphicsItem* makePoly(const QPointF& pt, QGraphicsItem* parent);
+  static GraphicsItem* makeLine(const QPointF& p1, const QPointF& p2, QGraphicsPixmapItem* parent);
+  static GraphicsItem* makeEllipse(const QPointF& p1, const QPointF& p2, QGraphicsPixmapItem* parent);
+  static GraphicsItem* makeAngle(const QPointF& pt, QGraphicsPixmapItem* parent);
+  static GraphicsItem* makePoly(const QPointF& pt, QGraphicsPixmapItem* parent);
 
-  static GraphicsItem* makeFromJson(const QJsonObject& data, QGraphicsItem* parent);
+  static GraphicsItem* makeFromJson(const QJsonObject& data, const QVector<Transformation>& t, int r, QGraphicsPixmapItem* parent);
 
 public:
   GraphicsItem(QGraphicsItem* parent = nullptr);

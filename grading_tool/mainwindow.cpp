@@ -31,6 +31,7 @@
 #include "progress_indicator.h"
 #include "settings_window.h"
 #include "app_preferences.h"
+#include "defs.h"
 
 using namespace QtCharts;
 
@@ -267,26 +268,26 @@ void MainWindow::showTransformMenu() {
 
   auto rotate_90_cw = new QAction("Rotate 90° CW", menu);
   connect(rotate_90_cw, &QAction::triggered, [this]() {
-    rotateCurrentItem(Metadata::Rotate90_CW);
+    rotateCurrentItem(Rotation::Rotate90_CW);
   });
 
   auto rotate_90_ccw = new QAction("Rotate 90° CCW", menu);
   connect(rotate_90_ccw, &QAction::triggered, [this]() {
-    rotateCurrentItem(Metadata::Rotate90_CCW);
+    rotateCurrentItem(Rotation::Rotate90_CCW);
   });
 
   auto rotate_180 = new QAction("Rotate 180°", menu);
   connect(rotate_180, &QAction::triggered, [this]() {
-    rotateCurrentItem(Metadata::Rotate180);
+    rotateCurrentItem(Rotation::Rotate180);
   });
 
   auto flip_h = new QAction("Flip horizontal", menu);
   connect(flip_h, &QAction::triggered, [this]() {
-    if (current_item_->transformations.contains(Metadata::HFlip)) {
-      current_item_->transformations.removeOne(Metadata::HFlip);
+    if (current_item_->transformations.contains(Transformation::HFlip)) {
+      current_item_->transformations.removeOne(Transformation::HFlip);
     }
     else {
-      current_item_->transformations.push_back(Metadata::HFlip);
+      current_item_->transformations.push_back(Transformation::HFlip);
     }
 
     saveCurrentGraphicsItems();
@@ -295,11 +296,11 @@ void MainWindow::showTransformMenu() {
 
   auto flip_v = new QAction("Flip vertical", menu);
   connect(flip_v, &QAction::triggered, [this]() {
-    if (current_item_->transformations.contains(Metadata::VFlip)) {
-      current_item_->transformations.removeOne(Metadata::VFlip);
+    if (current_item_->transformations.contains(Transformation::VFlip)) {
+      current_item_->transformations.removeOne(Transformation::VFlip);
     }
     else {
-      current_item_->transformations.push_back(Metadata::VFlip);
+      current_item_->transformations.push_back(Transformation::VFlip);
     }
 
     saveCurrentGraphicsItems();
@@ -595,8 +596,8 @@ void MainWindow::updateCurrentItem() {
   }
 
   for (auto t : current_item_->transformations) {
-    if (t == Metadata::HFlip) cv::flip(sample, sample, 1);
-    else if (t == Metadata::VFlip) cv::flip(sample, sample, 0);
+    if (t == Transformation::HFlip) cv::flip(sample, sample, 1);
+    else if (t == Transformation::VFlip) cv::flip(sample, sample, 0);
     else {
       // TODO:
     }
@@ -620,7 +621,7 @@ void MainWindow::updateCurrentItem() {
 
   // restore graphics items
   viewport_->setCalibrationCoef(current_item_->calib_coef);
-  viewport_->setGraphicsItems(current_item_->graphics_items);
+  viewport_->setGraphicsItems(current_item_->graphics_items, current_item_->transformations, current_item_->rotation);
   calib_coef_->setText(current_item_->calib_coef ? QString::number(current_item_->calib_coef.value()) : "");
 
   view_queue_->updateView();

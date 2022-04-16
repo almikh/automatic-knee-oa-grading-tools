@@ -143,6 +143,9 @@
     <ClInclude Include="app_preferences.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="defs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="debug\moc_predefs.h.cbt">

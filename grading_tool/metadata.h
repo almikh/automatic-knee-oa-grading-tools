@@ -7,23 +7,13 @@
 #include <opencv2/opencv.hpp>
 #include "classifier.h"
 #include "viewport.h"
+#include "defs.h"
 
 struct Metadata {
   using HardPtr = std::shared_ptr<Metadata>;
   struct Joint {
     cv::Rect rect;
     QVector<Classifier::Item> grades;
-  };
-
-  enum Rotation {
-    Rotate90_CW = 90,
-    Rotate90_CCW = -90,
-    Rotate180 = 180,
-  };
-
-  enum Transformation {
-    HFlip = 0,
-    VFlip = 1
   };
 
 public:

@@ -8,6 +8,7 @@
 
 #include <opencv2/opencv.hpp>
 #include "graphics_item.h"
+#include "defs.h"
 
 class QPushButton;
 class QHBoxLayout;
@@ -60,7 +61,12 @@ public:
 
   void setMode(Mode mode);
   void setState(State state);
-  void setGraphicsItems(const QJsonArray& items);
+
+  // add graphics items to viewport
+  // @param items:  list of encoded graphics items
+  // @param t:      transformations set of current image
+  // @param r:      rotation of current image
+  void setGraphicsItems(const QJsonArray& items, const QVector<Transformation>& t = {}, int r = 0);
 
   void setLabelText(const QString& text);
   void setLabelVisible(bool visible);

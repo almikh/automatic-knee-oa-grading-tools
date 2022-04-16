@@ -121,11 +121,13 @@ void Viewport::setState(Viewport::State state) {
   pixmap_item_->setPos(state.position);
 }
 
-void Viewport::setGraphicsItems(const QJsonArray& items) {
+void Viewport::setGraphicsItems(const QJsonArray& items, const QVector<Transformation>& t, int r) {
   for (auto json : items) {
-    auto item = GraphicsItem::makeFromJson(json.toObject(), pixmap_item_);
+    auto item = GraphicsItem::makeFromJson(json.toObject(), t, r, pixmap_item_);
     item->setCalibrationCoef(calib_coef_);
     item->setScaleFactor(scale_factor_);
+    item->setCreated(true);
+
     graphics_items_.push_back(item);
   }
 

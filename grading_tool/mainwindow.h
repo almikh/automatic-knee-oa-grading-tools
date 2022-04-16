@@ -77,10 +77,10 @@ protected:
 
   Q_SLOT void onItemProcessed(Metadata::HardPtr data);
 
-  /// run models to localize joints and classify AO grades
+  // run models to localize joints and classify AO grades
   Q_SLOT void runOnData(Metadata::HardPtr data);
 
-  /// calibrate measuring units over selected item
+  // calibrate measuring units over selected item
   Q_SLOT void calibrate(GraphicsItem* item, const QPoint& pt);
 
   void rotateCurrentItem(int angle);
