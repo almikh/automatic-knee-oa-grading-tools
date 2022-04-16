@@ -9,5 +9,6 @@
         <file alias="ic_poly">res/ic_poly.png</file>
         <file alias="ic_filter">res/ic_filter.png</file>
         <file alias="ic_settings">res/ic_settings.png</file>
+        <file alias="ic_transform">res/ic_transform.png</file>
     </qresource>
 </RCC>

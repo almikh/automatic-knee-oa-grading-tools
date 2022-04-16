@@ -15,6 +15,17 @@ struct Metadata {
     QVector<Classifier::Item> grades;
   };
 
+  enum Rotation {
+    Rotate90_CW = 90,
+    Rotate90_CCW = -90,
+    Rotate180 = 180,
+  };
+
+  enum Transformation {
+    HFlip = 0,
+    VFlip = 1
+  };
+
 public:
   cv::Mat image;
   cv::Mat src_image;
@@ -24,4 +35,6 @@ public:
   Viewport::State viewport_state;
   std::optional<qreal> calib_coef;
   QJsonArray graphics_items;
+  QVector<Transformation> transformations;
+  int rotation = 0;
 };

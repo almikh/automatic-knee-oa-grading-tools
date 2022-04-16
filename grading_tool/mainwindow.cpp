@@ -99,6 +99,9 @@ MainWindow::MainWindow(QWidget* parent) :
   frame->setContentsMargins(0, 2, 0, 2);
   ll->addWidget(frame, 0, Qt::AlignTop | Qt::AlignLeft);
 
+  transform_menu_ = createOptionButton(QIcon(":/ic_transform"));
+  ll->addWidget(transform_menu_, 0, Qt::AlignTop | Qt::AlignLeft);
+
   proc_menu_ = createOptionButton(QIcon(":/ic_filter"));
   ll->addWidget(proc_menu_, 0, Qt::AlignTop | Qt::AlignLeft);
   
@@ -111,7 +114,11 @@ MainWindow::MainWindow(QWidget* parent) :
   connect(draw_angle_, &QPushButton::clicked, this, &MainWindow::drawAngle);
   connect(draw_poly_, &QPushButton::clicked, this, &MainWindow::drawPoly);
   connect(proc_menu_, &QPushButton::clicked, this, &MainWindow::showProcMenu);
+  connect(transform_menu_, &QPushButton::clicked, this, &MainWindow::showTransformMenu);
   
+  proc_menu_->setEnabled(false);
+  transform_menu_->setEnabled(false);
+
   // loading area
   loading_area_->setFixedHeight(20);
   wl->addWidget(loading_area_, 0, Qt::AlignLeft);
@@ -255,6 +262,73 @@ void MainWindow::showZoomMenu() {
   menu->exec(zoom_menu_->mapToGlobal(QPoint(0, 28)));
 }
 
+void MainWindow::showTransformMenu() {
+  auto menu = new QMenu();
+
+  auto rotate_90_cw = new QAction("Rotate 90° CW", menu);
+  connect(rotate_90_cw, &QAction::triggered, [this]() {
+    rotateCurrentItem(Metadata::Rotate90_CW);
+  });
+
+  auto rotate_90_ccw = new QAction("Rotate 90° CCW", menu);
+  connect(rotate_90_ccw, &QAction::triggered, [this]() {
+    rotateCurrentItem(Metadata::Rotate90_CCW);
+  });
+
+  auto rotate_180 = new QAction("Rotate 180°", menu);
+  connect(rotate_180, &QAction::triggered, [this]() {
+    rotateCurrentItem(Metadata::Rotate180);
+  });
+
+  auto flip_h = new QAction("Flip horizontal", menu);
+  connect(flip_h, &QAction::triggered, [this]() {
+    if (current_item_->transformations.contains(Metadata::HFlip)) {
+      current_item_->transformations.removeOne(Metadata::HFlip);
+    }
+    else {
+      current_item_->transformations.push_back(Metadata::HFlip);
+    }
+
+    saveCurrentGraphicsItems();
+    updateCurrentItem();
+  });
+
+  auto flip_v = new QAction("Flip vertical", menu);
+  connect(flip_v, &QAction::triggered, [this]() {
+    if (current_item_->transformations.contains(Metadata::VFlip)) {
+      current_item_->transformations.removeOne(Metadata::VFlip);
+    }
+    else {
+      current_item_->transformations.push_back(Metadata::VFlip);
+    }
+
+    saveCurrentGraphicsItems();
+    updateCurrentItem();
+  });
+
+  auto clear = new QAction("Clear transformations", menu);
+  connect(clear, &QAction::triggered, [this]() {
+    if (!current_item_->transformations.isEmpty() || current_item_->rotation) {
+      current_item_->transformations.clear();
+      current_item_->rotation = 0;
+      saveCurrentGraphicsItems();
+      updateCurrentItem();
+    }
+  });
+
+  menu->addAction(rotate_90_cw);
+  menu->addAction(rotate_90_ccw);
+  menu->addAction(rotate_180);
+  menu->addSeparator();
+  menu->addAction(flip_h);
+  menu->addAction(flip_v);
+  menu->addSeparator();
+  menu->addAction(clear);
+
+  menu->setShortcutEnabled(0, true);
+  menu->exec(transform_menu_->mapToGlobal(QPoint(0, 28)));
+}
+
 void MainWindow::showProcMenu() {
   auto menu = new QMenu();
 
@@ -357,7 +431,7 @@ void MainWindow::showProcMenu() {
   menu->addAction(emboss_d);
 
   menu->setShortcutEnabled(0, true);
-  menu->exec(zoom_menu_->mapToGlobal(QPoint(0, 28)));
+  menu->exec(proc_menu_->mapToGlobal(QPoint(0, 28)));
 }
 
 void MainWindow::makeToolbar() {
@@ -469,10 +543,18 @@ void MainWindow::setItemAsCurrent(Metadata::HardPtr data) {
 
 void MainWindow::onItemProcessed(Metadata::HardPtr data) {
   if (current_item_ == data) {
+    saveCurrentGraphicsItems();
     updateCurrentItem();
   }
   else if (in_process_.isEmpty()) {
     loading_ind_->stopAnimation();
+  }
+}
+
+void MainWindow::saveCurrentGraphicsItems() {
+  if (current_item_) {
+    current_item_->calib_coef = viewport_->calibCoef();
+    current_item_->graphics_items = viewport_->graphicsItems();
   }
 }
 
@@ -503,6 +585,21 @@ void MainWindow::updateCurrentItem() {
 
     auto graph = makeGraph(title, std::get<1>(joint_colors[k % 2]), joint.grades);
     right_panel_->setCellWidget(k, 0, graph);
+  }
+
+  // transformations
+  if (const auto r = current_item_->rotation) {
+    if (r == 90) cv::rotate(sample, sample, cv::ROTATE_90_CLOCKWISE);
+    else if (r == 270) cv::rotate(sample, sample, cv::ROTATE_90_COUNTERCLOCKWISE);
+    else if (r == 180) cv::rotate(sample, sample, cv::ROTATE_180);
+  }
+
+  for (auto t : current_item_->transformations) {
+    if (t == Metadata::HFlip) cv::flip(sample, sample, 1);
+    else if (t == Metadata::VFlip) cv::flip(sample, sample, 0);
+    else {
+      // TODO:
+    }
   }
 
   // currentn item
@@ -560,6 +657,16 @@ void MainWindow::runOnData(Metadata::HardPtr data) {
 
   in_process_.remove(data.get());
   emit itemProcessed(data);
+}
+
+void MainWindow::rotateCurrentItem(int angle) {
+  current_item_->rotation += angle;
+
+  if (current_item_->rotation < 0) current_item_->rotation += 360;
+  else if (current_item_->rotation > 270) current_item_->rotation -= 360;
+
+  saveCurrentGraphicsItems();
+  updateCurrentItem();
 }
 
 void MainWindow::applyFilterForCurrent(cv::Mat filter, float delta, bool apply_to_gray) {
@@ -634,15 +741,12 @@ void MainWindow::openDICOM(bool) {
         return;
       }
 
+      cv::Mat sample;
       cv::Mat img(image.GetRows(), image.GetColumns(), pixel_type, buffer.data());
-
-      auto item = std::make_shared<Metadata>();
-      cv::cvtColor(img, item->image, cv::COLOR_GRAY2RGB);
-      item->src_image = item->image.clone();
-      item->filename = filename;
+      cv::cvtColor(img, sample, cv::COLOR_GRAY2RGB);
 
       AppPrefs::write("last-dicom-path", path.left(path.lastIndexOf('/')) + "/");
-      view_queue_->addItem(item);
+      open(filename, sample);
     }
   }
 }
@@ -655,14 +759,21 @@ void MainWindow::openSample(bool) {
     auto filename = QFileInfo(path).fileName();
     auto sample = cv::imread(path.toLocal8Bit().data(), cv::IMREAD_COLOR);
 
-    auto item = std::make_shared<Metadata>();
-    item->filename = filename;
-    item->src_image = sample.clone();
-    item->image = sample;
-
     AppPrefs::write("last-file-path", path.left(path.lastIndexOf('/')) + "/");
-    view_queue_->addItem(item);
+    open(filename, sample);
   }
+}
+
+void MainWindow::open(const QString& filename, cv::Mat sample) {
+  auto item = std::make_shared<Metadata>();
+  item->filename = filename;
+  item->src_image = sample.clone();
+  item->image = sample;
+
+  view_queue_->addItem(item);
+
+  proc_menu_->setEnabled(true);
+  transform_menu_->setEnabled(true);
 }
 
 void MainWindow::setCalibration() {

@@ -40,6 +40,7 @@ protected:
   QPushButton* draw_angle_ = nullptr;
   QPushButton* draw_poly_ = nullptr;
   QPushButton* proc_menu_ = nullptr;
+  QPushButton* transform_menu_ = nullptr;
   QAction* reset_calib_ = nullptr;
 
   Metadata::HardPtr current_item_;
@@ -60,6 +61,7 @@ protected:
 
   Q_SLOT void openSample(bool);
   Q_SLOT void openDICOM(bool);
+  void open(const QString& filename, cv::Mat image);
 
   Q_SLOT void setCalibration();
   Q_SLOT void resetCalibration();
@@ -70,6 +72,8 @@ protected:
 
   // update all data of current item
   Q_SLOT void updateCurrentItem(); 
+  
+  void saveCurrentGraphicsItems();
 
   Q_SLOT void onItemProcessed(Metadata::HardPtr data);
 
@@ -79,6 +83,7 @@ protected:
   /// calibrate measuring units over selected item
   Q_SLOT void calibrate(GraphicsItem* item, const QPoint& pt);
 
+  void rotateCurrentItem(int angle);
   void applyFilterForCurrent(cv::Mat filter, float delta = 0.0f, bool apply_to_gray = false);
 
   Q_SLOT void mousePosChanged(const QPoint&);
@@ -94,6 +99,7 @@ protected:
   // zoom menu
   Q_SLOT void showZoomMenu();
   Q_SLOT void showProcMenu();
+  Q_SLOT void showTransformMenu();
   Q_SLOT void fillViewport();
   Q_SLOT void zoomIn();
   Q_SLOT void zoomOut();
