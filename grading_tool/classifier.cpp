@@ -7,6 +7,11 @@
 #include "zip/qzipreader.h"
 
 bool Classifier::initFromResource(const QString& filename) {
+  if (path_ == filename)
+    return true;
+
+  path_ = filename;
+
   // читаем архив
   QJsonParseError parse_error;
   QZipReader zip_reader(filename);

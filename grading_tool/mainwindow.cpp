@@ -29,6 +29,7 @@
 #include "utils.h"
 #include "view_queue.h"
 #include "progress_indicator.h"
+#include "settings_window.h"
 #include "app_preferences.h"
 
 using namespace QtCharts;
@@ -438,7 +439,12 @@ void MainWindow::init() {
     resize(AppPrefs::read("window/size").toSize());
   }
 
-  classifier_.initFromResource("D:\\Development\\automatic-knee-oa-grading-tools\\cnn_converter\\script.zip");
+  initClassifier();
+}
+
+void MainWindow::initClassifier() {
+  classifier_enabled_ = AppPrefs::read("enable_classifier").toBool();
+  classifier_.initFromResource(AppPrefs::read("classifier_params_path").toString());
 }
 
 void MainWindow::setItemAsCurrent(Metadata::HardPtr data) {
@@ -681,7 +687,15 @@ void MainWindow::resetCalibration() {
 }
 
 void MainWindow::showSettings() {
+  if (SettingsWindow::opened) {
+    return;
+  }
 
+  auto settings_window = new SettingsWindow();
+  QObject::connect(settings_window, &SettingsWindow::closed, [=](bool) {
+    initClassifier();
+  });
+  settings_window->show();
 }
 
 void MainWindow::mousePosChanged(const QPoint& pt) {

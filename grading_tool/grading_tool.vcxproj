@@ -195,6 +195,7 @@
     <ClCompile Include="graphics_poly_item.cpp" />
     <ClCompile Include="graphics_text_item.cpp" />
     <ClCompile Include="progress_indicator.cpp" />
+    <ClCompile Include="settings_window.cpp" />
     <ClCompile Include="utils.cpp" />
     <ClCompile Include="view_queue.cpp" />
     <ClCompile Include="main.cpp" />
@@ -218,6 +219,7 @@
     <ClInclude Include="metadata.h" />
     <QtMoc Include="progress_indicator.h" />
     <ClInclude Include="resource.h" />
+    <QtMoc Include="settings_window.h" />
     <ClInclude Include="tfdetect\tfdetect.h" />
     <ClInclude Include="tfdetect\tfwrapper.h" />
     <QtMoc Include="viewport.h" />

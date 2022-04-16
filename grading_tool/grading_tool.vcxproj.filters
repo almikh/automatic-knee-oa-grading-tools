@@ -90,6 +90,9 @@
     <ClCompile Include="app_preferences.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="settings_window.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="classifier.h">
@@ -157,6 +160,9 @@
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="progress_indicator.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="settings_window.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>

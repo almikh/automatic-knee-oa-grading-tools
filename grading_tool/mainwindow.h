@@ -45,6 +45,7 @@ protected:
   Metadata::HardPtr current_item_;
   std::shared_ptr<tfdetect::Detector> detector_;
   QSet<Metadata*> in_process_;
+  bool classifier_enabled_ = false;
   Classifier classifier_;
 
 protected:
@@ -54,7 +55,9 @@ protected:
 
   QPushButton* createOptionButton(QIcon icon, bool enabled = true);
   QtCharts::QChartView* makeGraph(const QString& title, QColor color, const QVector<Classifier::Item>& data);
-  
+
+  void initClassifier();
+
   Q_SLOT void openSample(bool);
   Q_SLOT void openDICOM(bool);
 

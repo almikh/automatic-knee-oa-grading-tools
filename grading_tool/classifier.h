@@ -21,6 +21,7 @@ public:
   };
 
 protected:
+  QString path_;
   QString last_error_;
   QStringList header_;
   cv::Size input_size_;
