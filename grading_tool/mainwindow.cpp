@@ -559,11 +559,7 @@ void MainWindow::runOnData(Metadata::HardPtr data) {
   }
 
   in_process_.remove(data.get());
-
-  // if selected other item - just store processing results
-  if (current_item_ == data) {
-    emit itemProcessed(data);
-  }
+  emit itemProcessed(data);
 }
 
 void MainWindow::applyFilterForCurrent(cv::Mat filter, float delta, bool apply_to_gray) {
