@@ -175,8 +175,6 @@ void Viewport::setImage(const QImage& image) {
   else {
     pixmap_item_->setPixmap(last_pixmap_);
   }
-
-  fitImageToViewport();
 }
 
 void Viewport::fitImageToViewport() {

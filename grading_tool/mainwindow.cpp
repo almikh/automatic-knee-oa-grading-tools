@@ -458,16 +458,8 @@ void MainWindow::setItemAsCurrent(Metadata::HardPtr data) {
   current_item_ = data;
   updateCurrentItem();
 
-  // is already calculating - just wait for it
-  
-  // TODO
-  // if (in_process_.contains(data.get())) {
-  //   current_item_ = data;
-  //   loading_ind_->startAnimation();
-  //   return;
-  // }
-
-  if (data->joints.isEmpty() && !in_process_.contains(data.get())) {
+  // run classification if needed
+  if (classifier_enabled_ && data->joints.isEmpty() && !in_process_.contains(data.get())) {
     in_process_.insert(data.get());
     loading_ind_->startAnimation();
 
@@ -478,6 +470,9 @@ void MainWindow::setItemAsCurrent(Metadata::HardPtr data) {
 void MainWindow::onItemProcessed(Metadata::HardPtr data) {
   if (current_item_ == data) {
     updateCurrentItem();
+  }
+  else if (in_process_.isEmpty()) {
+    loading_ind_->stopAnimation();
   }
 }
 
@@ -510,11 +505,6 @@ void MainWindow::updateCurrentItem() {
     right_panel_->setCellWidget(k, 0, graph);
   }
 
-  // store old data
-  current_item_->viewport_state = viewport_->state();
-  current_item_->calib_coef = viewport_->calibCoef();
-  current_item_->graphics_items = viewport_->graphicsItems();
-
   // currentn item
   viewport_->setImage(sample);
   if (in_process_.isEmpty()) {
@@ -522,16 +512,19 @@ void MainWindow::updateCurrentItem() {
   }
 
   // set actual image position and scale
-  viewport_->setCalibrationCoef(current_item_->calib_coef);
-  viewport_->setGraphicsItems(current_item_->graphics_items);
-  calib_coef_->setText(current_item_->calib_coef ? QString::number(current_item_->calib_coef.value()) : "");
   if (!current_item_->already_display) {
-    current_item_->already_display = true;
+    viewport_->fitImageToViewport();
     current_item_->viewport_state = viewport_->state();
+    current_item_->already_display = true;
   }
   else {
     viewport_->setState(current_item_->viewport_state);
   }
+
+  // restore graphics items
+  viewport_->setCalibrationCoef(current_item_->calib_coef);
+  viewport_->setGraphicsItems(current_item_->graphics_items);
+  calib_coef_->setText(current_item_->calib_coef ? QString::number(current_item_->calib_coef.value()) : "");
 
   view_queue_->updateView();
   zoom_menu_->setEnabled(true);
