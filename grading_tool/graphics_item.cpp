@@ -78,10 +78,12 @@ GraphicsItem* GraphicsItem::makeFromJson(const QJsonObject& json, const QVector<
 
     for (auto t : transforms) {
       if (t == Transformation::HFlip) {
+        item->h_flipped = !item->h_flipped;
         p1.setX(sz.width() - p1.x());
         p2.setX(sz.width() - p2.x());
       }
       else if (t == Transformation::VFlip) {
+        item->v_flipped = !item->v_flipped;
         p1.setY(sz.height() - p1.y());
         p2.setY(sz.height() - p2.y());
       }
@@ -100,11 +102,13 @@ GraphicsItem* GraphicsItem::makeFromJson(const QJsonObject& json, const QVector<
 
     for (auto t : transforms) {
       if (t == Transformation::HFlip) {
+        item->h_flipped = !item->h_flipped;
         p1.setX(sz.width() - p1.x());
         p2.setX(sz.width() - p2.x());
         p3.setX(sz.width() - p3.x());
       }
       else if (t == Transformation::VFlip) {
+        item->v_flipped = !item->v_flipped;
         p1.setY(sz.height() - p1.y());
         p2.setY(sz.height() - p2.y());
         p3.setY(sz.height() - p3.y());
@@ -125,10 +129,12 @@ GraphicsItem* GraphicsItem::makeFromJson(const QJsonObject& json, const QVector<
 
     for (auto t : transforms) {
       if (t == Transformation::HFlip) {
+        item->h_flipped = !item->h_flipped;
         tl.setX(sz.width() - tl.x());
         br.setX(sz.width() - br.x());
       }
       else if (t == Transformation::VFlip) {
+        item->v_flipped = !item->v_flipped;
         tl.setY(sz.height() - tl.y());
         br.setY(sz.height() - br.y());
       }
@@ -150,11 +156,13 @@ GraphicsItem* GraphicsItem::makeFromJson(const QJsonObject& json, const QVector<
 
     for (auto t : transforms) {
       if (t == Transformation::HFlip) {
+        item->h_flipped = !item->h_flipped;
         for (int k = 0; k < poly.size(); ++k) {
           poly[k].setX(sz.width() - poly[k].x());
         }
       }
       else if (t == Transformation::VFlip) {
+        item->v_flipped = !item->v_flipped;
         for (int k = 0; k < poly.size(); ++k) {
           poly[k].setY(sz.height() - poly[k].y());
         }
@@ -187,14 +195,44 @@ QRectF GraphicsItem::boundingRect() const {
 }
 
 QJsonObject GraphicsItem::toJson() const {
+  auto parent = dynamic_cast<QGraphicsPixmapItem*>(parentItem());
+  auto sz = parent->pixmap().size();
+
   QJsonObject json;
   if (type_ == Type::Line) {
+    auto p1 = line_->line().p1();
+    auto p2 = line_->line().p2();
+
+    if (h_flipped) {
+      p1.setX(sz.width() - p1.x());
+      p2.setX(sz.width() - p2.x());
+    }
+
+    if (v_flipped) {
+      p1.setY(sz.height() - p1.y());
+      p2.setY(sz.height() - p2.y());
+    }
+
     json["type"] = "line";
-    json["p1"] = point2str(line_->line().p1());
-    json["p2"] = point2str(line_->line().p2());
+    json["p1"] = point2str(p1);
+    json["p2"] = point2str(p2);
   }
   else if (type_ == Type::Angle) {
     auto poly = angle_->polygon();
+    auto p1 = line_->line().p1();
+    auto p2 = line_->line().p2();
+
+    if (h_flipped) {
+      poly[0].setX(sz.width() - poly[0].x());
+      poly[1].setX(sz.width() - poly[1].x());
+      poly[2].setX(sz.width() - poly[2].x());
+    }
+
+    if (v_flipped) {
+      poly[0].setY(sz.height() - poly[0].y());
+      poly[1].setY(sz.height() - poly[1].y());
+      poly[2].setY(sz.height() - poly[2].y());
+    }
 
     json["type"] = "angle";
     json["p1"] = point2str(poly[0]);
@@ -204,12 +242,37 @@ QJsonObject GraphicsItem::toJson() const {
   else if (type_ == Type::Ellipse) {
     auto rect = ellipse_->rect();
 
+    auto tl = rect.topLeft();
+    auto br = rect.bottomRight();
+
+    if (h_flipped) {
+      tl.setX(sz.width() - tl.x());
+      br.setX(sz.width() - br.x());
+    }
+
+    if (v_flipped) {
+      tl.setY(sz.height() - tl.y());
+      br.setY(sz.height() - br.y());
+    }
+
     json["type"] = "ellipse";
-    json["tl"] = point2str(rect.topLeft());
-    json["br"] = point2str(rect.bottomRight());
+    json["tl"] = point2str(tl);
+    json["br"] = point2str(br);
   }
   else if (type_ == Type::Poly) {
     auto poly = poly_->polygon();
+
+    if (h_flipped) {
+      for (int k = 0; k < poly.size(); ++k) {
+        poly[k].setX(sz.width() - poly[k].x());
+      }
+    }
+
+    if (v_flipped) {
+      for (int k = 0; k < poly.size(); ++k) {
+        poly[k].setY(sz.height() - poly[k].y());
+      }
+    }
 
     json["type"] = "poly";
     json["count"] = poly.size();

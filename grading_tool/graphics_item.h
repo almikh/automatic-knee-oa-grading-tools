@@ -41,6 +41,10 @@ private:
   int anchor_index_ = -1;
 
 public:
+  bool h_flipped = false;
+  bool v_flipped = false;
+
+public:
   static GraphicsItem* makeLine(const QPointF& p1, const QPointF& p2, QGraphicsPixmapItem* parent);
   static GraphicsItem* makeEllipse(const QPointF& p1, const QPointF& p2, QGraphicsPixmapItem* parent);
   static GraphicsItem* makeAngle(const QPointF& pt, QGraphicsPixmapItem* parent);
