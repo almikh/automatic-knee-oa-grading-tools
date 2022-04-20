@@ -39,6 +39,7 @@ public:
 protected:
   Mode mode_ = Mode::View;
   cv::Mat image_;
+  int rotation_ = 0;
   QPixmap last_pixmap_;
   QGraphicsTextItem* label_ = nullptr;
   QGraphicsPixmapItem* pixmap_item_ = nullptr;
@@ -77,7 +78,7 @@ public:
   void resetCalibrationCoef();
   void setCalibrationCoef(std::optional<qreal> coef);
   void removeGraphicsItem(GraphicsItem* item);
-  void setImage(const cv::Mat& image);
+  void setImage(const cv::Mat& image, int rotation = 0);
   void setImage(const QImage& image);
 
   void resizeEvent(QResizeEvent* event) override;

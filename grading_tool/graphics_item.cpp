@@ -422,8 +422,11 @@ void GraphicsItem::setSelected(bool selected) {
   updateColors();
 }
 
-void GraphicsItem::setCreated(bool created) {
+void GraphicsItem::setCreated(bool created, std::optional<int> r) {
   created_ = created;
+  if (r) {
+    rotation = r.value();
+  }
 }
 
 void GraphicsItem::checkPartUnderPos(const QPointF& coord) {

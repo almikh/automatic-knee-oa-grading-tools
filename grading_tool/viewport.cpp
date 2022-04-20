@@ -197,7 +197,9 @@ void Viewport::fitImageToViewport() {
   }
 }
 
-void Viewport::setImage(const cv::Mat& image) {
+void Viewport::setImage(const cv::Mat& image, int rotation) {
+  rotation_ = rotation;
+
   if (image.type() != CV_8UC3) {
     cv::cvtColor(image, image_, cv::COLOR_GRAY2RGB);
     setImage(convert::cv2qt(image_));
@@ -261,7 +263,7 @@ void Viewport::mouseDoubleClickEvent(QMouseEvent* event) {
         graphics_items_.pop_back();
         delete item;
       }
-      else item->setCreated(true);
+      else item->setCreated(true, rotation_);
 
       drawing_ = false;
       repaint();
@@ -397,7 +399,7 @@ void Viewport::mouseReleaseEvent(QMouseEvent* event) {
         graphics_items_.pop_back();
         delete item;
       }
-      else item->setCreated(true);
+      else item->setCreated(true, rotation_);
     }
     else if (mode_ == Mode::DrawPoly) {
       auto item = graphics_items_.last();
@@ -421,7 +423,7 @@ void Viewport::mouseReleaseEvent(QMouseEvent* event) {
         graphics_items_.pop_back();
         delete item;
       }
-      else item->setCreated(true);
+      else item->setCreated(true, rotation_);
     }
     else {
       for (auto item : graphics_items_) {

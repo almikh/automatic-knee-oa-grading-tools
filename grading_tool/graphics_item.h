@@ -72,8 +72,8 @@ public:
   void setPolygon(const QPolygonF& poly);
   void setCalibrationCoef(std::optional<qreal> coef);
   void setScaleFactor(float scale_factor);
+  void setCreated(bool created, std::optional<int> rotation = std::nullopt);
   void setSelected(bool selected);
-  void setCreated(bool created);
 
   bool checkSelection(const QPointF& pos);
   void checkPartUnderPos(const QPointF& pos);

@@ -606,7 +606,7 @@ void MainWindow::updateCurrentItem() {
   }
 
   // currentn item
-  viewport_->setImage(sample);
+  viewport_->setImage(sample, current_item_->rotation);
   if (in_process_.isEmpty()) {
     loading_ind_->stopAnimation();
   }
