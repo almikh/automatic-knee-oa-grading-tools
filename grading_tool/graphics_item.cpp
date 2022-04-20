@@ -219,8 +219,6 @@ QJsonObject GraphicsItem::toJson() const {
   }
   else if (type_ == Type::Angle) {
     auto poly = angle_->polygon();
-    auto p1 = line_->line().p1();
-    auto p2 = line_->line().p2();
 
     if (h_flipped) {
       poly[0].setX(sz.width() - poly[0].x());
