@@ -95,6 +95,7 @@ protected:
   Q_SLOT void drawCircle();
   Q_SLOT void drawAngle();
   Q_SLOT void drawPoly();
+  void clearModeView();
 
   // zoom menu
   Q_SLOT void showZoomMenu();

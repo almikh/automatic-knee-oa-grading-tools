@@ -28,6 +28,24 @@ namespace convert
   }
 }
 
+QPointF rotatedPoint(const QPointF& pt, int angle, QSize sz, bool enabled) {
+  if (angle == 0) {
+    return pt;
+  }
+  else if (enabled) {
+    if (angle == 90) return QPointF(sz.width() - pt.y(), pt.x());
+    else if (angle == 180) return QPointF(sz.width() - pt.x(), sz.height() - pt.y());
+    else if (angle == 270) return QPointF(pt.y(), sz.height() - pt.x());
+  }
+  else { // disabled
+    if (angle == 90) return QPointF(pt.y(), sz.width() - pt.x());
+    else if (angle == 180) return QPointF(sz.width() - pt.x(), sz.height() - pt.y());
+    else if (angle == 270) return QPointF(sz.height() - pt.y(), pt.x());
+  }
+
+  return pt;
+}
+
 qreal dist(const QPointF& p1, const QPointF& p2) {
   return std::sqrt((p1.x() - p2.x()) * (p1.x() - p2.x()) + (p1.y() - p2.y()) * (p1.y() - p2.y()));
 }

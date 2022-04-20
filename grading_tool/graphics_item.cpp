@@ -70,11 +70,13 @@ GraphicsItem* GraphicsItem::makeFromJson(const QJsonObject& json, const QVector<
   Q_UNUSED(r);
   
   auto item = new GraphicsItem(parent);
+  item->rotation = r;
+
   auto type = json["type"].toString();
   auto sz = parent->pixmap().size();
   if (type == "line") { 
-    auto p1 = str2point(json["p1"].toString());
-    auto p2 = str2point(json["p2"].toString());
+    auto p1 = rotatedPoint(str2point(json["p1"].toString()), r, sz);
+    auto p2 = rotatedPoint(str2point(json["p2"].toString()), r, sz);
 
     for (auto t : transforms) {
       if (t == Transformation::HFlip) {
@@ -89,6 +91,7 @@ GraphicsItem* GraphicsItem::makeFromJson(const QJsonObject& json, const QVector<
       }
     }
 
+
     item->line_ = new GraphicsLineItem(QLineF(p1, p2), item);
     item->type_ = Type::Line;
 
@@ -96,9 +99,9 @@ GraphicsItem* GraphicsItem::makeFromJson(const QJsonObject& json, const QVector<
     item->updateColors();
   }
   else if (type == "angle") {
-    auto p1 = str2point(json["p1"].toString());
-    auto p2 = str2point(json["p2"].toString());
-    auto p3 = str2point(json["p3"].toString());
+    auto p1 = rotatedPoint(str2point(json["p1"].toString()), r, sz);
+    auto p2 = rotatedPoint(str2point(json["p2"].toString()), r, sz);
+    auto p3 = rotatedPoint(str2point(json["p3"].toString()), r, sz);
 
     for (auto t : transforms) {
       if (t == Transformation::HFlip) {
@@ -124,8 +127,8 @@ GraphicsItem* GraphicsItem::makeFromJson(const QJsonObject& json, const QVector<
     item->updateColors();
   }
   else if (type == "ellipse") {
-    auto tl = str2point(json["tl"].toString());
-    auto br = str2point(json["br"].toString());
+    auto tl = rotatedPoint(str2point(json["tl"].toString()), r, sz);
+    auto br = rotatedPoint(str2point(json["br"].toString()), r, sz);
 
     for (auto t : transforms) {
       if (t == Transformation::HFlip) {
@@ -150,7 +153,7 @@ GraphicsItem* GraphicsItem::makeFromJson(const QJsonObject& json, const QVector<
   else if (type == "poly") {
     QPolygonF poly;
     for (int k = 0; k < json["count"].toInt(); ++k) {
-      auto pt = str2point(json["p" + QString::number(k)].toString());
+      auto pt = rotatedPoint(str2point(json["p" + QString::number(k)].toString()), r, sz);
       poly.push_back(pt);
     }
 
@@ -214,8 +217,8 @@ QJsonObject GraphicsItem::toJson() const {
     }
 
     json["type"] = "line";
-    json["p1"] = point2str(p1);
-    json["p2"] = point2str(p2);
+    json["p1"] = point2str(rotatedPoint(p1, rotation, sz, false));
+    json["p2"] = point2str(rotatedPoint(p2, rotation, sz, false));
   }
   else if (type_ == Type::Angle) {
     auto poly = angle_->polygon();
@@ -233,9 +236,9 @@ QJsonObject GraphicsItem::toJson() const {
     }
 
     json["type"] = "angle";
-    json["p1"] = point2str(poly[0]);
-    json["p2"] = point2str(poly[1]);
-    json["p3"] = point2str(poly[2]);
+    json["p1"] = point2str(rotatedPoint(poly[0], rotation, sz, false));
+    json["p2"] = point2str(rotatedPoint(poly[1], rotation, sz, false));
+    json["p3"] = point2str(rotatedPoint(poly[2], rotation, sz, false));
   }
   else if (type_ == Type::Ellipse) {
     auto rect = ellipse_->rect();
@@ -254,8 +257,8 @@ QJsonObject GraphicsItem::toJson() const {
     }
 
     json["type"] = "ellipse";
-    json["tl"] = point2str(tl);
-    json["br"] = point2str(br);
+    json["tl"] = point2str(rotatedPoint(tl, rotation, sz, false));
+    json["br"] = point2str(rotatedPoint(br, rotation, sz, false));
   }
   else if (type_ == Type::Poly) {
     auto poly = poly_->polygon();
@@ -275,7 +278,7 @@ QJsonObject GraphicsItem::toJson() const {
     json["type"] = "poly";
     json["count"] = poly.size();
     for (int k = 0; k < poly.size(); ++k) {
-      json["p" + QString::number(k)] = point2str(poly[k]);
+      json["p" + QString::number(k)] = point2str(rotatedPoint(poly[k], rotation, sz, false));
     }
   }
 

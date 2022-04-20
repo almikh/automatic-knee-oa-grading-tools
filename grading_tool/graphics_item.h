@@ -43,6 +43,7 @@ private:
 public:
   bool h_flipped = false;
   bool v_flipped = false;
+  int rotation = 0;
 
 public:
   static GraphicsItem* makeLine(const QPointF& p1, const QPointF& p2, QGraphicsPixmapItem* parent);

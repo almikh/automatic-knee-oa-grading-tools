@@ -292,6 +292,7 @@ void MainWindow::showTransformMenu() {
 
     saveCurrentGraphicsItems();
     updateCurrentItem();
+    clearModeView();
   });
 
   auto flip_v = new QAction("Flip vertical", menu);
@@ -305,14 +306,15 @@ void MainWindow::showTransformMenu() {
 
     saveCurrentGraphicsItems();
     updateCurrentItem();
+    clearModeView();
   });
 
   auto clear = new QAction("Clear transformations", menu);
   connect(clear, &QAction::triggered, [this]() {
     if (!current_item_->transformations.isEmpty() || current_item_->rotation) {
+      saveCurrentGraphicsItems();
       current_item_->transformations.clear();
       current_item_->rotation = 0;
-      saveCurrentGraphicsItems();
       updateCurrentItem();
     }
   });
@@ -661,13 +663,15 @@ void MainWindow::runOnData(Metadata::HardPtr data) {
 }
 
 void MainWindow::rotateCurrentItem(int angle) {
+  saveCurrentGraphicsItems();
+
   current_item_->rotation += angle;
 
   if (current_item_->rotation < 0) current_item_->rotation += 360;
   else if (current_item_->rotation > 270) current_item_->rotation -= 360;
 
-  saveCurrentGraphicsItems();
   updateCurrentItem();
+  clearModeView();
 }
 
 void MainWindow::applyFilterForCurrent(cv::Mat filter, float delta, bool apply_to_gray) {
@@ -867,6 +871,16 @@ void MainWindow::drawPoly() {
   else {
     viewport_->setMode(Viewport::Mode::View);
     draw_poly_->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: yellow; } ");
+  }
+}
+
+void MainWindow::clearModeView() {
+  if (viewport_->mode() != Viewport::Mode::View) {
+    viewport_->setMode(Viewport::Mode::View);
+    draw_poly_->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: yellow; } ");
+    draw_circle_->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: yellow; } ");
+    draw_line_->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: yellow; } ");
+    draw_angle_->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: yellow; } ");
   }
 }
 
