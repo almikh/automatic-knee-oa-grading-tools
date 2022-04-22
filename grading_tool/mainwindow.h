@@ -35,10 +35,10 @@ protected:
   QTableWidget* right_panel_;
 
   QPushButton* zoom_menu_ = nullptr;
-  QPushButton* draw_line_ = nullptr;
-  QPushButton* draw_circle_ = nullptr;
-  QPushButton* draw_angle_ = nullptr;
-  QPushButton* draw_poly_ = nullptr;
+  QPair<QPushButton*, QAction*> draw_line_ = { nullptr, nullptr };
+  QPair<QPushButton*, QAction*> draw_circle_ = { nullptr, nullptr };
+  QPair<QPushButton*, QAction*> draw_angle_ = { nullptr, nullptr };
+  QPair<QPushButton*, QAction*> draw_poly_ = { nullptr, nullptr };
   QPushButton* proc_menu_ = nullptr;
   QPushButton* transform_menu_ = nullptr;
   QAction* reset_calib_ = nullptr;
@@ -51,6 +51,7 @@ protected:
 
 protected:
   void makeMenuFile();
+  void makeMenuMeasure();
   void makeMenuTools();
   void makeToolbar();
 
@@ -91,10 +92,10 @@ protected:
   
   Q_SIGNAL void itemProcessed(Metadata::HardPtr data);
 
-  Q_SLOT void drawLine();
-  Q_SLOT void drawCircle();
-  Q_SLOT void drawAngle();
-  Q_SLOT void drawPoly();
+  Q_SLOT void drawLine(bool);
+  Q_SLOT void drawCircle(bool);
+  Q_SLOT void drawAngle(bool);
+  Q_SLOT void drawPoly(bool);
   void clearModeView();
 
   // zoom menu
