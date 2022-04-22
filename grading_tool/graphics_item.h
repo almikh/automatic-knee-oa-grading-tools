@@ -24,6 +24,9 @@ public:
 
 private:
   Type type_ = Type::Line;
+  QColor selected_color_;
+  QColor default_color_;
+  QColor calibrated_color_;
   bool selected_ = false;
   bool highlighted_ = false;
   float scale_factor_ = 1.0f;
@@ -68,6 +71,11 @@ public:
   bool isItemUnderMouse() const;
   bool isCreated() const;
   bool isValid() const;
+
+  void setFixedColor(const QColor& color);
+  void setSelectedColor(const QColor& color);
+  void setDefaultColor(const QColor& color);
+  void setCalibratedColor(const QColor& color);
 
   void setPolygon(const QPolygonF& poly);
   void setCalibrationCoef(std::optional<qreal> coef);

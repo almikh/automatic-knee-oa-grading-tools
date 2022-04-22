@@ -289,66 +289,76 @@ void Viewport::mousePressEvent(QMouseEvent* event) {
   }
   else if (event->button() == Qt::LeftButton) {
     GraphicsItem* item = nullptr;
-    GraphicsItem* under_selection = nullptr;
     auto coord = QPointF(point - pixmap_item_->pos()) / scale_factor_;
-    for (int k = 0; k < graphics_items_.size(); ++k) {
-      if (graphics_items_[k]->isPartUnderPos(coord)) {
-        item = graphics_items_.takeAt(k);
-        break;
-      }
-      else if (graphics_items_[k]->isUnderPos(coord)) {
-        under_selection = graphics_items_[k];
-        break;
-      }
-    }
+    if (mode_ == Mode::Calibrate) {
+      item = GraphicsItem::makeLine(coord, coord, pixmap_item_);
+      item->setScaleFactor(scale_factor_);
+      item->setFixedColor(Qt::blue);
 
-    // create new if no selected line
-    if (!item) {
-      if (under_selection) {
-        if (under_selection->isSelected()) {
-          under_selection->setSelected(false);
-        }
-        else {
-          for (auto item : graphics_items_) {
-            item->setSelected(false);
-          }
-
-          under_selection->setSelected(true);
-        }
-      }
-      else if (mode_ == Mode::DrawLine) {
-        item = GraphicsItem::makeLine(coord, coord, pixmap_item_);
-        item->setCalibrationCoef(calib_coef_);
-        item->setScaleFactor(scale_factor_);
-        graphics_items_.push_back(item);
-        drawing_ = true;
-      }
-      else if (mode_ == Mode::DrawAngle) {
-        item = GraphicsItem::makeAngle(coord, pixmap_item_);
-        item->setCalibrationCoef(calib_coef_);
-        item->setScaleFactor(scale_factor_);
-        graphics_items_.push_back(item);
-        drawing_ = true;
-      }
-      else if (mode_ == Mode::DrawPoly) {
-        item = GraphicsItem::makePoly(coord, pixmap_item_);
-        item->setCalibrationCoef(calib_coef_);
-        item->setScaleFactor(scale_factor_);
-        graphics_items_.push_back(item);
-        drawing_ = true;
-      }
-      else if (mode_ == Mode::DrawCircle) {
-        item = GraphicsItem::makeEllipse(coord, coord, pixmap_item_);
-        item->setCalibrationCoef(calib_coef_);
-        item->setScaleFactor(scale_factor_);
-        graphics_items_.push_back(item);
-        drawing_ = true;
-      }
-    }
-    else {
-      item->mousePressEvent(coord);
       graphics_items_.push_back(item);
       drawing_ = true;
+    }
+    else {
+      GraphicsItem* under_selection = nullptr;
+      for (int k = 0; k < graphics_items_.size(); ++k) {
+        if (graphics_items_[k]->isPartUnderPos(coord)) {
+          item = graphics_items_.takeAt(k);
+          break;
+        }
+        else if (graphics_items_[k]->isUnderPos(coord)) {
+          under_selection = graphics_items_[k];
+          break;
+        }
+      }
+
+      // create new if no selected line
+      if (!item) {
+        if (under_selection) {
+          if (under_selection->isSelected()) {
+            under_selection->setSelected(false);
+          }
+          else {
+            for (auto item : graphics_items_) {
+              item->setSelected(false);
+            }
+
+            under_selection->setSelected(true);
+          }
+        }
+        else if (mode_ == Mode::DrawLine) {
+          item = GraphicsItem::makeLine(coord, coord, pixmap_item_);
+          item->setCalibrationCoef(calib_coef_);
+          item->setScaleFactor(scale_factor_);
+          graphics_items_.push_back(item);
+          drawing_ = true;
+        }
+        else if (mode_ == Mode::DrawAngle) {
+          item = GraphicsItem::makeAngle(coord, pixmap_item_);
+          item->setCalibrationCoef(calib_coef_);
+          item->setScaleFactor(scale_factor_);
+          graphics_items_.push_back(item);
+          drawing_ = true;
+        }
+        else if (mode_ == Mode::DrawPoly) {
+          item = GraphicsItem::makePoly(coord, pixmap_item_);
+          item->setCalibrationCoef(calib_coef_);
+          item->setScaleFactor(scale_factor_);
+          graphics_items_.push_back(item);
+          drawing_ = true;
+        }
+        else if (mode_ == Mode::DrawCircle) {
+          item = GraphicsItem::makeEllipse(coord, coord, pixmap_item_);
+          item->setCalibrationCoef(calib_coef_);
+          item->setScaleFactor(scale_factor_);
+          graphics_items_.push_back(item);
+          drawing_ = true;
+        }
+      }
+      else {
+        item->mousePressEvent(coord);
+        graphics_items_.push_back(item);
+        drawing_ = true;
+      }
     }
 
     repaint();
@@ -380,7 +390,19 @@ void Viewport::mouseReleaseEvent(QMouseEvent* event) {
     }
   }
   else if (drawing_) {
-    if (mode_ == Mode::DrawAngle) {
+    if (mode_ == Mode::Calibrate) {
+      auto item = graphics_items_.last();
+      scene()->removeItem(item);
+      graphics_items_.pop_back();      
+      if (item->isValid()) {
+        emit calibFinished(item->length());
+      }
+
+      delete item;
+
+      setMode(Mode::View);
+    }
+    else if (mode_ == Mode::DrawAngle) {
       auto item = graphics_items_.last();
       auto poly = item->polygon();
       if (poly.count() < 3) {

@@ -42,6 +42,7 @@ protected:
   QPushButton* proc_menu_ = nullptr;
   QPushButton* transform_menu_ = nullptr;
   QAction* reset_calib_ = nullptr;
+  QAction* calibrate_ = nullptr;
 
   Metadata::HardPtr current_item_;
   std::shared_ptr<tfdetect::Detector> detector_;
@@ -77,6 +78,8 @@ protected:
   void saveCurrentGraphicsItems();
 
   Q_SLOT void onItemProcessed(Metadata::HardPtr data);
+
+  Q_SLOT void calibrateForLength(qreal length);
 
   // run models to localize joints and classify AO grades
   Q_SLOT void runOnData(Metadata::HardPtr data);

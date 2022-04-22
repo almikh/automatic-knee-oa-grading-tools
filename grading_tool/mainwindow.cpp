@@ -164,6 +164,7 @@ MainWindow::MainWindow(QWidget* parent) :
   // makeToolbar();
 
   connect(this, &MainWindow::itemProcessed, this, &MainWindow::onItemProcessed, Qt::QueuedConnection);
+  connect(viewport_, &Viewport::calibFinished, this, &MainWindow::calibrateForLength);
   connect(viewport_, &Viewport::mousePosChanged, this, &MainWindow::mousePosChanged);
   connect(viewport_, &Viewport::mousePosOutOfImage, this, &MainWindow::mousePosOutOfImage);
   connect(viewport_, &Viewport::menuForItemRequested, [=](GraphicsItem* item, const QPoint& pt) {
@@ -235,8 +236,9 @@ void MainWindow::makeMenuMeasure() {
 
   menu->addSeparator();
 
-  auto calib = menu->addAction("Calibration");
-  connect(calib, &QAction::triggered, this, &MainWindow::setCalibration);
+  calibrate_ = menu->addAction("Calibration");
+  connect(calibrate_, &QAction::triggered, this, &MainWindow::setCalibration);
+  calibrate_->setEnabled(false);
 
   reset_calib_ = menu->addAction("Reset Calibration");
   connect(reset_calib_, &QAction::triggered, this, &MainWindow::resetCalibration);
@@ -575,6 +577,18 @@ void MainWindow::onItemProcessed(Metadata::HardPtr data) {
   }
 }
 
+void MainWindow::calibrateForLength(qreal length) {
+  bool ok;
+  auto desc = "Enter new distance for current item:";
+  auto new_length = QInputDialog::getDouble(this, "Length calibration", desc, 0.0, 0.0, DBL_MAX, 2, &ok);
+  if (ok) {
+    auto coef = new_length / length;
+    viewport_->setCalibrationCoef(coef);
+    calib_coef_->setText(QString::number(coef));
+    reset_calib_->setEnabled(true);
+  }
+}
+
 void MainWindow::saveCurrentGraphicsItems() {
   if (current_item_) {
     current_item_->calib_coef = viewport_->calibCoef();
@@ -711,15 +725,7 @@ void MainWindow::applyFilterForCurrent(cv::Mat filter, float delta, bool apply_t
 }
 
 void MainWindow::calibrate(GraphicsItem* item, const QPoint& pt) {
-  bool ok;
-  auto desc = "Enter new distance for current item:";
-  auto new_length = QInputDialog::getDouble(this, "Length calibration", desc, 0.0, 0.0, DBL_MAX, 2, &ok);
-  if (ok) {
-    auto coef = new_length / item->length();
-    viewport_->setCalibrationCoef(coef);
-    calib_coef_->setText(QString::number(coef));
-    reset_calib_->setEnabled(true);
-  }
+  calibrateForLength(item->length());
 }
 
 QVector<Classifier::Item> MainWindow::runClassifier(const cv::Mat& joint_area) {
@@ -799,11 +805,19 @@ void MainWindow::open(const QString& filename, cv::Mat sample) {
   view_queue_->addItem(item);
 
   proc_menu_->setEnabled(true);
+  calibrate_->setEnabled(true);
   transform_menu_->setEnabled(true);
 }
 
 void MainWindow::setCalibration() {
+  if (viewport_->mode() != Viewport::Mode::View) {
+    for (auto it : { draw_poly_, draw_circle_, draw_line_, draw_angle_ }) {
+      it.first->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: yellow; } ");
+      it.second->setChecked(false);
+    }
+  }
 
+  viewport_->setMode(Viewport::Mode::Calibrate);
 }
 
 void MainWindow::resetCalibration() {

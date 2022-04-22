@@ -9,7 +9,10 @@ float GraphicsItem::base_touch_radius = 7.0f;
 
 GraphicsItem::GraphicsItem(QGraphicsItem* parent):
   QGraphicsItem(parent),
-  item_(new GraphicsTextItem("", this))
+  item_(new GraphicsTextItem("", this)),
+  selected_color_(Qt::yellow),
+  default_color_(Qt::red),
+  calibrated_color_(0, 150, 0)
 {
   item_->setFont(QFont("Arial", 10 / scale_factor_));
 }
@@ -385,6 +388,28 @@ bool GraphicsItem::isPartUnderPos(const QPointF& coord) const {
   return false;
 }
 
+void GraphicsItem::setFixedColor(const QColor& color) {
+  selected_color_ = color;
+  default_color_ = color;
+  calibrated_color_ = color;
+  updateColors();
+}
+
+void GraphicsItem::setSelectedColor(const QColor& color) {
+  selected_color_ = color;
+  updateColors();
+}
+
+void GraphicsItem::setDefaultColor(const QColor& color) {
+  default_color_ = color;
+  updateColors();
+}
+
+void GraphicsItem::setCalibratedColor(const QColor& color) {
+  calibrated_color_ = color;
+  updateColors();
+}
+
 void GraphicsItem::setPolygon(const QPolygonF& poly) {
   if (angle_) {
     if (angle_->polygon().size() <= 2 && poly.size() > 2) {
@@ -488,24 +513,24 @@ bool GraphicsItem::checkSelection(const QPointF& pos) {
 void GraphicsItem::updateColors() {
   if (highlighted_ || selected_) {
     item_->setBackgroundColor(QColor(80, 80, 0, 200));
-    if (line_) line_->setPen(QPen(Qt::yellow, 2 / scale_factor_));
-    if (ellipse_) ellipse_->setPen(QPen(Qt::yellow, 2 / scale_factor_));
-    if (angle_) angle_->setPen(QPen(Qt::yellow, 2 / scale_factor_));
-    if (poly_) poly_->setPen(QPen(Qt::yellow, 2 / scale_factor_));
+    if (line_) line_->setPen(QPen(selected_color_, 2 / scale_factor_));
+    if (ellipse_) ellipse_->setPen(QPen(selected_color_, 2 / scale_factor_));
+    if (angle_) angle_->setPen(QPen(selected_color_, 2 / scale_factor_));
+    if (poly_) poly_->setPen(QPen(selected_color_, 2 / scale_factor_));
   }
   else if (calib_coef_) {
     item_->setBackgroundColor(QColor(0, 88, 0, 200));
-    if (line_) line_->setPen(QPen(QColor(0, 150, 0), 2 / scale_factor_));
-    if (ellipse_) ellipse_->setPen(QPen(QColor(0, 150, 0), 2 / scale_factor_));
-    if (angle_) angle_->setPen(QPen(QColor(0, 150, 0), 2 / scale_factor_));
-    if (poly_) poly_->setPen(QPen(QColor(0, 150, 0), 2 / scale_factor_));
+    if (line_) line_->setPen(QPen(calibrated_color_, 2 / scale_factor_));
+    if (ellipse_) ellipse_->setPen(QPen(calibrated_color_, 2 / scale_factor_));
+    if (angle_) angle_->setPen(QPen(calibrated_color_, 2 / scale_factor_));
+    if (poly_) poly_->setPen(QPen(calibrated_color_, 2 / scale_factor_));
   }
   else {
     item_->setBackgroundColor(QColor(80, 80, 0, 200));
-    if (line_) line_->setPen(QPen(Qt::red, 2 / scale_factor_));
-    if (ellipse_) ellipse_->setPen(QPen(Qt::red, 2 / scale_factor_));
-    if (angle_) angle_->setPen(QPen(Qt::red, 2 / scale_factor_));
-    if (poly_) poly_->setPen(QPen(Qt::red, 2 / scale_factor_));
+    if (line_) line_->setPen(QPen(default_color_, 2 / scale_factor_));
+    if (ellipse_) ellipse_->setPen(QPen(default_color_, 2 / scale_factor_));
+    if (angle_) angle_->setPen(QPen(default_color_, 2 / scale_factor_));
+    if (poly_) poly_->setPen(QPen(default_color_, 2 / scale_factor_));
   }
 
   update();
