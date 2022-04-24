@@ -74,56 +74,6 @@ MainWindow::MainWindow(QWidget* parent) :
   // sample's viewport
   wl->addWidget(viewport_, 1);
 
-  // reset viewport state
-  auto ll = new QHBoxLayout(viewport_);
-  auto reset = createOptionButton(QIcon(":/ic_reset"));
-  ll->addWidget(reset, 0, Qt::AlignTop | Qt::AlignLeft);
-
-  zoom_menu_ = createOptionButton(QIcon(":/ic_zoom"), false);
-  ll->addWidget(zoom_menu_, 0, Qt::AlignTop | Qt::AlignLeft);
-
-  draw_line_.first = createOptionButton(QIcon(":/ic_line"));
-  ll->addWidget(draw_line_.first, 0, Qt::AlignTop | Qt::AlignLeft);
-
-  draw_angle_.first = createOptionButton(QIcon(":/ic_angle"));
-  ll->addWidget(draw_angle_.first, 0, Qt::AlignTop | Qt::AlignLeft);
-
-  draw_cobb_angle_.first = createOptionButton(QIcon(":/ic_cobb_angle"));
-  ll->addWidget(draw_cobb_angle_.first, 0, Qt::AlignTop | Qt::AlignLeft);
-  
-  draw_circle_.first = createOptionButton(QIcon(":/ic_circle"));
-  ll->addWidget(draw_circle_.first, 0, Qt::AlignTop | Qt::AlignLeft);
-
-  draw_poly_.first = createOptionButton(QIcon(":/ic_poly"));
-  ll->addWidget(draw_poly_.first, 0, Qt::AlignTop | Qt::AlignLeft);
-
-  auto frame = new QFrame();
-  frame->setFrameShape(QFrame::Shape::VLine);
-  frame->setFrameShadow(QFrame::Shadow::Sunken);
-  frame->setContentsMargins(0, 2, 0, 2);
-  ll->addWidget(frame, 0, Qt::AlignTop | Qt::AlignLeft);
-
-  transform_menu_ = createOptionButton(QIcon(":/ic_transform"));
-  ll->addWidget(transform_menu_, 0, Qt::AlignTop | Qt::AlignLeft);
-
-  proc_menu_ = createOptionButton(QIcon(":/ic_filter"));
-  ll->addWidget(proc_menu_, 0, Qt::AlignTop | Qt::AlignLeft);
-  
-  ll->addWidget(new QWidget(), 1, Qt::AlignTop | Qt::AlignLeft);
-
-  connect(reset, &QPushButton::clicked, viewport_, &Viewport::fitImageToViewport);
-  connect(zoom_menu_, &QPushButton::clicked, this, &MainWindow::showZoomMenu);
-  connect(draw_line_.first, &QPushButton::clicked, this, &MainWindow::drawLine);
-  connect(draw_angle_.first, &QPushButton::clicked, this, &MainWindow::drawAngle);
-  connect(draw_cobb_angle_.first, &QPushButton::clicked, this, &MainWindow::drawCobbAngle);
-  connect(draw_circle_.first, &QPushButton::clicked, this, &MainWindow::drawCircle);
-  connect(draw_poly_.first, &QPushButton::clicked, this, &MainWindow::drawPoly);
-  connect(proc_menu_, &QPushButton::clicked, this, &MainWindow::showProcMenu);
-  connect(transform_menu_, &QPushButton::clicked, this, &MainWindow::showTransformMenu);
-  
-  proc_menu_->setEnabled(false);
-  transform_menu_->setEnabled(false);
-
   // loading area
   loading_area_->setFixedHeight(20);
   wl->addWidget(loading_area_, 0, Qt::AlignLeft);
@@ -162,10 +112,11 @@ MainWindow::MainWindow(QWidget* parent) :
     splitter->setCollapsible(k, false);
   }
 
+  makeToolbar();
+
   makeMenuFile();
   makeMenuMeasure();
   makeMenuTools();
-  // makeToolbar();
 
   connect(this, &MainWindow::itemProcessed, this, &MainWindow::onItemProcessed, Qt::QueuedConnection);
   connect(viewport_, &Viewport::calibFinished, this, &MainWindow::calibrateForLength);
@@ -469,16 +420,54 @@ void MainWindow::showProcMenu() {
 }
 
 void MainWindow::makeToolbar() {
-  auto toolbar = addToolBar("main");
+  auto ll = new QHBoxLayout(viewport_);
+  auto reset = createOptionButton(QIcon(":/ic_reset"));
+  ll->addWidget(reset, 0, Qt::AlignTop | Qt::AlignLeft);
 
-  auto line = nameAction(toolbar, toolbar->addAction(QIcon(":/ic_line"), "Draw Line"), "line");
-  auto calibrate = nameAction(toolbar, toolbar->addAction(QIcon(":/ic_calibrate"), "Calibrate"), "calibrate");
-  toolbar->setStyleSheet(
-    "QToolButton#calibrate { background:green }"
-    "QToolButton#line { background:blue }");
+  zoom_menu_ = createOptionButton(QIcon(":/ic_zoom"), false);
+  ll->addWidget(zoom_menu_, 0, Qt::AlignTop | Qt::AlignLeft);
 
-  Q_UNUSED(calibrate);
-  Q_UNUSED(line);
+  draw_line_.first = createOptionButton(QIcon(":/ic_line"));
+  ll->addWidget(draw_line_.first, 0, Qt::AlignTop | Qt::AlignLeft);
+
+  draw_angle_.first = createOptionButton(QIcon(":/ic_angle"));
+  ll->addWidget(draw_angle_.first, 0, Qt::AlignTop | Qt::AlignLeft);
+
+  draw_cobb_angle_.first = createOptionButton(QIcon(":/ic_cobb_angle"));
+  ll->addWidget(draw_cobb_angle_.first, 0, Qt::AlignTop | Qt::AlignLeft);
+
+  draw_circle_.first = createOptionButton(QIcon(":/ic_circle"));
+  ll->addWidget(draw_circle_.first, 0, Qt::AlignTop | Qt::AlignLeft);
+
+  draw_poly_.first = createOptionButton(QIcon(":/ic_poly"));
+  ll->addWidget(draw_poly_.first, 0, Qt::AlignTop | Qt::AlignLeft);
+
+  auto frame = new QFrame();
+  frame->setFrameShape(QFrame::Shape::VLine);
+  frame->setFrameShadow(QFrame::Shadow::Sunken);
+  frame->setContentsMargins(0, 2, 0, 2);
+  ll->addWidget(frame, 0, Qt::AlignTop | Qt::AlignLeft);
+
+  transform_menu_ = createOptionButton(QIcon(":/ic_transform"));
+  ll->addWidget(transform_menu_, 0, Qt::AlignTop | Qt::AlignLeft);
+
+  proc_menu_ = createOptionButton(QIcon(":/ic_filter"));
+  ll->addWidget(proc_menu_, 0, Qt::AlignTop | Qt::AlignLeft);
+
+  ll->addWidget(new QWidget(), 1, Qt::AlignTop | Qt::AlignLeft);
+
+  connect(reset, &QPushButton::clicked, viewport_, &Viewport::fitImageToViewport);
+  connect(zoom_menu_, &QPushButton::clicked, this, &MainWindow::showZoomMenu);
+  connect(draw_line_.first, &QPushButton::clicked, this, &MainWindow::drawLine);
+  connect(draw_angle_.first, &QPushButton::clicked, this, &MainWindow::drawAngle);
+  connect(draw_cobb_angle_.first, &QPushButton::clicked, this, &MainWindow::drawCobbAngle);
+  connect(draw_circle_.first, &QPushButton::clicked, this, &MainWindow::drawCircle);
+  connect(draw_poly_.first, &QPushButton::clicked, this, &MainWindow::drawPoly);
+  connect(proc_menu_, &QPushButton::clicked, this, &MainWindow::showProcMenu);
+  connect(transform_menu_, &QPushButton::clicked, this, &MainWindow::showTransformMenu);
+
+  proc_menu_->setEnabled(false);
+  transform_menu_->setEnabled(false);
 }
 
 QPushButton* MainWindow::createOptionButton(QIcon icon, bool enabled) {
