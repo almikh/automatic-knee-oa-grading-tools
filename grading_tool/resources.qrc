@@ -10,5 +10,6 @@
         <file alias="ic_filter">res/ic_filter.png</file>
         <file alias="ic_settings">res/ic_settings.png</file>
         <file alias="ic_transform">res/ic_transform.png</file>
+        <file alias="ic_cobb_angle">res/ic_cobb_angle.png</file>
     </qresource>
 </RCC>

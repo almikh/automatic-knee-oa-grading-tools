@@ -189,6 +189,7 @@
     <ClCompile Include="app_preferences.cpp" />
     <ClCompile Include="classifier.cpp" />
     <ClCompile Include="graphics_angle_item.cpp" />
+    <ClCompile Include="graphics_cobb_angle_item.cpp" />
     <ClCompile Include="graphics_ellipse_item.cpp" />
     <ClCompile Include="graphics_item.cpp" />
     <ClCompile Include="graphics_line_item.cpp" />
@@ -212,6 +213,7 @@
     <QtMoc Include="view_queue.h" />
     <ClInclude Include="defs.h" />
     <ClInclude Include="graphics_angle_item.h" />
+    <ClInclude Include="graphics_cobb_angle_item.h" />
     <ClInclude Include="graphics_ellipse_item.h" />
     <ClInclude Include="graphics_item.h" />
     <ClInclude Include="graphics_line_item.h" />

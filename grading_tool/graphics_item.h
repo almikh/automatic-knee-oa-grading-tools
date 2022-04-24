@@ -7,6 +7,7 @@
 #include "graphics_text_item.h"
 #include "graphics_line_item.h"
 #include "graphics_ellipse_item.h"
+#include "graphics_cobb_angle_item.h"
 #include "graphics_angle_item.h"
 #include "graphics_poly_item.h"
 #include <opencv2/opencv.hpp>
@@ -19,6 +20,7 @@ public:
     Ellipse,
     Line,
     Angle,
+    CobbAngle,
     Poly
   };
 
@@ -38,6 +40,7 @@ private:
   GraphicsLineItem* line_ = nullptr;
   GraphicsEllipseItem* ellipse_ = nullptr;
   GraphicsAngleItem* angle_ = nullptr;
+  GraphicsCobbAngleItem* cobb_angle_ = nullptr;
   GraphicsPolyItem* poly_ = nullptr;
   GraphicsTextItem* item_ = nullptr;
 
@@ -51,6 +54,7 @@ public:
 public:
   static GraphicsItem* makeLine(const QPointF& p1, const QPointF& p2, QGraphicsPixmapItem* parent);
   static GraphicsItem* makeEllipse(const QPointF& p1, const QPointF& p2, QGraphicsPixmapItem* parent);
+  static GraphicsItem* makeCobbAngle(const QPointF& pt, QGraphicsPixmapItem* parent);
   static GraphicsItem* makeAngle(const QPointF& pt, QGraphicsPixmapItem* parent);
   static GraphicsItem* makePoly(const QPointF& pt, QGraphicsPixmapItem* parent);
 

@@ -155,6 +155,7 @@ void Viewport::setImage(const QImage& image) {
   }
 
   graphics_items_.clear();
+  clicks_counter_ = 0;
   drawing_ = false;
 
   // если изменился размер изображения
@@ -265,6 +266,7 @@ void Viewport::mouseDoubleClickEvent(QMouseEvent* event) {
       }
       else item->setCreated(true, rotation_);
 
+      clicks_counter_ = 0;
       drawing_ = false;
       repaint();
     }
@@ -301,7 +303,11 @@ void Viewport::mousePressEvent(QMouseEvent* event) {
     else {
       GraphicsItem* under_selection = nullptr;
       for (int k = 0; k < graphics_items_.size(); ++k) {
-        if (graphics_items_[k]->isPartUnderPos(coord)) {
+        if (!graphics_items_[k]->isCreated()) {
+          item = graphics_items_.takeAt(k);
+          break;
+        }
+        else if (graphics_items_[k]->isPartUnderPos(coord)) {
           item = graphics_items_.takeAt(k);
           break;
         }
@@ -337,6 +343,14 @@ void Viewport::mousePressEvent(QMouseEvent* event) {
           item->setCalibrationCoef(calib_coef_);
           item->setScaleFactor(scale_factor_);
           graphics_items_.push_back(item);
+          drawing_ = true;
+        }
+        else if (mode_ == Mode::DrawCobbAngle) {
+          item = GraphicsItem::makeCobbAngle(coord, pixmap_item_);
+          item->setCalibrationCoef(calib_coef_);
+          item->setScaleFactor(scale_factor_);
+          graphics_items_.push_back(item);
+          clicks_counter_ = 0;
           drawing_ = true;
         }
         else if (mode_ == Mode::DrawPoly) {
@@ -423,6 +437,25 @@ void Viewport::mouseReleaseEvent(QMouseEvent* event) {
       }
       else item->setCreated(true, rotation_);
     }
+    else if (mode_ == Mode::DrawCobbAngle) {
+      auto item = graphics_items_.last();
+      if (!item->isCreated()) {
+        auto poly = item->polygon();
+        clicks_counter_ += 1;
+
+        if (clicks_counter_ == 1) item->setPolygon(poly);
+        else if (clicks_counter_ > 1) {
+          poly.append(coord);
+          item->setPolygon(poly);
+          repaint();
+        }
+
+        if (clicks_counter_ == 4) {
+          item->setCreated(true, rotation_);
+        }
+        else return;
+      }
+    }
     else if (mode_ == Mode::DrawPoly) {
       auto item = graphics_items_.last();
       if (!item->isCreated()) {
@@ -453,6 +486,7 @@ void Viewport::mouseReleaseEvent(QMouseEvent* event) {
       }
     }
 
+    clicks_counter_ = 0;
     drawing_ = false;
     repaint();
   }

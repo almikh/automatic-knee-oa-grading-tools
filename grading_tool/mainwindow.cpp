@@ -85,11 +85,14 @@ MainWindow::MainWindow(QWidget* parent) :
   draw_line_.first = createOptionButton(QIcon(":/ic_line"));
   ll->addWidget(draw_line_.first, 0, Qt::AlignTop | Qt::AlignLeft);
 
-  draw_circle_.first = createOptionButton(QIcon(":/ic_circle"));
-  ll->addWidget(draw_circle_.first, 0, Qt::AlignTop | Qt::AlignLeft);
-
   draw_angle_.first = createOptionButton(QIcon(":/ic_angle"));
   ll->addWidget(draw_angle_.first, 0, Qt::AlignTop | Qt::AlignLeft);
+
+  draw_cobb_angle_.first = createOptionButton(QIcon(":/ic_cobb_angle"));
+  ll->addWidget(draw_cobb_angle_.first, 0, Qt::AlignTop | Qt::AlignLeft);
+  
+  draw_circle_.first = createOptionButton(QIcon(":/ic_circle"));
+  ll->addWidget(draw_circle_.first, 0, Qt::AlignTop | Qt::AlignLeft);
 
   draw_poly_.first = createOptionButton(QIcon(":/ic_poly"));
   ll->addWidget(draw_poly_.first, 0, Qt::AlignTop | Qt::AlignLeft);
@@ -112,6 +115,7 @@ MainWindow::MainWindow(QWidget* parent) :
   connect(zoom_menu_, &QPushButton::clicked, this, &MainWindow::showZoomMenu);
   connect(draw_line_.first, &QPushButton::clicked, this, &MainWindow::drawLine);
   connect(draw_angle_.first, &QPushButton::clicked, this, &MainWindow::drawAngle);
+  connect(draw_cobb_angle_.first, &QPushButton::clicked, this, &MainWindow::drawCobbAngle);
   connect(draw_circle_.first, &QPushButton::clicked, this, &MainWindow::drawCircle);
   connect(draw_poly_.first, &QPushButton::clicked, this, &MainWindow::drawPoly);
   connect(proc_menu_, &QPushButton::clicked, this, &MainWindow::showProcMenu);
@@ -225,6 +229,10 @@ void MainWindow::makeMenuMeasure() {
   draw_angle_.second = menu->addAction(QIcon(":/ic_angle"), "Angle");
   connect(draw_angle_.second, &QAction::triggered, this, &MainWindow::drawAngle);
   draw_angle_.second->setCheckable(true);
+
+  draw_cobb_angle_.second = menu->addAction(QIcon(":/ic_cobb_angle"), "Cobb Angle");
+  connect(draw_cobb_angle_.second, &QAction::triggered, this, &MainWindow::drawCobbAngle);
+  draw_cobb_angle_.second->setCheckable(true);
 
   draw_circle_.second = menu->addAction(QIcon(":/ic_circle"), "Ellipse");
   connect(draw_circle_.second, &QAction::triggered, this, &MainWindow::drawCircle);
@@ -811,7 +819,7 @@ void MainWindow::open(const QString& filename, cv::Mat sample) {
 
 void MainWindow::setCalibration() {
   if (viewport_->mode() != Viewport::Mode::View) {
-    for (auto it : { draw_poly_, draw_circle_, draw_line_, draw_angle_ }) {
+    for (auto it : { draw_poly_, draw_circle_, draw_line_, draw_angle_, draw_cobb_angle_ }) {
       it.first->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: yellow; } ");
       it.second->setChecked(false);
     }
@@ -857,7 +865,7 @@ void MainWindow::drawLine(bool checked) {
   if (viewport_->mode() != Viewport::Mode::DrawLine) {
     viewport_->setMode(Viewport::Mode::DrawLine);
     draw_line_.first->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: rgb(28, 244, 19); } ");
-    for (auto it : { draw_poly_, draw_circle_, draw_angle_ }) {
+    for (auto it : { draw_poly_, draw_circle_, draw_angle_, draw_cobb_angle_ }) {
       it.first->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: yellow; } ");
       it.second->setChecked(false);
     }
@@ -873,7 +881,7 @@ void MainWindow::drawCircle(bool checked) {
   if (viewport_->mode() != Viewport::Mode::DrawCircle) {
     viewport_->setMode(Viewport::Mode::DrawCircle);
     draw_circle_.first->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: rgb(28, 244, 19); } ");
-    for (auto it : { draw_poly_, draw_line_, draw_angle_ }) {
+    for (auto it : { draw_poly_, draw_line_, draw_angle_, draw_cobb_angle_ }) {
       it.first->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: yellow; } ");
       it.second->setChecked(false);
     }
@@ -889,7 +897,7 @@ void MainWindow::drawAngle(bool checked) {
   if (viewport_->mode() != Viewport::Mode::DrawAngle) {
     viewport_->setMode(Viewport::Mode::DrawAngle);
     draw_angle_.first->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: rgb(28, 244, 19); } ");   
-    for (auto it : { draw_poly_, draw_circle_, draw_line_ }) {
+    for (auto it : { draw_poly_, draw_circle_, draw_line_, draw_cobb_angle_ }) {
       it.first->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: yellow; } ");
       it.second->setChecked(false);
     }
@@ -901,11 +909,27 @@ void MainWindow::drawAngle(bool checked) {
   }
 }
 
+void MainWindow::drawCobbAngle(bool checked) {
+  if (viewport_->mode() != Viewport::Mode::DrawCobbAngle) {
+    viewport_->setMode(Viewport::Mode::DrawCobbAngle);
+    draw_cobb_angle_.first->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: rgb(28, 244, 19); } ");
+    for (auto it : { draw_poly_, draw_circle_, draw_line_, draw_angle_ }) {
+      it.first->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: yellow; } ");
+      it.second->setChecked(false);
+    }
+  }
+  else {
+    viewport_->setMode(Viewport::Mode::View);
+    draw_cobb_angle_.first->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: yellow; } ");
+    draw_cobb_angle_.second->setChecked(false);
+  }
+}
+
 void MainWindow::drawPoly(bool checked) {
   if (viewport_->mode() != Viewport::Mode::DrawPoly) {
     viewport_->setMode(Viewport::Mode::DrawPoly);
     draw_poly_.first->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: rgb(28, 244, 19); } ");
-    for (auto it : { draw_circle_, draw_line_, draw_angle_ }) {
+    for (auto it : { draw_circle_, draw_line_, draw_angle_, draw_cobb_angle_ }) {
       it.first->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: yellow; } ");
       it.second->setChecked(false);
     }

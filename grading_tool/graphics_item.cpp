@@ -57,6 +57,18 @@ GraphicsItem* GraphicsItem::makeAngle(const QPointF& pt, QGraphicsPixmapItem* pa
   return item;
 }
 
+GraphicsItem* GraphicsItem::makeCobbAngle(const QPointF& pt, QGraphicsPixmapItem* parent) {
+  auto item = new GraphicsItem(parent);
+  item->cobb_angle_ = new GraphicsCobbAngleItem(QPolygonF({ pt }), item);
+  item->type_ = Type::CobbAngle;
+  item->anchor_index_ = -1;
+
+  item->mouseMoveEvent(pt, cv::Mat());
+  item->updateColors();
+
+  return item;
+}
+
 GraphicsItem* GraphicsItem::makePoly(const QPointF& pt, QGraphicsPixmapItem* parent) {
   auto item = new GraphicsItem(parent);
   item->poly_ = new GraphicsPolyItem(QPolygonF({ pt, pt }), item);
@@ -127,6 +139,35 @@ GraphicsItem* GraphicsItem::makeFromJson(const QJsonObject& json, const QVector<
 
     item->angle_->setPolygon(QPolygonF({ p1, p2, p3 }));
     item->mouseMoveEvent(p3, cv::Mat());
+    item->updateColors();
+  }
+  else if (type == "cobb_angle") {
+    QPolygonF poly;
+    for (int k = 0; k < 4; ++k) {
+      auto name = "p" + QString::number(k + 1);
+      if (json.contains(name)) {
+        auto pt = rotatedPoint(str2point(json[name].toString()), r, sz);
+        for (auto t : transforms) {
+          if (t == Transformation::HFlip) {
+            item->h_flipped = !item->h_flipped;
+            pt.setX(sz.width() - pt.x());
+          }
+          else if (t == Transformation::VFlip) {
+            item->v_flipped = !item->v_flipped;
+            pt.setY(sz.height() - pt.y());
+          }
+        }
+
+        poly.push_back(pt);
+      }
+    }
+
+    item->cobb_angle_ = new GraphicsCobbAngleItem(QPolygonF({ poly[0] }), item);
+    item->type_ = Type::CobbAngle;
+    item->anchor_index_ = -1;
+
+    item->cobb_angle_->setPolygon(poly);
+    item->mouseMoveEvent(poly.back(), cv::Mat());
     item->updateColors();
   }
   else if (type == "ellipse") {
@@ -243,6 +284,17 @@ QJsonObject GraphicsItem::toJson() const {
     json["p2"] = point2str(rotatedPoint(poly[1], rotation, sz, false));
     json["p3"] = point2str(rotatedPoint(poly[2], rotation, sz, false));
   }
+  else if (type_ == Type::CobbAngle) {
+    auto poly = cobb_angle_->polygon();
+
+    json["type"] = "cobb_angle";
+    for (int k = 0; k < poly.size(); ++k) {
+      if (h_flipped) poly[k].setX(sz.width() - poly[k].x());
+      if (v_flipped) poly[k].setY(sz.height() - poly[k].y());
+
+      json["p" + QString::number(k + 1)] = point2str(rotatedPoint(poly[k], rotation, sz, false));
+    }
+  }
   else if (type_ == Type::Ellipse) {
     auto rect = ellipse_->rect();
 
@@ -290,6 +342,7 @@ QJsonObject GraphicsItem::toJson() const {
 
 QPolygonF GraphicsItem::polygon() const {
   if (angle_) return angle_->polygon();
+  else if (cobb_angle_) return cobb_angle_->polygon();
   else if (poly_) return poly_->polygon();
   else return QPolygonF();
 }
@@ -325,7 +378,7 @@ bool GraphicsItem::isUnderPos(const QPointF& p) const {
   if (type_ == Type::Line) {
     return line_->isUnderPos(p) || item_->isUnderMouse();
   }
-  else if (type_ == Type::Ellipse || type_ == Type::Angle || type_ == Type::Poly) {
+  else if (type_ == Type::Ellipse || type_ == Type::Angle || type_ == Type::CobbAngle || type_ == Type::Poly) {
     return  item_->isUnderMouse(); // || ellipse_->isUnderPos(p);
   }
 
@@ -343,6 +396,10 @@ bool GraphicsItem::isValid() const {
   else if (type_ == Type::Angle) {
     auto poly = angle_->polygon();
     return poly.count() > 2 && dist(poly[0], poly[1]) > 7 && dist(poly[1], poly[2]) > 7;
+  }
+  else if (type_ == Type::CobbAngle) {
+    auto poly = cobb_angle_->polygon();
+    return poly.count() > 2 && dist(poly[0], poly[1]) > 7 && dist(poly[2], poly[3]) > 7;
   }
   else if (type_ == Type::Poly) {
     auto poly = poly_->polygon();
@@ -370,6 +427,14 @@ bool GraphicsItem::isPartUnderPos(const QPointF& coord) const {
   }
   else if (type_ == Type::Angle) {
     auto poly = angle_->polygon();
+    for (int k = 0; k < poly.count(); ++k) {
+      if (dist(coord, poly[k].toPoint()) < r) {
+        return true;
+      }
+    }
+  }
+  else if (type_ == Type::CobbAngle) {
+    auto poly = cobb_angle_->polygon();
     for (int k = 0; k < poly.count(); ++k) {
       if (dist(coord, poly[k].toPoint()) < r) {
         return true;
@@ -418,6 +483,12 @@ void GraphicsItem::setPolygon(const QPolygonF& poly) {
 
     angle_->setPolygon(poly);
   }
+  else if (cobb_angle_) {
+    cobb_angle_->setPolygon(poly);
+    if (poly.size() == 1) anchor_index_ = 1;
+    else if (poly.size() == 3) anchor_index_ = 3;
+    else anchor_index_ = -1;
+  }
   else if (poly_) {
     poly_->setPolygon(poly);
   }
@@ -434,6 +505,7 @@ void GraphicsItem::setScaleFactor(float scale_factor) {
 
   if (line_) line_->setScaleFactor(scale_factor_);
   if (ellipse_) ellipse_->setScaleFactor(scale_factor_);
+  if (cobb_angle_) cobb_angle_->setScaleFactor(scale_factor_);
   if (angle_) angle_->setScaleFactor(scale_factor_);
   if (poly_) poly_->setScaleFactor(scale_factor_);
 
@@ -489,6 +561,17 @@ void GraphicsItem::checkPartUnderPos(const QPointF& coord) {
 
     angle_->setPartUnderMouse(-1);
   }
+  else if (type_ == Type::CobbAngle) {
+    auto poly = cobb_angle_->polygon();
+    for (int k = 0; k < poly.count(); ++k) {
+      if (dist(coord, poly[k].toPoint()) < r) {
+        cobb_angle_->setPartUnderMouse(k);
+        return;
+      }
+    }
+
+    cobb_angle_->setPartUnderMouse(-1);
+  }
   else if (type_ == Type::Poly) {
     auto poly = poly_->polygon();
     for (int k = 0; k < poly.count(); ++k) {
@@ -515,6 +598,7 @@ void GraphicsItem::updateColors() {
     item_->setBackgroundColor(QColor(80, 80, 0, 200));
     if (line_) line_->setPen(QPen(selected_color_, 2 / scale_factor_));
     if (ellipse_) ellipse_->setPen(QPen(selected_color_, 2 / scale_factor_));
+    if (cobb_angle_) cobb_angle_->setPen(QPen(selected_color_, 2 / scale_factor_));
     if (angle_) angle_->setPen(QPen(selected_color_, 2 / scale_factor_));
     if (poly_) poly_->setPen(QPen(selected_color_, 2 / scale_factor_));
   }
@@ -522,6 +606,7 @@ void GraphicsItem::updateColors() {
     item_->setBackgroundColor(QColor(0, 88, 0, 200));
     if (line_) line_->setPen(QPen(calibrated_color_, 2 / scale_factor_));
     if (ellipse_) ellipse_->setPen(QPen(calibrated_color_, 2 / scale_factor_));
+    if (cobb_angle_) cobb_angle_->setPen(QPen(calibrated_color_, 2 / scale_factor_));
     if (angle_) angle_->setPen(QPen(calibrated_color_, 2 / scale_factor_));
     if (poly_) poly_->setPen(QPen(calibrated_color_, 2 / scale_factor_));
   }
@@ -529,6 +614,7 @@ void GraphicsItem::updateColors() {
     item_->setBackgroundColor(QColor(80, 80, 0, 200));
     if (line_) line_->setPen(QPen(default_color_, 2 / scale_factor_));
     if (ellipse_) ellipse_->setPen(QPen(default_color_, 2 / scale_factor_));
+    if (cobb_angle_) cobb_angle_->setPen(QPen(default_color_, 2 / scale_factor_));
     if (angle_) angle_->setPen(QPen(default_color_, 2 / scale_factor_));
     if (poly_) poly_->setPen(QPen(default_color_, 2 / scale_factor_));
   }
@@ -576,6 +662,18 @@ void GraphicsItem::updateCaption() {
     }
 
     item_->setPlainText("Angle: " + QString::number(angle_->angle()));
+    item_->setPos(rightest_pt + QPointF(11, -10) / scale_factor_);
+  }
+  else if (type_ == Type::CobbAngle) {
+    auto poly = cobb_angle_->polygon();
+    auto rightest_pt = poly.first();
+    for (int k = 1; k < poly.count(); ++k) {
+      if (poly[k].x() > rightest_pt.x()) {
+        rightest_pt = poly[k];
+      }
+    }
+
+    item_->setPlainText("Angle: " + QString::number(cobb_angle_->angle()));
     item_->setPos(rightest_pt + QPointF(11, -10) / scale_factor_);
   }
   else if (type_ == Type::Poly) {
@@ -653,6 +751,15 @@ void GraphicsItem::mousePressEvent(const QPointF& pos) {
       }
     }
   }
+  else if (type_ == Type::CobbAngle) {
+    auto poly = cobb_angle_->polygon();
+    for (int k = 0; k < poly.count(); ++k) {
+      if (dist(poly[k], pos) < r) {
+        anchor_index_ = k;
+        break;
+      }
+    }
+  }
   else if (type_ == Type::Poly) {
     auto poly = poly_->polygon();
     for (int k = poly.count() - 1; k >= 0; --k) {
@@ -714,6 +821,11 @@ void GraphicsItem::mouseMoveEvent(const QPointF& pos, const cv::Mat& image) {
     }
     else {
       angle_->setPoint(angle_->polygon().count() - 1, pos);
+    }
+  }
+  else if (type_ == Type::CobbAngle) {
+    if (anchor_index_ >= 0) {
+      cobb_angle_->setPoint(anchor_index_, pos, created_);
     }
   }
   else if (type_ == Type::Poly) {
