@@ -197,6 +197,7 @@
     <ClCompile Include="graphics_text_item.cpp" />
     <ClCompile Include="progress_indicator.cpp" />
     <ClCompile Include="settings_window.cpp" />
+    <ClCompile Include="smart_curve_item.cpp" />
     <ClCompile Include="utils.cpp" />
     <ClCompile Include="view_queue.cpp" />
     <ClCompile Include="main.cpp" />
@@ -223,6 +224,7 @@
     <QtMoc Include="progress_indicator.h" />
     <ClInclude Include="resource.h" />
     <QtMoc Include="settings_window.h" />
+    <ClInclude Include="smart_curve_item.h" />
     <ClInclude Include="tfdetect\tfdetect.h" />
     <ClInclude Include="tfdetect\tfwrapper.h" />
     <QtMoc Include="viewport.h" />

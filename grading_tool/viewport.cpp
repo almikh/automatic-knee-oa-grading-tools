@@ -367,6 +367,9 @@ void Viewport::mousePressEvent(QMouseEvent* event) {
           graphics_items_.push_back(item);
           drawing_ = true;
         }
+        else if (mode_ == Mode::SmartCurve) {
+          // TODO:
+        }
       }
       else {
         item->mousePressEvent(coord);
@@ -469,6 +472,12 @@ void Viewport::mouseReleaseEvent(QMouseEvent* event) {
         // continue drawing
         repaint();
         return;
+      }
+    }
+    else if (mode_ == Mode::SmartCurve) {
+      auto item = graphics_items_.last();
+      if (!item->isCreated()) {
+        // TODO:
       }
     }
     else if (mode_ == Mode::DrawLine || mode_ == Mode::DrawCircle) {

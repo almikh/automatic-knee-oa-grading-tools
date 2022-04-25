@@ -40,6 +40,7 @@ protected:
   QPair<QPushButton*, QAction*> draw_angle_ = { nullptr, nullptr };
   QPair<QPushButton*, QAction*> draw_cobb_angle_ = { nullptr, nullptr };
   QPair<QPushButton*, QAction*> draw_poly_ = { nullptr, nullptr };
+  QPair<QPushButton*, QAction*> smart_curve_ = { nullptr, nullptr };
   QPushButton* proc_menu_ = nullptr;
   QPushButton* transform_menu_ = nullptr;
   QAction* reset_calib_ = nullptr;
@@ -100,6 +101,7 @@ protected:
   Q_SLOT void drawCircle(bool);
   Q_SLOT void drawAngle(bool);
   Q_SLOT void drawCobbAngle(bool);
+  Q_SLOT void smartCurve(bool);
   Q_SLOT void drawPoly(bool);
   void clearModeView();
 

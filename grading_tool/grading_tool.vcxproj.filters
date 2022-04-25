@@ -96,6 +96,9 @@
     <ClCompile Include="graphics_cobb_angle_item.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="smart_curve_item.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="classifier.h">
@@ -150,6 +153,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="graphics_cobb_angle_item.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="smart_curve_item.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

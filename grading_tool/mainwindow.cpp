@@ -193,6 +193,10 @@ void MainWindow::makeMenuMeasure() {
   connect(draw_poly_.second, &QAction::triggered, this, &MainWindow::drawPoly);
   draw_poly_.second->setCheckable(true);
 
+  smart_curve_.second = menu->addAction(QIcon(":/ic_smart"), "Smart curve");
+  connect(smart_curve_.second, &QAction::triggered, this, &MainWindow::smartCurve);
+  smart_curve_.second->setCheckable(true);
+  
   menu->addSeparator();
 
   calibrate_ = menu->addAction("Calibration");
@@ -442,6 +446,9 @@ void MainWindow::makeToolbar() {
   draw_poly_.first = createOptionButton(QIcon(":/ic_poly"));
   ll->addWidget(draw_poly_.first, 0, Qt::AlignTop | Qt::AlignLeft);
 
+  smart_curve_.first = createOptionButton(QIcon(":/ic_smart"));
+  ll->addWidget(smart_curve_.first, 0, Qt::AlignTop | Qt::AlignLeft);
+
   auto frame = new QFrame();
   frame->setFrameShape(QFrame::Shape::VLine);
   frame->setFrameShadow(QFrame::Shadow::Sunken);
@@ -463,9 +470,10 @@ void MainWindow::makeToolbar() {
   connect(draw_cobb_angle_.first, &QPushButton::clicked, this, &MainWindow::drawCobbAngle);
   connect(draw_circle_.first, &QPushButton::clicked, this, &MainWindow::drawCircle);
   connect(draw_poly_.first, &QPushButton::clicked, this, &MainWindow::drawPoly);
+  connect(smart_curve_.first, &QPushButton::clicked, this, &MainWindow::smartCurve);
   connect(proc_menu_, &QPushButton::clicked, this, &MainWindow::showProcMenu);
   connect(transform_menu_, &QPushButton::clicked, this, &MainWindow::showTransformMenu);
-
+  
   proc_menu_->setEnabled(false);
   transform_menu_->setEnabled(false);
 }
@@ -854,7 +862,7 @@ void MainWindow::drawLine(bool checked) {
   if (viewport_->mode() != Viewport::Mode::DrawLine) {
     viewport_->setMode(Viewport::Mode::DrawLine);
     draw_line_.first->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: rgb(28, 244, 19); } ");
-    for (auto it : { draw_poly_, draw_circle_, draw_angle_, draw_cobb_angle_ }) {
+    for (auto it : { draw_poly_, draw_circle_, draw_angle_, draw_cobb_angle_, smart_curve_ }) {
       it.first->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: yellow; } ");
       it.second->setChecked(false);
     }
@@ -870,7 +878,7 @@ void MainWindow::drawCircle(bool checked) {
   if (viewport_->mode() != Viewport::Mode::DrawCircle) {
     viewport_->setMode(Viewport::Mode::DrawCircle);
     draw_circle_.first->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: rgb(28, 244, 19); } ");
-    for (auto it : { draw_poly_, draw_line_, draw_angle_, draw_cobb_angle_ }) {
+    for (auto it : { draw_poly_, draw_line_, draw_angle_, draw_cobb_angle_, smart_curve_ }) {
       it.first->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: yellow; } ");
       it.second->setChecked(false);
     }
@@ -886,7 +894,7 @@ void MainWindow::drawAngle(bool checked) {
   if (viewport_->mode() != Viewport::Mode::DrawAngle) {
     viewport_->setMode(Viewport::Mode::DrawAngle);
     draw_angle_.first->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: rgb(28, 244, 19); } ");   
-    for (auto it : { draw_poly_, draw_circle_, draw_line_, draw_cobb_angle_ }) {
+    for (auto it : { draw_poly_, draw_circle_, draw_line_, draw_cobb_angle_, smart_curve_ }) {
       it.first->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: yellow; } ");
       it.second->setChecked(false);
     }
@@ -902,7 +910,7 @@ void MainWindow::drawCobbAngle(bool checked) {
   if (viewport_->mode() != Viewport::Mode::DrawCobbAngle) {
     viewport_->setMode(Viewport::Mode::DrawCobbAngle);
     draw_cobb_angle_.first->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: rgb(28, 244, 19); } ");
-    for (auto it : { draw_poly_, draw_circle_, draw_line_, draw_angle_ }) {
+    for (auto it : { draw_poly_, draw_circle_, draw_line_, draw_angle_, smart_curve_ }) {
       it.first->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: yellow; } ");
       it.second->setChecked(false);
     }
@@ -914,11 +922,27 @@ void MainWindow::drawCobbAngle(bool checked) {
   }
 }
 
+void MainWindow::smartCurve(bool) {
+  if (viewport_->mode() != Viewport::Mode::SmartCurve) {
+    viewport_->setMode(Viewport::Mode::SmartCurve);
+    smart_curve_.first->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: rgb(28, 244, 19); } ");
+    for (auto it : { draw_circle_, draw_line_, draw_angle_, draw_cobb_angle_, draw_poly_ }) {
+      it.first->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: yellow; } ");
+      it.second->setChecked(false);
+    }
+  }
+  else {
+    viewport_->setMode(Viewport::Mode::View);
+    smart_curve_.first->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: yellow; } ");
+    smart_curve_.second->setChecked(false);
+  }
+}
+
 void MainWindow::drawPoly(bool checked) {
   if (viewport_->mode() != Viewport::Mode::DrawPoly) {
     viewport_->setMode(Viewport::Mode::DrawPoly);
     draw_poly_.first->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: rgb(28, 244, 19); } ");
-    for (auto it : { draw_circle_, draw_line_, draw_angle_, draw_cobb_angle_ }) {
+    for (auto it : { draw_circle_, draw_line_, draw_angle_, draw_cobb_angle_, smart_curve_ }) {
       it.first->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: yellow; } ");
       it.second->setChecked(false);
     }

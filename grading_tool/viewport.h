@@ -31,6 +31,7 @@ public:
     DrawLine,
     DrawAngle,
     DrawCobbAngle,
+    SmartCurve,
     DrawPoly
   };
   struct State {
