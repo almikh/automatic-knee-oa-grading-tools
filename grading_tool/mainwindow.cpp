@@ -647,6 +647,7 @@ void MainWindow::updateCurrentItem() {
 
   // currentn item
   viewport_->setImage(sample, current_item_->rotation);
+  viewport_->setGradient(current_item_->gradient);
   if (in_process_.isEmpty()) {
     loading_ind_->stopAnimation();
   }
@@ -929,6 +930,19 @@ void MainWindow::smartCurve(bool) {
     for (auto it : { draw_circle_, draw_line_, draw_angle_, draw_cobb_angle_, draw_poly_ }) {
       it.first->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: yellow; } ");
       it.second->setChecked(false);
+    }
+
+    // make gradient for current image
+    if (current_item_->gradient.empty()) {
+      int ddepth = CV_64F;
+
+      cv::Mat temp;
+      cv::GaussianBlur(current_item_->src_image, temp, cv::Size(3, 3), 0, 0, cv::BORDER_DEFAULT);
+      // Convert the image to grayscale
+      cv::cvtColor(temp, temp, cv::COLOR_RGB2GRAY);
+      cv::Sobel(temp, current_item_->gradient, ddepth, 1, 1);
+
+      viewport_->setGradient(current_item_->gradient);
     }
   }
   else {

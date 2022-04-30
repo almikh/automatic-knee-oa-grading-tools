@@ -19,6 +19,7 @@ struct Metadata {
 public:
   cv::Mat image;
   cv::Mat src_image;
+  cv::Mat gradient;
   QString filename;
   QVector<Joint> joints;
   bool already_display = false;

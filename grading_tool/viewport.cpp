@@ -211,6 +211,12 @@ void Viewport::setImage(const cv::Mat& image, int rotation) {
   }
 }
 
+void Viewport::setGradient(const cv::Mat& gradient) {
+  path_finder_ = PathFinder(gradient.size());
+  path_finder_.setGradient(gradient);
+  path_finder_.scaleGradient(0, 10);
+}
+
 void Viewport::clearScene() {
   setStyleSheet("background-color: black;");
   if (auto s = scene()) {

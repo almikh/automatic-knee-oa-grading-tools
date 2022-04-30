@@ -195,6 +195,7 @@
     <ClCompile Include="graphics_line_item.cpp" />
     <ClCompile Include="graphics_poly_item.cpp" />
     <ClCompile Include="graphics_text_item.cpp" />
+    <ClCompile Include="path_finder.cpp" />
     <ClCompile Include="progress_indicator.cpp" />
     <ClCompile Include="settings_window.cpp" />
     <ClCompile Include="smart_curve_item.cpp" />
@@ -222,6 +223,7 @@
     <ClInclude Include="graphics_text_item.h" />
     <ClInclude Include="metadata.h" />
     <QtMoc Include="progress_indicator.h" />
+    <ClInclude Include="path_finder.h" />
     <ClInclude Include="resource.h" />
     <QtMoc Include="settings_window.h" />
     <ClInclude Include="smart_curve_item.h" />

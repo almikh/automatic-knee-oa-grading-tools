@@ -8,6 +8,7 @@
 
 #include <opencv2/opencv.hpp>
 #include "graphics_item.h"
+#include "path_finder.h"
 #include "defs.h"
 
 class QPushButton;
@@ -44,6 +45,7 @@ protected:
   cv::Mat image_;
   int rotation_ = 0;
   QPixmap last_pixmap_;
+  PathFinder path_finder_;
   QGraphicsTextItem* label_ = nullptr;
   QGraphicsPixmapItem* pixmap_item_ = nullptr;
   QList<GraphicsItem*> graphics_items_;
@@ -83,6 +85,7 @@ public:
   void setCalibrationCoef(std::optional<qreal> coef);
   void removeGraphicsItem(GraphicsItem* item);
   void setImage(const cv::Mat& image, int rotation = 0);
+  void setGradient(const cv::Mat& gradient);
   void setImage(const QImage& image);
 
   void resizeEvent(QResizeEvent* event) override;
