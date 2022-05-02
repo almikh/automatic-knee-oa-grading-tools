@@ -8,7 +8,6 @@
 
 #include <opencv2/opencv.hpp>
 #include "graphics_item.h"
-#include "path_finder.h"
 #include "defs.h"
 
 class QPushButton;
@@ -43,9 +42,9 @@ public:
 protected:
   Mode mode_ = Mode::View;
   cv::Mat image_;
+  cv::Mat gradient_;
   int rotation_ = 0;
   QPixmap last_pixmap_;
-  PathFinder path_finder_;
   QGraphicsTextItem* label_ = nullptr;
   QGraphicsPixmapItem* pixmap_item_ = nullptr;
   QList<GraphicsItem*> graphics_items_;

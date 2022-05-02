@@ -81,15 +81,27 @@ GraphicsItem* GraphicsItem::makePoly(const QPointF& pt, QGraphicsPixmapItem* par
   return item;
 }
 
+GraphicsItem* GraphicsItem::makeSmartCurve(const QPointF& pt, QGraphicsPixmapItem* parent) {
+  auto item = new GraphicsItem(parent);
+  item->smart_curve_ = new SmartCurveItem({ pt.toPoint() }, item);
+  item->type_ = Type::SmartCurve;
+  item->anchor_index_ = -1;
+
+  item->mouseMoveEvent(pt, cv::Mat());
+  item->updateColors();
+
+  return item;
+}
+
 GraphicsItem* GraphicsItem::makeFromJson(const QJsonObject& json, const QVector<Transformation>& transforms, int r, QGraphicsPixmapItem* parent) {
   Q_UNUSED(r);
-  
+
   auto item = new GraphicsItem(parent);
   item->rotation = r;
 
   auto type = json["type"].toString();
   auto sz = parent->pixmap().size();
-  if (type == "line") { 
+  if (type == "line") {
     auto p1 = rotatedPoint(str2point(json["p1"].toString()), r, sz);
     auto p2 = rotatedPoint(str2point(json["p2"].toString()), r, sz);
 
@@ -223,6 +235,35 @@ GraphicsItem* GraphicsItem::makeFromJson(const QJsonObject& json, const QVector<
     item->mouseMoveEvent(poly.back(), cv::Mat());
     item->updateColors();
   }
+  else if (type == "smart_curve") {
+    QVector<QPoint> points;
+    for (int k = 0; k < json["count"].toInt(); ++k) {
+      auto pt = rotatedPoint(str2point(json["p" + QString::number(k)].toString()), r, sz).toPoint();
+      points.push_back(pt);
+    }
+
+    for (auto t : transforms) {
+      if (t == Transformation::HFlip) {
+        item->h_flipped = !item->h_flipped;
+        for (int k = 0; k < points.size(); ++k) {
+          points[k].setX(sz.width() - points[k].x());
+        }
+      }
+      else if (t == Transformation::VFlip) {
+        item->v_flipped = !item->v_flipped;
+        for (int k = 0; k < points.size(); ++k) {
+          points[k].setY(sz.height() - points[k].y());
+        }
+      }
+    }
+
+    item->smart_curve_ = new SmartCurveItem(points, item);
+    item->type_ = Type::SmartCurve;
+    item->anchor_index_ = -1;
+
+    item->mouseMoveEvent(points.back(), cv::Mat());
+    item->updateColors();
+  }
 
   return item;
 }
@@ -236,6 +277,9 @@ QRectF GraphicsItem::boundingRect() const {
   }
   else if (type_ == Type::Poly) {
     return poly_->boundingRect();
+  }
+  else if (type_ == Type::SmartCurve) {
+    return smart_curve_->boundingRect();
   }
 
   return QRectF();
@@ -336,6 +380,27 @@ QJsonObject GraphicsItem::toJson() const {
       json["p" + QString::number(k)] = point2str(rotatedPoint(poly[k], rotation, sz, false));
     }
   }
+  else if (type_ == Type::SmartCurve) {
+    auto points = smart_curve_->points();
+
+    if (h_flipped) {
+      for (int k = 0; k < points.size(); ++k) {
+        points[k].setX(sz.width() - points[k].x());
+      }
+    }
+
+    if (v_flipped) {
+      for (int k = 0; k < points.size(); ++k) {
+        points[k].setY(sz.height() - points[k].y());
+      }
+    }
+
+    json["type"] = "poly";
+    json["count"] = points.size();
+    for (int k = 0; k < points.size(); ++k) {
+      json["p" + QString::number(k)] = point2str(rotatedPoint(points[k], rotation, sz, false));
+    }
+  }
 
   return json;
 }
@@ -345,6 +410,14 @@ QPolygonF GraphicsItem::polygon() const {
   else if (cobb_angle_) return cobb_angle_->polygon();
   else if (poly_) return poly_->polygon();
   else return QPolygonF();
+}
+
+QVector<QPoint> GraphicsItem::points() const {
+  if (smart_curve_) {
+    return smart_curve_->points();
+  }
+
+  return {};
 }
 
 GraphicsItem::Type GraphicsItem::getType() const {
@@ -357,6 +430,9 @@ double GraphicsItem::length() const {
   }
   else if (type_ == Type::Poly) {
     return poly_->polygon().length();
+  }
+  else if (type_ == Type::SmartCurve) {
+    return smart_curve_->points().length();
   }
 
   return 0.0;
@@ -378,7 +454,7 @@ bool GraphicsItem::isUnderPos(const QPointF& p) const {
   if (type_ == Type::Line) {
     return line_->isUnderPos(p) || item_->isUnderMouse();
   }
-  else if (type_ == Type::Ellipse || type_ == Type::Angle || type_ == Type::CobbAngle || type_ == Type::Poly) {
+  else if (type_ == Type::Ellipse || type_ == Type::Angle || type_ == Type::CobbAngle || type_ == Type::Poly || type_ == Type::SmartCurve) {
     return  item_->isUnderMouse(); // || ellipse_->isUnderPos(p);
   }
 
@@ -404,6 +480,10 @@ bool GraphicsItem::isValid() const {
   else if (type_ == Type::Poly) {
     auto poly = poly_->polygon();
     return poly.count() > 2;
+  }
+  else if (type_ == Type::SmartCurve) {
+    auto points = smart_curve_->points();
+    return smart_curve_->points().size() >= 2 && dist(points[0], points[1]) > 7;
   }
 
   return false;
@@ -445,6 +525,14 @@ bool GraphicsItem::isPartUnderPos(const QPointF& coord) const {
     auto poly = poly_->polygon();
     for (int k = 0; k < poly.count(); ++k) {
       if (dist(coord, poly[k].toPoint()) < r) {
+        return true;
+      }
+    }
+  }
+  else if (type_ == Type::SmartCurve) {
+    auto points = smart_curve_->points();
+    for (int k = 0; k < points.count(); ++k) {
+      if (dist(coord, points[k]) < r) {
         return true;
       }
     }
@@ -494,9 +582,21 @@ void GraphicsItem::setPolygon(const QPolygonF& poly) {
   }
 }
 
+void GraphicsItem::setPoints(const QVector<QPoint>& points) {
+  if (smart_curve_) {
+    smart_curve_->setPoints(points);
+  }
+}
+
 void GraphicsItem::setCalibrationCoef(std::optional<qreal> coef) {
   calib_coef_ = coef;
   updateCaption();
+}
+
+void GraphicsItem::setGradient(const cv::Mat_<double>& gradient) {
+  if (smart_curve_) {
+    smart_curve_->setGradient(gradient);
+  }
 }
 
 void GraphicsItem::setScaleFactor(float scale_factor) {
@@ -508,6 +608,7 @@ void GraphicsItem::setScaleFactor(float scale_factor) {
   if (cobb_angle_) cobb_angle_->setScaleFactor(scale_factor_);
   if (angle_) angle_->setScaleFactor(scale_factor_);
   if (poly_) poly_->setScaleFactor(scale_factor_);
+  if (smart_curve_) smart_curve_->setScaleFactor(scale_factor_);
 
   updateCaption();
   updateColors();
@@ -583,6 +684,17 @@ void GraphicsItem::checkPartUnderPos(const QPointF& coord) {
 
     poly_->setPartUnderMouse(-1);
   }
+  else if (type_ == Type::SmartCurve) {
+    auto points = smart_curve_->points();
+    for (int k = 0; k < points.count(); ++k) {
+      if (dist(coord, points[k]) < r) {
+        smart_curve_->setPartUnderMouse(k);
+        return;
+      }
+    }
+
+    smart_curve_->setPartUnderMouse(-1);
+  }
 }
 
 bool GraphicsItem::checkSelection(const QPointF& pos) {
@@ -601,6 +713,7 @@ void GraphicsItem::updateColors() {
     if (cobb_angle_) cobb_angle_->setPen(QPen(selected_color_, 2 / scale_factor_));
     if (angle_) angle_->setPen(QPen(selected_color_, 2 / scale_factor_));
     if (poly_) poly_->setPen(QPen(selected_color_, 2 / scale_factor_));
+    if (smart_curve_) smart_curve_->setPen(QPen(selected_color_, 2 / scale_factor_));
   }
   else if (calib_coef_) {
     item_->setBackgroundColor(QColor(0, 88, 0, 200));
@@ -609,6 +722,7 @@ void GraphicsItem::updateColors() {
     if (cobb_angle_) cobb_angle_->setPen(QPen(calibrated_color_, 2 / scale_factor_));
     if (angle_) angle_->setPen(QPen(calibrated_color_, 2 / scale_factor_));
     if (poly_) poly_->setPen(QPen(calibrated_color_, 2 / scale_factor_));
+    if (smart_curve_) smart_curve_->setPen(QPen(calibrated_color_, 2 / scale_factor_));
   }
   else {
     item_->setBackgroundColor(QColor(80, 80, 0, 200));
@@ -617,6 +731,7 @@ void GraphicsItem::updateColors() {
     if (cobb_angle_) cobb_angle_->setPen(QPen(default_color_, 2 / scale_factor_));
     if (angle_) angle_->setPen(QPen(default_color_, 2 / scale_factor_));
     if (poly_) poly_->setPen(QPen(default_color_, 2 / scale_factor_));
+    if (smart_curve_) smart_curve_->setPen(QPen(default_color_, 2 / scale_factor_));
   }
 
   update();
@@ -705,6 +820,31 @@ void GraphicsItem::updateCaption() {
       }
     }
   }
+  else if (type_ == Type::SmartCurve) {
+    auto points = smart_curve_->points();
+    auto rightest_pt = points.first();
+    for (int k = 1; k < points.count(); ++k) {
+      if (points[k].x() > rightest_pt.x()) {
+        rightest_pt = points[k];
+      }
+    }
+
+    if (points.size() < 2) {
+      item_->setVisible(false);
+    }
+    else {
+      item_->setVisible(true);
+      item_->setPos(rightest_pt + QPointF(11, -10) / scale_factor_);
+
+      // TODO:
+      if (calib_coef_) {
+        item_->setPlainText(QString::number(points.length() * calib_coef_.value(), 'f', 2) + " mm");
+      }
+      else {
+        item_->setPlainText(QString::number(points.length(), 'f', 2) + " px");
+      }
+    }
+  }
 
   update();
 }
@@ -769,10 +909,23 @@ void GraphicsItem::mousePressEvent(const QPointF& pos) {
       }
     }
   }
+  else if (type_ == Type::SmartCurve) {
+    auto points = smart_curve_->points();
+    for (int k = points.count() - 1; k >= 0; --k) {
+      if (dist(points[k], pos) < r) {
+        anchor_index_ = k;
+        break;
+      }
+    }
+  }
 }
 
 void GraphicsItem::mouseReleaseEvent(const QPointF& pos) {
-
+  if (type_ == Type::SmartCurve) {
+    if (anchor_index_ >= 0) {
+      smart_curve_->setPoint(anchor_index_, pos.toPoint());
+    }
+  }
 }
 
 void GraphicsItem::mouseMoveEvent(const QPointF& pos, const cv::Mat& image) {
@@ -865,10 +1018,16 @@ void GraphicsItem::mouseMoveEvent(const QPointF& pos, const cv::Mat& image) {
     perimeter_ = p;
     avg_ = double(sum) / count;
   }
+  else if (type_ == Type::SmartCurve) {
+    if (anchor_index_ >= 0) {
+      smart_curve_->setPoint(anchor_index_, pos.toPoint());
+    }
+  }
 
   updateCaption();
 }
 
 void GraphicsItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* o, QWidget* w) {
-
+  Q_UNUSED(o);
+  Q_UNUSED(w);
 }

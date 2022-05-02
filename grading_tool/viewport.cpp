@@ -212,9 +212,7 @@ void Viewport::setImage(const cv::Mat& image, int rotation) {
 }
 
 void Viewport::setGradient(const cv::Mat& gradient) {
-  path_finder_ = PathFinder(gradient.size());
-  path_finder_.setGradient(gradient);
-  path_finder_.scaleGradient(0, 10);
+  gradient_ = gradient;
 }
 
 void Viewport::clearScene() {
@@ -263,6 +261,25 @@ void Viewport::mouseDoubleClickEvent(QMouseEvent* event) {
       if (poly.size() > 2 && dist(poly[poly.count() - 2], poly.back()) <= 7) {
         poly.pop_back();
         item->setPolygon(poly);
+      }
+
+      if (!item->isValid()) {
+        scene()->removeItem(item);
+        graphics_items_.pop_back();
+        delete item;
+      }
+      else item->setCreated(true, rotation_);
+
+      clicks_counter_ = 0;
+      drawing_ = false;
+      repaint();
+    }
+    else if (mode_ == Mode::SmartCurve) {
+      auto item = graphics_items_.last();
+      auto points = item->points();
+      if (points.size() > 2 && dist(points[points.size() - 2], points.back()) <= 3) {
+        points.pop_back();
+        item->setPoints(points);
       }
 
       if (!item->isValid()) {
@@ -374,7 +391,12 @@ void Viewport::mousePressEvent(QMouseEvent* event) {
           drawing_ = true;
         }
         else if (mode_ == Mode::SmartCurve) {
-          // TODO:
+          item = GraphicsItem::makeSmartCurve(coord, pixmap_item_);
+          item->setCalibrationCoef(calib_coef_);
+          item->setScaleFactor(scale_factor_);
+          item->setGradient(gradient_);
+          graphics_items_.push_back(item);
+          drawing_ = true;
         }
       }
       else {
@@ -483,7 +505,14 @@ void Viewport::mouseReleaseEvent(QMouseEvent* event) {
     else if (mode_ == Mode::SmartCurve) {
       auto item = graphics_items_.last();
       if (!item->isCreated()) {
-        // TODO:
+        auto poins = item->points();
+        poins.push_back(coord.toPoint());
+        item->setPoints(poins);
+
+        // NOTE:
+        // continue drawing
+        repaint();
+        return;
       }
     }
     else if (mode_ == Mode::DrawLine || mode_ == Mode::DrawCircle) {

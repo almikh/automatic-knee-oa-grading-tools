@@ -28,6 +28,137 @@ namespace convert
   }
 }
 
+void scale(cv::Mat& src, double down, double up) {
+  double min_value, max_value;
+  cv::minMaxLoc(src, &min_value, &max_value);
+
+  double temp = double(up - down) / (max_value - min_value);
+  for (int i = 0; i < src.rows; ++i) {
+    for (int j = 0; j < src.cols; ++j) {
+      auto val = src.at<double>(i, j);
+      src.at<double>(i, j) = (down + (val - min_value) * temp);
+    }
+  }
+}
+
+cv::Mat gvf(cv::Mat src, double mu, int iters) {
+  cv::Mat_<double> u = cv::Mat_<double>::zeros(src.size());
+  cv::Mat_<double> v = cv::Mat_<double>::zeros(src.size());
+
+  cv::Mat_<double> f;
+  src.convertTo(f, CV_64FC1); 
+  scale(f, 0, 1);
+
+  /* Compute derivative */
+  for (int j = 1; j < src.rows - 1; ++j) {
+    for (int i = 1; i < src.cols - 1; ++i) {
+      u(j, i) = 0.5 * (f(j, i + 1) - f(j, i - 1));
+      v(j, i) = 0.5 * (f(j + 1, i) - f(j - 1, i));
+    }
+  }
+
+  for (int j = 0; j < src.rows; ++j) {
+    u(j, 0) = 0.5 * (f(j, 1) - f(j, 0));
+    u(j, src.cols - 1) = 0.5 * (f(j, src.cols - 1) - f(j, src.cols - 2));
+  }
+
+  for (int i = 0; i < src.cols; ++i) {
+    v(0, i) = 0.5 * (f(1, i) - f(0, i));
+    v(src.rows - 1, i) = 0.5 * (f(src.rows - 1, i) - f(src.rows - 2, i));
+  }
+
+  /* Compute parameters and initializing arrays */
+  cv::Mat_<double> b(src.size()), c1(src.size()), c2(src.size());
+  for (int j = 0; j < src.rows; ++j) {
+    for (int i = 0; i < src.cols; ++i) {
+      b(j, i) = sqr(u(j, i)) + sqr(v(j, i));
+      c1(j, i) = b(j, i) * u(j, i);
+      c2(j, i) = b(j, i) * v(j, i);
+    }
+  }
+
+  /* Solve GVF = (u,v) */
+  cv::Mat_<double> Lu(src.size()), Lv(src.size());
+  for (int it = 0; it < iters; ++it) {
+    /* corners */
+    int n = src.cols - 1;
+    int m = src.rows - 1;
+    Lu(0, 0) = (2 * u(0, 1) + 2 * u(1, 0)) - 4 * u(0, 0);
+    Lv(0, 0) = (2 * v(0, 1) + 2 * v(1, 0)) - 4 * v(0, 0);
+    Lu(m, n) = (2 * u(m, n - 1) + u(m - 1, n)) - 4 * u(m, n);
+    Lv(m, n) = (2 * v(m, n - 1) + v(m - 1, n)) - 4 * v(m, n);
+    Lu(0, n) = (2 * u(0, n - 1) + 2 * u(1, n)) - 4 * u(0, n);
+    Lv(0, n) = (2 * v(0, n - 1) + 2 * v(1, n)) - 4 * v(0, n);
+    Lu(m, 0) = (2 * u(m, 1) + 2 * u(m - 1, 0)) - 4 * u(m, 0);
+    Lv(m, 0) = (2 * v(m, 1) + 2 * v(m - 1, 0)) - 4 * v(m, 0);
+
+    /* interior Lu, Lv*/
+    double* uCur, * uPrev, * uNext;
+    double* vCur, * vPrev, * vNext;
+    double* curLu = (double*)Lu.data;
+    double* curLv = (double*)Lv.data;
+    for (int j = 1; j < m; ++j) {
+      uCur = u[j] + 1;
+      uPrev = u[j - 1] + 1;
+      uNext = u[j + 1] + 1;
+      vCur = v[j] + 1;
+      vPrev = v[j - 1] + 1;
+      vNext = v[j + 1] + 1;
+      curLu = Lu[j] + 1;
+      curLv = Lv[j] + 1;
+      for (int i = 1; i < n; ++i) {
+        *curLu++ = (*(uCur - 1) + *uPrev++ + *(uCur + 1) + *uNext++) - 4 * (*uCur);
+        *curLv++ = (*(vCur - 1) + *vPrev++ + *(vCur + 1) + *vNext++) - 4 * (*vCur);
+        ++uCur;
+        ++vCur;
+      }
+    }
+
+    /* left and right columns */
+    for (int j = 1; j < m; ++j) {
+      Lu(j, 0) = (u(j - 1, 0) + 2 * u(j, 1) + u(j + 1, 0)) - 4 * u(j, 0);
+      Lv(j, 0) = (v(j - 1, 0) + 2 * v(j, 1) + v(j + 1, 0)) - 4 * v(j, 0);
+      Lu(j, n) = (u(j - 1, n) + 2 * u(j, n - 1) + u(j + 1, n)) - 4 * u(j, n);
+      Lv(j, n) = (v(j - 1, n) + 2 * v(j, n - 1) + v(j + 1, n)) - 4 * v(j, n);
+    }
+
+    /* top and bottom rows */
+    for (int i = 1; i < n; ++i) {
+      Lu(0, i) = (u(0, i - 1) + 2 * u(1, i) + u(0, i + 1)) - 4 * u(0, i);
+      Lv(0, i) = (v(0, i - 1) + 2 * v(1, i) + v(0, i + 1)) - 4 * v(0, i);
+      Lu(m, i) = (u(m, i - 1) + 2 * u(m - 1, i) + u(m, i + 1)) - 4 * u(m, i);
+      Lv(m, i) = (v(m, i - 1) + 2 * v(m - 1, i) + v(m, i + 1)) - 4 * v(m, i);
+    }
+
+    /* Update GVF  */
+    double* curU = (double*)u.data;
+    double* curV = (double*)v.data;
+    double* curb = (double*)b.data;
+    double* curC1 = (double*)c1.data;
+    double* curC2 = (double*)c2.data;
+    curLu = (double*)Lu.data;
+    curLv = (double*)Lv.data;
+    for (int i = 0, n = src.cols * src.rows; i < n; ++i) {
+      *curU = (1.0 - *curb) * (*curU) + mu * (*curLu++) + *curC1++;
+      *curV = (1.0 - *curb) * (*curV) + mu * (*curLv++) + *curC2++;
+      ++curU;
+      ++curV;
+      ++curb;
+    }
+  }
+
+  cv::Mat dst = cv::Mat::zeros(src.size(), CV_64FC1);
+  for (int j = 0; j < src.rows; ++j) {
+    for (int i = 0; i < src.cols; ++i) {
+      dst.at<double>(j, i) = sqrt(sqr(u(j, i)) + sqr(v(j, i)));
+    }
+  }
+
+  scale(dst, 0, 1);
+
+  return dst;
+}
+
 QPointF rotatedPoint(const QPointF& pt, int angle, QSize sz, bool enabled) {
   if (angle == 0) {
     return pt;

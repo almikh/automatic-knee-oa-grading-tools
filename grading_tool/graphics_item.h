@@ -10,6 +10,7 @@
 #include "graphics_cobb_angle_item.h"
 #include "graphics_angle_item.h"
 #include "graphics_poly_item.h"
+#include "smart_curve_item.h"
 #include <opencv2/opencv.hpp>
 
 class GraphicsItem : public QGraphicsItem {
@@ -21,6 +22,7 @@ public:
     Line,
     Angle,
     CobbAngle,
+    SmartCurve,
     Poly
   };
 
@@ -41,6 +43,7 @@ private:
   GraphicsEllipseItem* ellipse_ = nullptr;
   GraphicsAngleItem* angle_ = nullptr;
   GraphicsCobbAngleItem* cobb_angle_ = nullptr;
+  SmartCurveItem* smart_curve_ = nullptr;
   GraphicsPolyItem* poly_ = nullptr;
   GraphicsTextItem* item_ = nullptr;
 
@@ -57,6 +60,7 @@ public:
   static GraphicsItem* makeCobbAngle(const QPointF& pt, QGraphicsPixmapItem* parent);
   static GraphicsItem* makeAngle(const QPointF& pt, QGraphicsPixmapItem* parent);
   static GraphicsItem* makePoly(const QPointF& pt, QGraphicsPixmapItem* parent);
+  static GraphicsItem* makeSmartCurve(const QPointF& pt, QGraphicsPixmapItem* parent);
 
   static GraphicsItem* makeFromJson(const QJsonObject& data, const QVector<Transformation>& t, int r, QGraphicsPixmapItem* parent);
 
@@ -66,6 +70,7 @@ public:
 
   Type getType() const;
   QPolygonF polygon() const;
+  QVector<QPoint> points() const;
   QJsonObject toJson() const;
 
   double length() const;
@@ -82,7 +87,9 @@ public:
   void setCalibratedColor(const QColor& color);
 
   void setPolygon(const QPolygonF& poly);
+  void setPoints(const QVector<QPoint>& points);
   void setCalibrationCoef(std::optional<qreal> coef);
+  void setGradient(const cv::Mat_<double>& gradient);
   void setScaleFactor(float scale_factor);
   void setCreated(bool created, std::optional<int> rotation = std::nullopt);
   void setSelected(bool selected);

@@ -761,9 +761,6 @@ void MainWindow::openDICOM(bool) {
       std::vector<char> buffer(image.GetBufferLength());
       image.GetBuffer(buffer.data());
       
-      int cols = image.GetColumns();
-      int rows = image.GetRows();
-
       int pixel_type;
       auto pixel_format = image.GetPixelFormat().GetScalarType();
       if (pixel_format == gdcm::PixelFormat::UINT8) pixel_type = CV_8UC1;
@@ -934,13 +931,19 @@ void MainWindow::smartCurve(bool) {
 
     // make gradient for current image
     if (current_item_->gradient.empty()) {
-      int ddepth = CV_64F;
-
       cv::Mat temp;
       cv::GaussianBlur(current_item_->src_image, temp, cv::Size(3, 3), 0, 0, cv::BORDER_DEFAULT);
       // Convert the image to grayscale
       cv::cvtColor(temp, temp, cv::COLOR_RGB2GRAY);
-      cv::Sobel(temp, current_item_->gradient, ddepth, 1, 1);
+
+      current_item_->gradient = gvf(temp, 0.04, 55);
+
+      // int ddepth = CV_64F;
+      // cv::Sobel(temp, current_item_->gradient, ddepth, 1, 1);
+
+      // current_item_->gradient.convertTo(current_item_->image, CV_8UC1, 255);
+      // cv::cvtColor(current_item_->image, current_item_->image, cv::COLOR_GRAY2RGB);
+      // updateCurrentItem();
 
       viewport_->setGradient(current_item_->gradient);
     }
