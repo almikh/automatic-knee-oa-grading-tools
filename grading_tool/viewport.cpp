@@ -263,44 +263,61 @@ void Viewport::mouseDoubleClickEvent(QMouseEvent* event) {
 
   auto point = mapToScene(event->pos());
   auto coord = QPointF(point - pixmap_item_->pos()) / scale_factor_;
-  if (drawing_ && event->button() == Qt::LeftButton) {
-    if (mode_ == Mode::DrawPoly) {
-      auto item = graphics_items_.last();
-      auto poly = item->polygon();
-      if (poly.size() > 2 && dist(poly[poly.count() - 2], poly.back()) <= 7) {
-        poly.pop_back();
-        item->setPolygon(poly);
-      }
+  if (event->button() == Qt::LeftButton) {
+    if (drawing_) {
+      if (mode_ == Mode::DrawPoly) {
+        auto item = graphics_items_.last();
+        auto poly = item->polygon();
+        if (poly.size() > 2 && dist(poly[poly.count() - 2], poly.back()) <= 7) {
+          poly.pop_back();
+          item->setPolygon(poly);
+        }
 
-      if (!item->isValid()) {
-        scene()->removeItem(item);
-        graphics_items_.pop_back();
-        delete item;
-      }
-      else item->setCreated(true, rotation_);
+        if (!item->isValid()) {
+          scene()->removeItem(item);
+          graphics_items_.pop_back();
+          delete item;
+        }
+        else item->setCreated(true, rotation_);
 
-      clicks_counter_ = 0;
-      drawing_ = false;
-      repaint();
+        clicks_counter_ = 0;
+        drawing_ = false;
+        repaint();
+      }
+      else if (mode_ == Mode::SmartCurve) {
+        auto item = graphics_items_.last();
+        auto points = item->points();
+        if (points.size() > 2 && dist(points[points.size() - 2], points.back()) <= 3) {
+          points.pop_back();
+          item->setPoints(points);
+        }
+
+        if (!item->isValid()) {
+          scene()->removeItem(item);
+          graphics_items_.pop_back();
+          delete item;
+        }
+        else item->setCreated(true, rotation_);
+
+        clicks_counter_ = 0;
+        drawing_ = false;
+        repaint();
+      }
     }
-    else if (mode_ == Mode::SmartCurve) {
-      auto item = graphics_items_.last();
-      auto points = item->points();
-      if (points.size() > 2 && dist(points[points.size() - 2], points.back()) <= 3) {
-        points.pop_back();
-        item->setPoints(points);
+    else {
+      GraphicsItem* item = nullptr;
+      for (int k = 0; k < graphics_items_.size(); ++k) {
+        const auto t = graphics_items_[k]->getType();
+        if ((t == GraphicsItem::Type::SmartCurve || t == GraphicsItem::Type::Poly) && graphics_items_[k]->isUnderPos(coord, true)) {
+          item = graphics_items_[k];
+          break;
+        }
       }
 
-      if (!item->isValid()) {
-        scene()->removeItem(item);
-        graphics_items_.pop_back();
-        delete item;
+      if (item) {
+        item->addExtraPoint(coord);
+        item->setSelected(false);
       }
-      else item->setCreated(true, rotation_);
-
-      clicks_counter_ = 0;
-      drawing_ = false;
-      repaint();
     }
   }
 }

@@ -14,6 +14,8 @@ cv::Mat gvf(cv::Mat src, double mu, int iters);
 QPointF rotatedPoint(const QPointF& pt, int angle, QSize pixmap_size, bool enable = true);
 
 qreal dist(const QPointF& p1, const QPointF& p2);
+qreal distToLine(const QPointF& p, const QPointF& pa, const QPointF& pb);
+
 QString point2str(const QPointF& pt);
 QPointF str2point(const QString& str);
 

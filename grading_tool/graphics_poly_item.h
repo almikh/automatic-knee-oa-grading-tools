@@ -9,6 +9,7 @@ class GraphicsPolyItem : public QGraphicsPolygonItem {
 public:
   GraphicsPolyItem(const QPolygonF& poly, QGraphicsItem* parent = nullptr);
 
+  void addExtraPoint(const QPointF& point);
   void setPoint(int idx, const QPointF& pt);
 
   bool isHighlighted() const;

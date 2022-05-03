@@ -3,6 +3,8 @@
 #include <QPainter>
 #include <QDebug>
 
+#include "utils.h"
+
 double sqr(double val) {
   return val * val;
 }
@@ -20,16 +22,7 @@ bool GraphicsLineItem::isHighlighted() const {
 }
 
 bool GraphicsLineItem::isUnderPos(const QPointF& p) const {
-  const auto pa = line().p1(), pb = line().p2();
-  const auto t = ((p.x() - pa.x()) * (pb.x() - pa.x()) + (p.y() - pa.y()) * (pb.y() - pa.y())) /
-   ((pb.x() - pa.x()) * (pb.x() - pa.x()) + (pb.y() - pa.y()) * (pb.y() - pa.y()));
-
-  double length = DBL_MAX;
-  if (0 <= t && t <= 1) {
-    length = std::sqrt(sqr(pa.x() - p.x() + (pb.x() - pa.x()) * t) + sqr(pa.y() - p.y() + (pb.y() - pa.y()) * t));
-  }
-
-  return length < 5;
+  return distToLine(p, line().p1(), line().p2()) < 5;
 }
 
 void GraphicsLineItem::setPartUnderMouse(int idx) {

@@ -181,6 +181,18 @@ qreal dist(const QPointF& p1, const QPointF& p2) {
   return std::sqrt((p1.x() - p2.x()) * (p1.x() - p2.x()) + (p1.y() - p2.y()) * (p1.y() - p2.y()));
 }
 
+qreal distToLine(const QPointF& p, const QPointF& pa, const QPointF& pb) {
+  const auto t = ((p.x() - pa.x()) * (pb.x() - pa.x()) + (p.y() - pa.y()) * (pb.y() - pa.y())) /
+    ((pb.x() - pa.x()) * (pb.x() - pa.x()) + (pb.y() - pa.y()) * (pb.y() - pa.y()));
+
+  double length = DBL_MAX;
+  if (0 <= t && t <= 1) {
+    length = std::sqrt(sqr(pa.x() - p.x() + (pb.x() - pa.x()) * t) + sqr(pa.y() - p.y() + (pb.y() - pa.y()) * t));
+  }
+
+  return length;
+}
+
 QString point2str(const QPointF& pt) {
   return QString::number(pt.x(), 'f', 2) + ";" + QString::number(pt.y(), 'f', 2);
 }

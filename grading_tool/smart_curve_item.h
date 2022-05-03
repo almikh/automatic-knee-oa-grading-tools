@@ -23,6 +23,7 @@ public:
 
   QVector<QPoint> points() const;
   void setPoints(const QVector<QPoint>& points);
+  void addExtraPoint(const QPointF& point);
 
   void setPartUnderMouse(int idx);
   void setGradient(const cv::Mat_<double>& gradient);
@@ -30,5 +31,5 @@ public:
   void setHighlighted(bool selected);
 
   void paint(QPainter* painter, const QStyleOptionGraphicsItem* o, QWidget* w) override;
-  void redraw();
+  void redraw(bool full_redraw = false);
 };

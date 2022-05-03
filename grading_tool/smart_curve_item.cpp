@@ -25,6 +25,14 @@ bool SmartCurveItem::isHighlighted() const {
 }
 
 bool SmartCurveItem::isUnderPos(const QPointF& p) const {
+  for (auto path : path_) {
+    for (int k = 0; k < path.size(); k += 3) {
+      if (dist(path[k], p) < 7) {
+        return true;
+      }
+    }
+  }
+
   return false;
 }
 
@@ -53,6 +61,27 @@ QVector<QPoint> SmartCurveItem::points() const {
 void SmartCurveItem::setPoints(const QVector<QPoint>& points) {
   points_ = points;
   redraw();
+} 
+
+void SmartCurveItem::addExtraPoint(const QPointF& point) {
+  auto min_idx = 0;
+  for (int k = 1; k < points_.count(); ++k) {
+    if (dist(points_[k], point) < dist(points_[min_idx], point)) {
+      min_idx = k;
+    }
+  }
+
+  auto next_idx = 0;
+  if (min_idx == 0) next_idx = min_idx + 1;
+  else if (min_idx == points_.size() - 1) next_idx = min_idx - 1;
+  else if (dist(points_[min_idx + 1], point) < dist(points_[min_idx - 1], point)) next_idx = min_idx + 1;
+  else next_idx = min_idx - 1;
+
+  if (next_idx < min_idx)
+    qSwap(min_idx, next_idx);
+
+  points_.insert(min_idx + 1, point.toPoint());
+  redraw(true);
 }
 
 void SmartCurveItem::setGradient(const cv::Mat_<double>& gradient) {
@@ -85,8 +114,8 @@ void SmartCurveItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* o,
   }
 }
 
-void SmartCurveItem::redraw() {
-  if (part_under_mouse_ < 0) {
+void SmartCurveItem::redraw(bool full_redraw) {
+  if (part_under_mouse_ < 0 || full_redraw) {
     path_.clear();
     for (int k = 1; k < points_.size(); ++k) {
       if (path_finder_.find(cv::Point(points_[k - 1].x(), points_[k - 1].y()), cv::Point(points_[k].x(), points_[k].y()))) {

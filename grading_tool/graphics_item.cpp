@@ -450,12 +450,22 @@ bool GraphicsItem::isCreated() const {
   return created_;
 }
 
-bool GraphicsItem::isUnderPos(const QPointF& p) const {
-  if (type_ == Type::Line) {
-    return line_->isUnderPos(p) || item_->isUnderMouse();
+bool GraphicsItem::isUnderPos(const QPointF& p, bool only_lines) const {
+  if (!only_lines && item_->isUnderMouse()) {
+    return true;
   }
-  else if (type_ == Type::Ellipse || type_ == Type::Angle || type_ == Type::CobbAngle || type_ == Type::Poly || type_ == Type::SmartCurve) {
-    return  item_->isUnderMouse(); // || ellipse_->isUnderPos(p);
+
+  if (type_ == Type::Line) {
+    return line_->isUnderPos(p);
+  }
+  else if (type_ == Type::SmartCurve) {
+    return smart_curve_->isUnderPos(p);
+  }
+  else if (type_ == Type::Poly) {
+    return poly_->isUnderPos(p);
+  }
+  else if (type_ == Type::Ellipse || type_ == Type::Angle || type_ == Type::CobbAngle) {
+    // TODO:
   }
 
   return false;
@@ -579,6 +589,15 @@ void GraphicsItem::setPolygon(const QPolygonF& poly) {
   }
   else if (poly_) {
     poly_->setPolygon(poly);
+  }
+}
+
+void GraphicsItem::addExtraPoint(const QPointF& point) {
+  if (type_ == Type::SmartCurve) {
+    smart_curve_->addExtraPoint(point);
+  }
+  else if (type_ == Type::Poly) {
+    poly_->addExtraPoint(point);
   }
 }
 

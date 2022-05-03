@@ -76,7 +76,7 @@ public:
   double length() const;
   bool isSelected() const;
   bool isPartUnderPos(const QPointF& point) const;
-  bool isUnderPos(const QPointF& point) const;
+  bool isUnderPos(const QPointF& point, bool only_lines = false) const;
   bool isItemUnderMouse() const;
   bool isCreated() const;
   bool isValid() const;
@@ -86,6 +86,7 @@ public:
   void setDefaultColor(const QColor& color);
   void setCalibratedColor(const QColor& color);
 
+  void addExtraPoint(const QPointF& point);
   void setPolygon(const QPolygonF& poly);
   void setPoints(const QVector<QPoint>& points);
   void setCalibrationCoef(std::optional<qreal> coef);

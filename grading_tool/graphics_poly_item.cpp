@@ -3,6 +3,8 @@
 #include <QPainter>
 #include <QDebug>
 
+#include "utils.h"
+
 GraphicsPolyItem::GraphicsPolyItem(const QPolygonF& poly, QGraphicsItem* parent) :
   QGraphicsPolygonItem(poly, parent)
 {
@@ -18,11 +20,40 @@ void GraphicsPolyItem::setPoint(int idx, const QPointF& pt) {
   setPolygon(poly);
 }
 
+void GraphicsPolyItem::addExtraPoint(const QPointF& point) {
+  auto min_idx = 0;
+  auto poly = polygon();
+  for (int k = 0; k < poly.count(); ++k) {
+    if (dist(poly[k], point) < dist(poly[min_idx], point)) {
+      min_idx = k;
+    }
+  }
+
+  auto next_idx = 0;
+  if (min_idx == 0) next_idx = min_idx + 1;
+  else if (min_idx == poly.count() - 1) next_idx = min_idx - 1;
+  else if (dist(poly[min_idx + 1], point) < dist(poly[min_idx - 1], point)) next_idx = min_idx + 1;
+  else next_idx = min_idx - 1;
+
+  if (next_idx < min_idx)
+    qSwap(min_idx, next_idx);
+
+  poly.insert(min_idx + 1, point.toPoint());
+  setPolygon(poly);
+}
+
 bool GraphicsPolyItem::isHighlighted() const {
   return highlighted_;
 }
 
 bool GraphicsPolyItem::isUnderPos(const QPointF& p) const {
+  auto poly = polygon();
+  for (int k = 1; k < poly.count(); ++k) {
+    if (distToLine(p, poly[k], poly[k - 1]) < 5) {
+      return true;
+    }
+  }
+
   return false;
 }
 
