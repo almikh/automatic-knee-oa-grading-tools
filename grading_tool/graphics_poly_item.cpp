@@ -42,8 +42,6 @@ void GraphicsPolyItem::setHighlighted(bool selected) {
 void GraphicsPolyItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* o, QWidget* w) {
   QGraphicsPolygonItem::paint(painter, o, w);
 
-  painter->setPen(QPen(Qt::red, 1.0 / scale_factor_));
-
   auto poly = polygon();
   for (int k = 0; k < poly.count(); ++k) {
     const auto pt = poly[k].toPoint();

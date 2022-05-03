@@ -11,7 +11,7 @@ GraphicsItem::GraphicsItem(QGraphicsItem* parent):
   QGraphicsItem(parent),
   item_(new GraphicsTextItem("", this)),
   selected_color_(Qt::yellow),
-  default_color_(Qt::red),
+  default_color_(Qt::blue),
   calibrated_color_(0, 150, 0)
 {
   item_->setFont(QFont("Arial", 10 / scale_factor_));
@@ -83,7 +83,7 @@ GraphicsItem* GraphicsItem::makePoly(const QPointF& pt, QGraphicsPixmapItem* par
 
 GraphicsItem* GraphicsItem::makeSmartCurve(const QPointF& pt, QGraphicsPixmapItem* parent) {
   auto item = new GraphicsItem(parent);
-  item->smart_curve_ = new SmartCurveItem({ pt.toPoint() }, item);
+  item->smart_curve_ = new SmartCurveItem({}, item);
   item->type_ = Type::SmartCurve;
   item->anchor_index_ = -1;
 
@@ -822,26 +822,25 @@ void GraphicsItem::updateCaption() {
   }
   else if (type_ == Type::SmartCurve) {
     auto points = smart_curve_->points();
-    auto rightest_pt = points.first();
-    for (int k = 1; k < points.count(); ++k) {
-      if (points[k].x() > rightest_pt.x()) {
-        rightest_pt = points[k];
-      }
-    }
-
     if (points.size() < 2) {
       item_->setVisible(false);
     }
     else {
+      auto rightest_pt = points.first();
+      for (int k = 1; k < points.count(); ++k) {
+        if (points[k].x() > rightest_pt.x()) {
+          rightest_pt = points[k];
+        }
+      }
+
       item_->setVisible(true);
       item_->setPos(rightest_pt + QPointF(11, -10) / scale_factor_);
 
-      // TODO:
       if (calib_coef_) {
-        item_->setPlainText(QString::number(points.length() * calib_coef_.value(), 'f', 2) + " mm");
+        item_->setPlainText("Length=" + QString::number(perimeter_.value_or(0) * calib_coef_.value()) + "mm");
       }
       else {
-        item_->setPlainText(QString::number(points.length(), 'f', 2) + " px");
+        item_->setPlainText("Length=" + QString::number(perimeter_.value_or(0)) + "px");
       }
     }
   }
@@ -1022,6 +1021,8 @@ void GraphicsItem::mouseMoveEvent(const QPointF& pos, const cv::Mat& image) {
     if (anchor_index_ >= 0) {
       smart_curve_->setPoint(anchor_index_, pos.toPoint());
     }
+
+    perimeter_ = smart_curve_->length();
   }
 
   updateCaption();

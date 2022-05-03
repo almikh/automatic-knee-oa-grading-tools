@@ -113,6 +113,15 @@ void Viewport::setCalibrationCoef(std::optional<qreal> coef) {
 
 void Viewport::setMode(Viewport::Mode mode) {
   mode_ = mode;
+  if (mode == Viewport::Mode::View && !graphics_items_.isEmpty()) {
+    auto item = graphics_items_.last();
+    if (!item->isValid()) {
+      scene()->removeItem(item);
+      graphics_items_.pop_back();
+      delete item;
+    }
+    else item->setCreated(true, rotation_);
+  }
 }
 
 void Viewport::setState(Viewport::State state) {

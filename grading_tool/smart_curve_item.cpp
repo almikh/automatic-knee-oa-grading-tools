@@ -3,13 +3,16 @@
 #include <QPainter>
 #include <QDebug>
 
+#include "utils.h"
+
 SmartCurveItem::SmartCurveItem(const QVector<QPoint>& points, QGraphicsItem* parent) :
-  QGraphicsItem(parent),
+  QGraphicsPathItem(parent),
   points_(points)
 {
   setFlag(QGraphicsItem::GraphicsItemFlag::ItemIsSelectable, false);
   setFlag(QGraphicsItem::GraphicsItemFlag::ItemIsMovable, false);
   setAcceptedMouseButtons(Qt::LeftButton);
+  setBrush(QBrush(Qt::transparent));
 }
 
 void SmartCurveItem::setPoint(int idx, const QPoint& pt) {
@@ -23,6 +26,24 @@ bool SmartCurveItem::isHighlighted() const {
 
 bool SmartCurveItem::isUnderPos(const QPointF& p) const {
   return false;
+}
+
+qreal SmartCurveItem::length() const {
+  qreal acc = 0.0f;
+  QVector<QPointF> prev_segment;
+  for (auto path : path_) {
+    for (int k = 1; k < path.size(); ++k) {
+      acc += dist(path[k - 1], path[k]);
+    }
+
+    if (!prev_segment.isEmpty()) {
+      acc += dist(prev_segment.last(), path.first());
+    }
+
+    prev_segment = path;
+  }
+
+  return acc;
 }
 
 QVector<QPoint> SmartCurveItem::points() const {
@@ -53,25 +74,14 @@ void SmartCurveItem::setHighlighted(bool selected) {
   highlighted_ = selected;
 }
 
-void SmartCurveItem::setPen(const QPen& pen) {
-  pen_ = pen;
-}
-
-QRectF SmartCurveItem::boundingRect() const {
-  return QRectF();
-}
-
 void SmartCurveItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* o, QWidget* w) {
+  QGraphicsPathItem::paint(painter, o, w);
+
   for (int k = 0; k < points_.count(); ++k) {
     const auto pt = points_[k];
     painter->setPen(QPen(part_under_mouse_ == k ? Qt::green : Qt::red, 1.0 / scale_factor_));
     painter->drawLine(QLine(pt - QPoint(5 / scale_factor_, 0), pt + QPoint(5 / scale_factor_, 0)));
     painter->drawLine(QLine(pt - QPoint(0, 5 / scale_factor_), pt + QPoint(0, 5 / scale_factor_)));
-  }
-
-  painter->setPen(pen_);
-  for (const auto& path : path_) {
-    painter->drawPoints(path.data(), path.size());
   }
 }
 
@@ -85,6 +95,7 @@ void SmartCurveItem::redraw() {
           path.push_back(QPointF(pt.x, pt.y));
         }
 
+        std::reverse(path.begin(), path.end());
         path_.push_back(path);
       }
     }
@@ -102,5 +113,12 @@ void SmartCurveItem::redraw() {
     }
   }
 
-  update();
+  if (!path_.isEmpty()) {
+    QPainterPath painter_path;
+    for (auto path : path_) {
+      painter_path.addPolygon(path);
+    }
+
+    setPath(painter_path);
+  }
 }
