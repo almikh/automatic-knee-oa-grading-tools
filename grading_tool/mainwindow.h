@@ -1,5 +1,6 @@
 #pragma once
 #include <QMainWindow>
+#include <QLinkedList>
 #include <QVBoxLayout>
 #include <QChartView>
 
@@ -48,6 +49,7 @@ protected:
 
   Metadata::HardPtr current_item_;
   std::shared_ptr<tfdetect::Detector> detector_;
+  QLinkedList<Metadata::HardPtr> process_queue_;
   QSet<Metadata*> in_process_;
   bool classifier_enabled_ = false;
   Classifier classifier_;
@@ -64,6 +66,8 @@ protected:
   void initClassifier();
 
   Q_SLOT void openSample(bool);
+  Q_SLOT void openSamples(bool);
+
   Q_SLOT void openDICOM(bool);
   void open(const QString& filename, cv::Mat image);
 

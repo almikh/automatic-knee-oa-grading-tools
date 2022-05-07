@@ -159,6 +159,11 @@ void MainWindow::makeMenuFile() {
   auto open_sample = menu->addAction("Open file");
   connect(open_sample, &QAction::triggered, this, &MainWindow::openSample);
 
+  auto open_samples = menu->addAction("Open files...");
+  connect(open_samples, &QAction::triggered, this, &MainWindow::openSamples);
+
+
+  menu->addSeparator();
   auto open_dicom = menu->addAction("Open DICOM");
   connect(open_dicom, &QAction::triggered, this, &MainWindow::openDICOM);
 }
@@ -565,20 +570,32 @@ void MainWindow::setItemAsCurrent(Metadata::HardPtr data) {
 
   // run classification if needed
   if (classifier_enabled_ && data->joints.isEmpty() && !in_process_.contains(data.get())) {
-    in_process_.insert(data.get());
-    loading_ind_->startAnimation();
+    if (!in_process_.isEmpty()) {
+      process_queue_.push_back(data);
+    }
+    else {
+      in_process_.insert(data.get());
+      loading_ind_->startAnimation();
 
-    QtConcurrent::run(this, &MainWindow::runOnData, data);
+      QtConcurrent::run(this, &MainWindow::runOnData, data);
+    }
   }
 }
 
 void MainWindow::onItemProcessed(Metadata::HardPtr data) {
-  if (current_item_ == data) {
-    saveCurrentGraphicsItems();
-    updateCurrentItem();
+  if (!process_queue_.isEmpty()) {
+    auto next = process_queue_.takeFirst();
+    in_process_.insert(next.get());
+
+    QtConcurrent::run(this, &MainWindow::runOnData, next);
   }
   else if (in_process_.isEmpty()) {
     loading_ind_->stopAnimation();
+  }
+
+  if (current_item_ == data) {
+    saveCurrentGraphicsItems();
+    updateCurrentItem();
   }
 }
 
@@ -799,6 +816,30 @@ void MainWindow::openSample(bool) {
   }
 }
 
+void MainWindow::openSamples(bool) {
+  auto filters = "Image files (*.bmp *.png *.jpg *.jpeg);;";
+  auto default_path = AppPrefs::read("last-files-path", "").toString();
+  auto files = QFileDialog::getOpenFileNames(this, "Load images...", default_path, filters);
+  if (!files.isEmpty()) {
+    for (auto path : files) {
+      auto filename = QFileInfo(path).fileName();
+      auto sample = cv::imread(path.toLocal8Bit().data(), cv::IMREAD_COLOR);
+      open(filename, sample);
+    }
+
+    AppPrefs::write("last-files-path", files.first().left(files.first().lastIndexOf('/')) + "/");
+  }
+}
+
+void MainWindow::openFolder(bool) {
+  auto default_path = AppPrefs::read("last-dir-path", "").toString();
+  auto path = QFileDialog::getOpenFileName(this, "Load directory", default_path, "", nullptr, QFileDialog::ShowDirsOnly);
+  if (!path.isEmpty()) {
+
+    AppPrefs::write("last-dir-path", path.left(path.lastIndexOf('/')) + "/");
+  }
+}
+
 void MainWindow::open(const QString& filename, cv::Mat sample) {
   auto item = std::make_shared<Metadata>();
   item->filename = filename;
@@ -937,9 +978,6 @@ void MainWindow::smartCurve(bool) {
       cv::cvtColor(temp, temp, cv::COLOR_RGB2GRAY);
 
       current_item_->gradient = gvf(temp, 0.04, 55);
-
-      // int ddepth = CV_64F;
-      // cv::Sobel(temp, current_item_->gradient, ddepth, 1, 1);
 
       // current_item_->gradient.convertTo(current_item_->image, CV_8UC1, 255);
       // cv::cvtColor(current_item_->image, current_item_->image, cv::COLOR_GRAY2RGB);
