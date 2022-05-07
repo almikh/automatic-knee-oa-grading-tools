@@ -492,8 +492,8 @@ QPushButton* MainWindow::createOptionButton(QIcon icon, bool enabled) {
   button->setEnabled(enabled);
 
   button->setStyleSheet(
-    "QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: yellow; } "
-    "QPushButton:!enabled { border-width: 1px; border-style: outset; border-color: black; background-color: gray;");
+    "QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: yellow; }; "
+    "QPushButton:!enabled { border-width: 1px; border-style: outset; border-color: black; background-color: gray; }");
 
   return button;
 }
