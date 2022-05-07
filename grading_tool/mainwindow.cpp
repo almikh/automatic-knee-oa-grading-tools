@@ -162,10 +162,15 @@ void MainWindow::makeMenuFile() {
   auto open_samples = menu->addAction("Open files...");
   connect(open_samples, &QAction::triggered, this, &MainWindow::openSamples);
 
+  auto open_folder = menu->addAction("Open folder");
+  connect(open_folder, &QAction::triggered, this, &MainWindow::openFolder);
 
   menu->addSeparator();
-  auto open_dicom = menu->addAction("Open DICOM");
-  connect(open_dicom, &QAction::triggered, this, &MainWindow::openDICOM);
+  auto open_dicom = menu->addAction("Open DICOM file");
+  connect(open_dicom, &QAction::triggered, this, &MainWindow::openFileDICOM);
+
+  auto open_dicom_folder = menu->addAction("Open DICOM folder");
+  connect(open_dicom_folder, &QAction::triggered, this, &MainWindow::openFolderDICOM);
 }
 
 void MainWindow::makeMenuTools() {
@@ -764,42 +769,61 @@ QVector<Classifier::Item> MainWindow::runClassifier(const cv::Mat& joint_area) {
   return grades;
 }
 
-void MainWindow::openDICOM(bool) {
+void MainWindow::openFileDICOM(bool) {
   auto filters = "DICOM files (*.DICOM *.DCM);;";
   auto default_path = AppPrefs::read("last-dicom-path", "").toString();
   auto path = QFileDialog::getOpenFileName(this, "Load DICOM file", default_path, filters);
   if (!path.isEmpty()) {
-    gdcm::ImageReader reader;
-    reader.SetFileName(path.toStdString().c_str());
-    if (reader.Read()) {
-      auto filename = QFileInfo(path).fileName();
-      auto image = reader.GetImage();
+    openDICOM(path);
+    AppPrefs::write("last-dicom-path", path.left(path.lastIndexOf('/')) + "/");
+  }
+}
 
-      std::vector<char> buffer(image.GetBufferLength());
-      image.GetBuffer(buffer.data());
-      
-      int pixel_type;
-      auto pixel_format = image.GetPixelFormat().GetScalarType();
-      if (pixel_format == gdcm::PixelFormat::UINT8) pixel_type = CV_8UC1;
-      else if (pixel_format == gdcm::PixelFormat::INT8) pixel_type = CV_8SC1;
-      else if (pixel_format == gdcm::PixelFormat::UINT16) pixel_type = CV_16UC1;
-      else if (pixel_format == gdcm::PixelFormat::INT16) pixel_type = CV_16SC1;
-      else if (pixel_format == gdcm::PixelFormat::FLOAT32) pixel_type = CV_32FC1;
-      else if (pixel_format == gdcm::PixelFormat::FLOAT64) pixel_type = CV_64FC1;
-      else if (pixel_format == gdcm::PixelFormat::UINT32) pixel_type = CV_8UC4;
-      else if (pixel_format == gdcm::PixelFormat::INT32) pixel_type = CV_8SC4;
-      else {
-        QMessageBox::warning(this, "Warning", "Unknown pixel format of image in DICOM!");
-        return;
+void MainWindow::openFolderDICOM(bool) {
+  auto default_path = AppPrefs::read("last-dicoms-path", "").toString();
+  auto path = QFileDialog::getExistingDirectory(this, "Load DICOM directory", default_path);
+  if (!path.isEmpty()) {
+    auto files = QDir(path).entryList(QDir::Files);
+    for (auto filename : files) {
+      if (filename.endsWith("DCM") || filename.endsWith("DICOM") || filename.endsWith("dicom") || filename.endsWith("dcm")) {
+        openDICOM(path + '/' + filename);
       }
-
-      cv::Mat sample;
-      cv::Mat img(image.GetRows(), image.GetColumns(), pixel_type, buffer.data());
-      cv::cvtColor(img, sample, cv::COLOR_GRAY2RGB);
-
-      AppPrefs::write("last-dicom-path", path.left(path.lastIndexOf('/')) + "/");
-      open(filename, sample);
     }
+
+    AppPrefs::write("last-dicoms-path", path + "/");
+  }
+}
+
+void MainWindow::openDICOM(const QString& path) {
+  gdcm::ImageReader reader;
+  reader.SetFileName(path.toStdString().c_str());
+  if (reader.Read()) {
+    auto filename = QFileInfo(path).fileName();
+    auto image = reader.GetImage();
+
+    std::vector<char> buffer(image.GetBufferLength());
+    image.GetBuffer(buffer.data());
+
+    int pixel_type;
+    auto pixel_format = image.GetPixelFormat().GetScalarType();
+    if (pixel_format == gdcm::PixelFormat::UINT8) pixel_type = CV_8UC1;
+    else if (pixel_format == gdcm::PixelFormat::INT8) pixel_type = CV_8SC1;
+    else if (pixel_format == gdcm::PixelFormat::UINT16) pixel_type = CV_16UC1;
+    else if (pixel_format == gdcm::PixelFormat::INT16) pixel_type = CV_16SC1;
+    else if (pixel_format == gdcm::PixelFormat::FLOAT32) pixel_type = CV_32FC1;
+    else if (pixel_format == gdcm::PixelFormat::FLOAT64) pixel_type = CV_64FC1;
+    else if (pixel_format == gdcm::PixelFormat::UINT32) pixel_type = CV_8UC4;
+    else if (pixel_format == gdcm::PixelFormat::INT32) pixel_type = CV_8SC4;
+    else {
+      QMessageBox::warning(this, "Warning", "Unknown pixel format of image in DICOM!");
+      return;
+    }
+
+    cv::Mat sample;
+    cv::Mat img(image.GetRows(), image.GetColumns(), pixel_type, buffer.data());
+    cv::cvtColor(img, sample, cv::COLOR_GRAY2RGB);
+
+    open(filename, sample);
   }
 }
 
@@ -833,10 +857,17 @@ void MainWindow::openSamples(bool) {
 
 void MainWindow::openFolder(bool) {
   auto default_path = AppPrefs::read("last-dir-path", "").toString();
-  auto path = QFileDialog::getOpenFileName(this, "Load directory", default_path, "", nullptr, QFileDialog::ShowDirsOnly);
+  auto path = QFileDialog::getExistingDirectory(this, "Load directory", default_path);
   if (!path.isEmpty()) {
+    auto files = QDir(path).entryList(QDir::Files);
+    for (auto filename : files) {
+      if (filename.endsWith("bmp") || filename.endsWith("png") || filename.endsWith("jpg") || filename.endsWith("jpeg")) {
+        auto sample = cv::imread((path + '/' + filename).toLocal8Bit().data(), cv::IMREAD_COLOR);
+        open(QFileInfo(filename).fileName(), sample);
+      }
+    }
 
-    AppPrefs::write("last-dir-path", path.left(path.lastIndexOf('/')) + "/");
+    AppPrefs::write("last-dir-path", path + "/");
   }
 }
 

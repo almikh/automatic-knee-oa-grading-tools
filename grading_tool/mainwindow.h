@@ -67,9 +67,13 @@ protected:
 
   Q_SLOT void openSample(bool);
   Q_SLOT void openSamples(bool);
+  Q_SLOT void openFolder(bool);
 
-  Q_SLOT void openDICOM(bool);
+  Q_SLOT void openFileDICOM(bool);
+  Q_SLOT void openFolderDICOM(bool);
+
   void open(const QString& filename, cv::Mat image);
+  void openDICOM(const QString& path);
 
   Q_SLOT void setCalibration();
   Q_SLOT void resetCalibration();
