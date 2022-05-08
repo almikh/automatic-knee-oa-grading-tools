@@ -87,7 +87,7 @@ void SmartCurveItem::addExtraPoint(const QPointF& point) {
 void SmartCurveItem::setGradient(const cv::Mat_<double>& gradient) {
   path_finder_ = PathFinder(gradient.size());
   path_finder_.setGradient(gradient);
-  path_finder_.scaleGradient(0, 10);
+  path_finder_.scaleGradient(0, 10.0);
 }
 
 void SmartCurveItem::setPartUnderMouse(int idx) {
