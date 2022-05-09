@@ -14,6 +14,11 @@
 
 #include "utils.h"
 
+const QColor colors[] = {
+   QColor(Qt::red),
+   QColor(Qt::blue),
+};
+
 Viewport::Viewport(QWidget* parent) :
   QGraphicsView(parent),
   label_(new QGraphicsTextItem()),
@@ -48,8 +53,8 @@ Viewport::Mode Viewport::mode() const {
   return mode_;
 }
 
-Viewport::State Viewport::state() const {
-  State s;
+ViewportState Viewport::state() const {
+  ViewportState s;
   s.scale = scale_factor_;
   if (pixmap_item_) {
     s.position = pixmap_item_->pos();
@@ -124,7 +129,7 @@ void Viewport::setMode(Viewport::Mode mode) {
   }
 }
 
-void Viewport::setState(Viewport::State state) {
+void Viewport::setState(ViewportState state) {
   scale_factor_ = state.scale;
   pixmap_item_->setScale(scale_factor_);
   pixmap_item_->setPos(state.position);
@@ -164,8 +169,8 @@ void Viewport::setImage(const QImage& image) {
   }
 
   graphics_items_.clear();
-  clicks_counter_ = 0;
-  drawing_ = false;
+  // clicks_counter_ = 0;
+  // drawing_ = false;
 
   // если изменился размер изображения
   if (!last_pixmap_.isNull() && last_pixmap_.size() != image.size()) {
@@ -186,6 +191,40 @@ void Viewport::setImage(const QImage& image) {
   }
   else {
     pixmap_item_->setPixmap(last_pixmap_);
+  }
+}
+
+void Viewport::setJoints(const QVector<Metadata::Joint>& joints, const QVector<Transformation>& transforms, int r) {
+  if (auto s = scene()) {
+    for (auto item : joints_items_) {
+      s->removeItem(item);
+    }
+
+    joints_items_.clear();
+  }
+  
+  int counter = 0;
+  auto sz = pixmap_item_->pixmap().size();
+  for (auto joint : joints) {
+    auto item = new QGraphicsRectItem(pixmap_item_);
+    auto rect = QRectF(joint.rect.x, joint.rect.y, joint.rect.size().width, joint.rect.size().height);
+    auto tl = rotatedPoint(rect.topLeft(), r, sz), br = rotatedPoint(rect.bottomRight(), r, sz);
+
+    for (auto t : transforms) {
+      if (t == Transformation::HFlip) {
+        tl.setX(sz.width() - tl.x());
+        br.setX(sz.width() - br.x());
+      }
+      else if (t == Transformation::VFlip) {
+        tl.setY(sz.height() - tl.y());
+        br.setY(sz.height() - br.y());
+      }
+    }
+
+    item->setRect(QRectF(tl, br));
+    item->setPen(QPen(QBrush(colors[counter++ % 2]), 3 / scale_factor_));
+
+    joints_items_.push_back(item);
   }
 }
 
@@ -227,7 +266,7 @@ void Viewport::setGradient(const cv::Mat& gradient) {
 void Viewport::clearScene() {
   setStyleSheet("background-color: black;");
   if (auto s = scene()) {
-    for (auto& item : s->items()) {
+    for (auto item : s->items()) {
       if (!dynamic_cast<QGraphicsPixmapItem*>(item)) {
         s->removeItem(item);
       }

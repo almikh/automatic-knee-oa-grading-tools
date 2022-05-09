@@ -1,12 +1,12 @@
 #pragma once
 #include <memory>
 #include <optional>
+#include <QJsonArray>
 #include <QString>
 #include <QVector>
 
 #include <opencv2/opencv.hpp>
 #include "classifier.h"
-#include "viewport.h"
 #include "defs.h"
 
 struct Metadata {
@@ -23,7 +23,7 @@ public:
   QString filename;
   QVector<Joint> joints;
   bool already_display = false;
-  Viewport::State viewport_state;
+  ViewportState viewport_state;
   std::optional<qreal> calib_coef;
   QJsonArray graphics_items;
   QVector<Transformation> transformations;

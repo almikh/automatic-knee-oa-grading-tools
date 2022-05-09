@@ -10,3 +10,8 @@ enum Transformation {
   HFlip = 0,
   VFlip = 1
 };
+
+struct ViewportState {
+  double scale = 1.0;
+  QPointF position;
+};

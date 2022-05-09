@@ -8,6 +8,7 @@
 
 #include <opencv2/opencv.hpp>
 #include "graphics_item.h"
+#include "metadata.h"
 #include "defs.h"
 
 class QPushButton;
@@ -34,10 +35,6 @@ public:
     SmartCurve,
     DrawPoly
   };
-  struct State {
-    double scale = 1.0;
-    QPointF position;
-  };
 
 protected:
   Mode mode_ = Mode::View;
@@ -47,6 +44,7 @@ protected:
   QPixmap last_pixmap_;
   QGraphicsTextItem* label_ = nullptr;
   QGraphicsPixmapItem* pixmap_item_ = nullptr;
+  QList<QGraphicsRectItem*> joints_items_;
   QList<GraphicsItem*> graphics_items_;
   std::optional<qreal> calib_coef_;
   int clicks_counter_ = 0;
@@ -60,13 +58,13 @@ public:
   explicit Viewport(QWidget* parent = nullptr);
 
   Mode mode() const;
-  State state() const;
+  ViewportState state() const;
   double scaleFactor() const;
   std::optional<qreal> calibCoef() const;
   QJsonArray graphicsItems() const;
 
   void setMode(Mode mode);
-  void setState(State state);
+  void setState(ViewportState state);
 
   // add graphics items to viewport
   // @param items:  list of encoded graphics items
@@ -86,6 +84,7 @@ public:
   void setImage(const cv::Mat& image, int rotation = 0);
   void setGradient(const cv::Mat& gradient);
   void setImage(const QImage& image);
+  void setJoints(const QVector<Metadata::Joint>& joints, const QVector<Transformation>& t, int r);
 
   void resizeEvent(QResizeEvent* event) override;
   void wheelEvent(QWheelEvent* event) override;

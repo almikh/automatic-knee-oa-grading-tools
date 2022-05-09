@@ -599,8 +599,7 @@ void MainWindow::onItemProcessed(Metadata::HardPtr data) {
   }
 
   if (current_item_ == data) {
-    saveCurrentGraphicsItems();
-    updateCurrentItem();
+    viewport_->setJoints(current_item_->joints, current_item_->transformations, current_item_->rotation);
   }
 }
 
@@ -640,9 +639,6 @@ void MainWindow::updateCurrentItem() {
       }
     }
 
-    // draw ROI
-    cv::rectangle(sample, joint.rect, std::get<2>(joint_colors[k % 2]), 3);
-
     // create graph
     auto conf = joint.grades[grade_idx].confidence;
     auto grade = joint.grades[grade_idx].mnemonic_code;
@@ -669,6 +665,7 @@ void MainWindow::updateCurrentItem() {
 
   // currentn item
   viewport_->setImage(sample, current_item_->rotation);
+  viewport_->setJoints(current_item_->joints, current_item_->transformations, current_item_->rotation);
   viewport_->setGradient(current_item_->gradient);
   if (in_process_.isEmpty()) {
     loading_ind_->stopAnimation();
