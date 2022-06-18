@@ -55,16 +55,16 @@
     <Import Project="$(QtMsBuild)\qt_defaults.props" />
   </ImportGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>debug\</OutDir>
-    <IntDir>debug\</IntDir>
+    <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)Intermediate\$(Configuration)\</IntDir>
     <TargetName>grading_tool</TargetName>
     <IgnoreImportLibrary>true</IgnoreImportLibrary>
     <IncludePath>$(GDCM_PATH)\include;tfdetect;$(LIBTENSORFLOW_PATH)\include;$(OPENCV_PATH)\include;$(LIBTORCH_PATH)_debug\include;$(LIBTORCH_PATH)_debug\include\torch\csrc\api\include;$(SolutionDir)3rdparty\zlib\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(GDCM_PATH)\lib\$(Configuration);$(LIBTENSORFLOW_PATH)\lib;$(SolutionDir)3rdparty\zlib\lib;$(OPENCV_PATH)\lib;$(LIBTORCH_PATH)_debug\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>release\</OutDir>
-    <IntDir>release\</IntDir>
+    <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)Intermediate\$(Configuration)\</IntDir>
     <TargetName>grading_tool</TargetName>
     <IgnoreImportLibrary>true</IgnoreImportLibrary>
     <LinkIncremental>false</LinkIncremental>
@@ -251,9 +251,6 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">release\moc_predefs.h;%(Outputs)</Outputs>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </CustomBuild>
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="grading_tool.rc" />
   </ItemGroup>
   <ItemGroup>
     <QtRcc Include="resources.qrc" />

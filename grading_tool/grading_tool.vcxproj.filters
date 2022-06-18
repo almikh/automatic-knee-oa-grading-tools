@@ -188,9 +188,6 @@
     </QtMoc>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="grading_tool.rc" />
-  </ItemGroup>
-  <ItemGroup>
     <QtRcc Include="resources.qrc">
       <Filter>Resources</Filter>
     </QtRcc>
