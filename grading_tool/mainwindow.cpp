@@ -48,6 +48,17 @@ const std::tuple<QString, QColor, cv::Scalar> joint_colors[] = {
   {QString("Blue Area"), QColor(Qt::blue), cv::Scalar(0, 0, 200)},
 };
 
+const QString MainWindow::ic_line = "res/ic_line.png";
+const QString MainWindow::ic_zoom = "res/ic_zoom.png";
+const QString MainWindow::ic_angle = "res/ic_angle.png";
+const QString MainWindow::ic_reset = "res/ic_reset.png";
+const QString MainWindow::ic_circle = "res/ic_circle.png";
+const QString MainWindow::ic_poly = "res/ic_poly.png";
+const QString MainWindow::ic_smart = "res/ic_smart.png";
+const QString MainWindow::ic_cobb_angle = "res/ic_cobb_angle.png";
+const QString MainWindow::ic_transform = "res/ic_transform.png";
+const QString MainWindow::ic_filter = "res/ic_filter.png";
+
 MainWindow::MainWindow(QWidget* parent) :
   QMainWindow(parent),
   viewport_(new Viewport()),
@@ -183,27 +194,27 @@ void MainWindow::makeMenuTools() {
 void MainWindow::makeMenuMeasure() {
   auto menu = menuBar()->addMenu("Measure and annotate");
 
-  draw_line_.second = menu->addAction(QIcon(":/ic_line"), "Line");
+  draw_line_.second = menu->addAction(QIcon(ic_line), "Line");
   connect(draw_line_.second, &QAction::triggered, this, &MainWindow::drawLine);
   draw_line_.second->setCheckable(true);
 
-  draw_angle_.second = menu->addAction(QIcon(":/ic_angle"), "Angle");
+  draw_angle_.second = menu->addAction(QIcon(ic_angle), "Angle");
   connect(draw_angle_.second, &QAction::triggered, this, &MainWindow::drawAngle);
   draw_angle_.second->setCheckable(true);
 
-  draw_cobb_angle_.second = menu->addAction(QIcon(":/ic_cobb_angle"), "Cobb Angle");
+  draw_cobb_angle_.second = menu->addAction(QIcon(ic_cobb_angle), "Cobb Angle");
   connect(draw_cobb_angle_.second, &QAction::triggered, this, &MainWindow::drawCobbAngle);
   draw_cobb_angle_.second->setCheckable(true);
 
-  draw_circle_.second = menu->addAction(QIcon(":/ic_circle"), "Ellipse");
+  draw_circle_.second = menu->addAction(QIcon(ic_circle), "Ellipse");
   connect(draw_circle_.second, &QAction::triggered, this, &MainWindow::drawCircle);
   draw_circle_.second->setCheckable(true);
 
-  draw_poly_.second = menu->addAction(QIcon(":/ic_poly"), "Closed polygon");
+  draw_poly_.second = menu->addAction(QIcon(ic_poly), "Closed polygon");
   connect(draw_poly_.second, &QAction::triggered, this, &MainWindow::drawPoly);
   draw_poly_.second->setCheckable(true);
 
-  smart_curve_.second = menu->addAction(QIcon(":/ic_smart"), "Smart curve");
+  smart_curve_.second = menu->addAction(QIcon(ic_smart), "Smart curve");
   connect(smart_curve_.second, &QAction::triggered, this, &MainWindow::smartCurve);
   smart_curve_.second->setCheckable(true);
   
@@ -435,28 +446,28 @@ void MainWindow::showProcMenu() {
 
 void MainWindow::makeToolbar() {
   auto ll = new QHBoxLayout(viewport_);
-  auto reset = createOptionButton(QIcon(":/ic_reset"));
+  auto reset = createOptionButton(QIcon(ic_reset));
   ll->addWidget(reset, 0, Qt::AlignTop | Qt::AlignLeft);
 
-  zoom_menu_ = createOptionButton(QIcon(":/ic_zoom"), false);
+  zoom_menu_ = createOptionButton(QIcon(ic_zoom), false);
   ll->addWidget(zoom_menu_, 0, Qt::AlignTop | Qt::AlignLeft);
 
-  draw_line_.first = createOptionButton(QIcon(":/ic_line"));
+  draw_line_.first = createOptionButton(QIcon(ic_line));
   ll->addWidget(draw_line_.first, 0, Qt::AlignTop | Qt::AlignLeft);
 
-  draw_angle_.first = createOptionButton(QIcon(":/ic_angle"));
+  draw_angle_.first = createOptionButton(QIcon(ic_angle));
   ll->addWidget(draw_angle_.first, 0, Qt::AlignTop | Qt::AlignLeft);
 
-  draw_cobb_angle_.first = createOptionButton(QIcon(":/ic_cobb_angle"));
+  draw_cobb_angle_.first = createOptionButton(QIcon(ic_cobb_angle));
   ll->addWidget(draw_cobb_angle_.first, 0, Qt::AlignTop | Qt::AlignLeft);
 
-  draw_circle_.first = createOptionButton(QIcon(":/ic_circle"));
+  draw_circle_.first = createOptionButton(QIcon(ic_circle));
   ll->addWidget(draw_circle_.first, 0, Qt::AlignTop | Qt::AlignLeft);
 
-  draw_poly_.first = createOptionButton(QIcon(":/ic_poly"));
+  draw_poly_.first = createOptionButton(QIcon(ic_poly));
   ll->addWidget(draw_poly_.first, 0, Qt::AlignTop | Qt::AlignLeft);
 
-  smart_curve_.first = createOptionButton(QIcon(":/ic_smart"));
+  smart_curve_.first = createOptionButton(QIcon(ic_smart));
   ll->addWidget(smart_curve_.first, 0, Qt::AlignTop | Qt::AlignLeft);
 
   auto frame = new QFrame();
@@ -465,10 +476,10 @@ void MainWindow::makeToolbar() {
   frame->setContentsMargins(0, 2, 0, 2);
   ll->addWidget(frame, 0, Qt::AlignTop | Qt::AlignLeft);
 
-  transform_menu_ = createOptionButton(QIcon(":/ic_transform"));
+  transform_menu_ = createOptionButton(QIcon(ic_transform));
   ll->addWidget(transform_menu_, 0, Qt::AlignTop | Qt::AlignLeft);
 
-  proc_menu_ = createOptionButton(QIcon(":/ic_filter"));
+  proc_menu_ = createOptionButton(QIcon(ic_filter));
   ll->addWidget(proc_menu_, 0, Qt::AlignTop | Qt::AlignLeft);
 
   ll->addWidget(new QWidget(), 1, Qt::AlignTop | Qt::AlignLeft);
@@ -999,7 +1010,7 @@ void MainWindow::smartCurve(bool) {
     }
 
     // make gradient for current image
-    if (current_item_->gradient.empty()) {
+    if (current_item_ && current_item_->gradient.empty()) {
       cv::Mat temp;
       cv::GaussianBlur(current_item_->src_image, temp, cv::Size(3, 3), 0, 0, cv::BORDER_DEFAULT);
       // Convert the image to grayscale

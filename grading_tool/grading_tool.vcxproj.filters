@@ -187,9 +187,4 @@
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>
-  <ItemGroup>
-    <QtRcc Include="resources.qrc">
-      <Filter>Resources</Filter>
-    </QtRcc>
-  </ItemGroup>
 </Project>

@@ -27,6 +27,18 @@ class MainWindow : public QMainWindow
   Q_OBJECT
 
 protected:
+  static const QString ic_line;
+  static const QString ic_zoom;
+  static const QString ic_angle;
+  static const QString ic_reset;
+  static const QString ic_circle;
+  static const QString ic_poly;
+  static const QString ic_smart;
+  static const QString ic_cobb_angle;
+  static const QString ic_transform;
+  static const QString ic_filter;
+  
+protected:
   Viewport* viewport_;
   ViewQueue* view_queue_;
   QWidget* loading_area_;
