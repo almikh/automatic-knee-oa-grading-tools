@@ -795,7 +795,7 @@ void GraphicsItem::updateCaption() {
       }
     }
 
-    item_->setPlainText("Angle: " + QString::number(angle_->angle()) + "°");
+    item_->setPlainText("Angle: " + QString::number(angle_->angle()) + "Â°");
     item_->setPos(rightest_pt + QPointF(11, -10) / scale_factor_);
   }
   else if (type_ == Type::CobbAngle) {
@@ -807,7 +807,7 @@ void GraphicsItem::updateCaption() {
       }
     }
 
-    item_->setPlainText("Angle: " + QString::number(cobb_angle_->angle()) + "°");
+    item_->setPlainText("Angle: " + QString::number(cobb_angle_->angle()) + "Â°");
     item_->setPos(rightest_pt + QPointF(11, -10) / scale_factor_);
   }
   else if (type_ == Type::Poly) {
