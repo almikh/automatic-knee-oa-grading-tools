@@ -43,7 +43,7 @@ std::optional<qreal> Viewport::calibCoef() const {
 QJsonArray Viewport::graphicsItems() const {
   QJsonArray ans;
   for (auto item : graphics_items_) {
-    ans.push_back(item->toJson());
+    if (item->isValid()) ans.push_back(item->toJson());
   }
 
   return ans;

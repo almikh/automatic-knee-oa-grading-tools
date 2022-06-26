@@ -611,6 +611,9 @@ void MainWindow::onItemProcessed(Metadata::HardPtr data) {
 
   if (current_item_ == data) {
     viewport_->setJoints(current_item_->joints, current_item_->transformations, current_item_->rotation);
+    current_item_->viewport_state = viewport_->state();
+    current_item_->calib_coef = viewport_->calibCoef();
+    current_item_->graphics_items = viewport_->graphicsItems();
     updateCurrentItem();
   }
 }
