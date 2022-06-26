@@ -485,7 +485,7 @@ bool GraphicsItem::isValid() const {
   }
   else if (type_ == Type::CobbAngle) {
     auto poly = cobb_angle_->polygon();
-    return poly.count() > 2 && dist(poly[0], poly[1]) > 7 && dist(poly[2], poly[3]) > 7;
+    return poly.count() > 3 && dist(poly[0], poly[1]) > 7 && dist(poly[2], poly[3]) > 7;
   }
   else if (type_ == Type::Poly) {
     auto poly = poly_->polygon();
