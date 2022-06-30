@@ -94,13 +94,15 @@ public:
     Buffer(const std::string& filename) : TFWrapper<TF_Buffer>(TF_NewBuffer, TF_DeleteBuffer), copy_(true)
     {
         std::ifstream ifs(filename, std::ios::binary | std::ios::ate);
-        std::ifstream::pos_type pos = ifs.tellg();
-        TFObj()->length = pos;
-        char* bytes = new char[TFObj()->length];
-        ifs.seekg(0, std::ios::beg);
-        ifs.read(bytes, TFObj()->length);
-        ifs.close();
-        TFObj()->data = bytes;
+        if (ifs.is_open()) {
+          std::ifstream::pos_type pos = ifs.tellg();
+          TFObj()->length = pos;
+          char* bytes = new char[TFObj()->length];
+          ifs.seekg(0, std::ios::beg);
+          ifs.read(bytes, TFObj()->length);
+          ifs.close();
+          TFObj()->data = bytes;
+        }
     }
 
     virtual ~Buffer()

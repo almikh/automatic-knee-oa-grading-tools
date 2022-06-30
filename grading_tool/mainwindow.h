@@ -60,6 +60,7 @@ protected:
   QAction* calibrate_ = nullptr;
 
   Metadata::HardPtr current_item_;
+  QString detector_graph_file_ = "frozen_inference_graph.pb";
   std::shared_ptr<tfdetect::Detector> detector_;
   QLinkedList<Metadata::HardPtr> process_queue_;
   QSet<Metadata*> in_process_;

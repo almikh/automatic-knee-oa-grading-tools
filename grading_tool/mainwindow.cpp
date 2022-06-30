@@ -710,7 +710,15 @@ void MainWindow::runOnData(Metadata::HardPtr data) {
 
   // init detector
   if (!detector_) {
-    detector_ = tfdetect::CreateDetectorFromGraph("frozen_inference_graph.pb");
+    if (QFile(detector_graph_file_).exists()) {
+      detector_ = tfdetect::CreateDetectorFromGraph("frozen_inference_graph.pb");
+    }
+    else {
+      qWarning() << "Detector's frozen graph file not found! Skip...";
+      in_process_.remove(data.get());
+      emit itemProcessed(data);
+      return;
+    }
   }
 
   // detect joints
