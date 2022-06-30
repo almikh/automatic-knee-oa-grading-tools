@@ -571,6 +571,7 @@ void MainWindow::init() {
 void MainWindow::initClassifier() {
   classifier_enabled_ = AppPrefs::read("enable_classifier").toBool();
   classifier_.initFromResource(AppPrefs::read("classifier_params_path").toString());
+  right_panel_->setVisible(classifier_enabled_);
 }
 
 void MainWindow::setItemAsCurrent(Metadata::HardPtr data) {
