@@ -115,7 +115,7 @@
       <LinkIncremental>false</LinkIncremental>
       <OutputFile>$(OutDir)\grading_tool.exe</OutputFile>
       <RandomizedBaseAddress>true</RandomizedBaseAddress>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <SuppressStartupBanner>true</SuppressStartupBanner>
     </Link>
     <Midl>

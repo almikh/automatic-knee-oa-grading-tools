@@ -151,5 +151,9 @@ void SettingsWindow::init() {
   const auto enable_classifier = findChild<QCheckBox*>("enable_classifier");
 
   enable_classifier->setChecked(AppPrefs::read("enable_classifier").toBool());
+
   classifier_params_path->setText(AppPrefs::read("classifier_params_path").toString());
+  if (classifier_params_path->text().isEmpty() && QFile("script.zip").exists()) {
+    classifier_params_path->setText(QFileInfo("script.zip").absoluteFilePath());
+  }
 }
