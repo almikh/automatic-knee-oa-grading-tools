@@ -1,6 +1,4 @@
-#ifndef TFWRAPPER_H
-#define TFWRAPPER_H
-
+#pragma once
 #include <fstream>
 #include <functional>
 #include <memory>
@@ -10,16 +8,8 @@
 namespace tfwrapper
 {
 
-//------------------------------------------------------------------------------
-// TYPEDEFS
-//------------------------------------------------------------------------------
-
 template<typename T>
 using ref_vector = std::vector<std::reference_wrapper<T>>;
-
-//------------------------------------------------------------------------------
-// Wrapper classes for various structs and operations of the tensorflow C-API
-//------------------------------------------------------------------------------
 
 template<typename T, typename Constructor = std::function<T*(void)>, typename Destructor = void(*)(T*)>
 class TFWrapper
@@ -431,5 +421,3 @@ public:
 };
 
 } // namespace tfwrapper
-
-#endif /* TFWRAPPER_H */

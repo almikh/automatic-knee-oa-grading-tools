@@ -57,7 +57,6 @@ bool Classifier::initFromResource(const QString& filename) {
     module_ = torch::jit::load(file.fileName().toStdString());
   }
   catch (c10::Error& e) {
-    // qWarning() << c10::GetExceptionString(e).c_str();
     last_error_ = e.what_without_backtrace();
     return false;
   }

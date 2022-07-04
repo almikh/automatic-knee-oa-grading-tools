@@ -88,5 +88,4 @@ namespace tfdetect
   std::shared_ptr<Detector> CreateDetectorFromGraph(const std::string& path_to_graph_proto) {
     return std::shared_ptr<GraphProtoDetector>(new GraphProtoDetector(path_to_graph_proto));
   }
-
 }
