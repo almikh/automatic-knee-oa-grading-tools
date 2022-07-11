@@ -94,6 +94,12 @@ namespace xr
     auto roi = createBoundingRect(future_sink);
     auto inflated_roi = roi.inflated(8);
 
+    // TODO:
+    inflated_roi.bottom = fmax(0, inflated_roi.bottom);
+    inflated_roi.left = fmax(0, inflated_roi.left);
+    inflated_roi.top = fmin(data_->working.height() - 1, inflated_roi.top);
+    inflated_roi.right = fmin(data_->working.width() - 1, inflated_roi.right);
+
     std::cout << roi.left << " vs " << roi.right << std::endl;
     std::cout << roi.bottom << " vs " << roi.top << std::endl;
     std::cout << "===" << std::endl;
