@@ -126,6 +126,8 @@ protected:
   Q_SLOT void drawPoly(bool);
   void clearModeView();
 
+  Q_SLOT void findContours(bool);
+
   // zoom menu
   Q_SLOT void showZoomMenu();
   Q_SLOT void showProcMenu();

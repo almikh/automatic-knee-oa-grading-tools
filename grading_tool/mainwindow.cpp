@@ -25,6 +25,7 @@
 #define slots Q_SLOTS
 
 #include <gdcm/gdcmImageReader.h>
+#include <main_processor.h>
 
 #include "utils.h"
 #include "view_queue.h"
@@ -217,7 +218,12 @@ void MainWindow::makeMenuMeasure() {
   smart_curve_.second = menu->addAction(QIcon(ic_smart), "Smart curve");
   connect(smart_curve_.second, &QAction::triggered, this, &MainWindow::smartCurve);
   smart_curve_.second->setCheckable(true);
-  
+
+  menu->addSeparator();
+
+  auto find_contours = menu->addAction(QIcon(), "Find contours");
+  connect(find_contours, &QAction::triggered, this, &MainWindow::findContours);
+
   menu->addSeparator();
 
   calibrate_ = menu->addAction("Calibration");
@@ -1043,6 +1049,59 @@ void MainWindow::smartCurve(bool) {
     smart_curve_.first->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: yellow; } ");
     smart_curve_.second->setChecked(false);
   }
+}
+
+void MainWindow::findContours(bool) {
+  if (!current_item_) {
+    return;
+  }
+
+  auto sample = current_item_->image.clone();
+  auto sample2 = sample.clone();
+
+  // find contours
+  const auto desired_image_size = 450;
+  float desired_factor_w = desired_image_size * 1.0f / sample.cols;
+  float desired_factor_h = desired_image_size * 1.0f / sample.rows;
+  auto factor = qMin(desired_factor_w, desired_factor_h);
+  if (factor < 1.0f) {
+    auto sw = static_cast<int>(sample.cols * factor);
+    auto sh = static_cast<int>(sample.rows * factor);
+    cv::resize(sample, sample, cv::Size(sw, sh));
+  }
+  else factor = 1.0f;
+
+  xr::Image dst(sample.cols, sample.rows);
+  for (int i = 0; i < sample.cols; ++i) {
+    for (int j = 0; j < sample.rows; ++j) {
+      auto rgb = sample.at<cv::Vec3b>(j, i);
+      dst.byte(i, j) = (int(rgb[0]) + int(rgb[1]) + int(rgb[2])) / 3;
+    }
+  }
+
+
+  int flags = 0;
+  flags |= xr::MainProcessor::UseOpenMP;
+  flags |= xr::MainProcessor::UseAutoBlur;
+  flags |= xr::MainProcessor::UseActiveContours;
+  flags |= xr::MainProcessor::UseAccurateSplit;
+
+  xr::MainProcessor processor(std::move(dst), flags);
+  processor.setContoursFinderType(xr::MainProcessor::FinderType::Radial);
+  processor.setGradientOpType(xr::MainProcessor::GradientOpType::Kirsch);
+
+  auto contours = processor.findContours();
+
+  for (auto contour : contours) {
+    for (auto pt : contour) {
+      sample2.at<cv::Vec3b>(pt.y * 1.0f / factor, pt.x * 1.0f / factor) = cv::Vec3b(0, 0, 255);
+    }
+  }
+
+  cv::imwrite("test_load.png", sample2);
+
+  current_item_->image = sample2;
+  updateCurrentItem();
 }
 
 void MainWindow::drawPoly(bool checked) {
