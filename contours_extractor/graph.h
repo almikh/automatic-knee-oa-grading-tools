@@ -18,7 +18,7 @@ namespace xr
     int size_;
     std::vector<int> parent_;
     std::vector<bool> visited_;
-    xr::Size image_size_;
+    cv::Size image_size_;
 
     std::vector<std::map<int, flow_t>> edges_;
     std::vector<std::map<int, flow_t>> r_edges_;
@@ -27,7 +27,7 @@ namespace xr
     void dfs(int s, std::vector<bool>& visited);
 
   public:
-    Graph(int size, const xr::Size& imageSize);
+    Graph(int size, const cv::Size& imageSize);
 
     static Graph fromImage(const xr::Matrix<double>& image);
 

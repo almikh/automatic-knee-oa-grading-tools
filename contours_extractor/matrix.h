@@ -1,7 +1,6 @@
 #pragma once
 #include <functional>
-#include "size.h"
-#include "point.h"
+#include "defs.h"
 
 namespace xr
 {
@@ -39,7 +38,7 @@ namespace xr
       other.data_ = nullptr;
     }
 
-    Matrix(const Size& size, const T& val = 0) {
+    Matrix(const cv::Size& size, const T& val = 0) {
       recreate(size.width, size.height, val);
     }
 
@@ -147,8 +146,8 @@ namespace xr
       return !data_;
     }
 
-    Size size() const {
-      return Size(width_, height_);
+    cv::Size size() const {
+      return cv::Size(width_, height_);
     }
 
     int height() const {

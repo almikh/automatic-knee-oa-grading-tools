@@ -24,7 +24,7 @@ namespace xr
     Image(const Image& src);
     Image(Image&& src);
 
-    Image(const Size& size);
+    Image(const cv::Size& size);
     Image(int width, int height);
 
     ~Image();
@@ -94,8 +94,8 @@ namespace xr
       return data_;
     }
 
-    Size size() const {
-      return Size(width_, height_);
+    cv::Size size() const {
+      return cv::Size(width_, height_);
     }
 
     int height() const {

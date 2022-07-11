@@ -5,7 +5,8 @@
 #include <algorithm>
 #include "utility.h"
 #include "xr_math.h"
-#include "rgb_image.h"
+
+#include <opencv2/opencv.hpp>
 
 namespace xr
 {
@@ -24,7 +25,7 @@ namespace xr
     src.data_ = nullptr;
   }
 
-  Image::Image(const Size& size) {
+  Image::Image(const cv::Size& size) {
     recreate(size.width, size.height);
   }
 
@@ -135,7 +136,7 @@ namespace xr
     for (int i = 0; i < 256; ++i) p[i] /= pixels;
 
     double w1 = 0, n1 = 0, n2 = 0;
-    for (int i = 0, n = p.size(); i < n; ++i) {
+    for (size_t i = 0, n = p.size(); i < n; ++i) {
       n2 += i*p[i];
     }
 
@@ -971,13 +972,25 @@ namespace xr
 
   /* others */
   Image imread(const std::string& filename) {
-    RgbImage src;
-    src.load(filename.c_str());
-    return src.toGray();
+    cv::Mat src = cv::imread(filename);
+    if (src.channels() > 1) {
+      cv::cvtColor(src, src, cv::COLOR_BGR2GRAY);
+    }
+
+    Image ans(src.cols, src.rows);
+    int pixels = src.cols * src.rows;
+    uint8_t* cur_dst = ans.data();
+    uint8_t* cur_src = src.data;
+    for (int i = 0; i < pixels; ++i) {
+      *cur_dst++ = *cur_src++;
+    }
+
+    return ans;
   }
 
   bool imwrite(const Image& image, const std::string& filename) {
-    return RgbImage(image).save(filename.c_str());
+    cv::Mat sample(cv::Size(image.width(), image.height()), CV_8UC1, image.data());
+    return cv::imwrite(filename, sample);
   }
 
   Image* draw(Image* image, const contour_t& contour, uint8_t color) {

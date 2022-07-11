@@ -36,8 +36,6 @@
     <ClInclude Include="xr_math.h" />
     <ClInclude Include="point.h" />
     <ClInclude Include="rect.h" />
-    <ClInclude Include="rgb_image.h" />
-    <ClInclude Include="size.h" />
     <ClInclude Include="timer.h" />
     <ClInclude Include="utility.h" />
   </ItemGroup>
@@ -61,7 +59,6 @@
     <ClCompile Include="simple_key_points_finder.cpp" />
     <ClCompile Include="threshold_finder.cpp" />
     <ClCompile Include="xr_math.cpp" />
-    <ClCompile Include="rgb_image.cpp" />
     <ClCompile Include="utility.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

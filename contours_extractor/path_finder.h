@@ -1,7 +1,6 @@
 ﻿#pragma once
 #include <memory>
 #include "defs.h"
-#include "size.h"
 #include "point.h"
 #include "matrix.h"
 #include "image.h"
@@ -54,7 +53,7 @@ namespace xr
     };
 
     PathFinder();
-    PathFinder(const Size& size);
+    PathFinder(const cv::Size& size);
 
     bool find(point_t first, point_t last, int flag = Distance | Gradient, bool include_init_points = false);
     path_t lastPath() const;

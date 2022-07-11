@@ -10,7 +10,7 @@ namespace xr
 
   }
 
-  PathFinder::PathFinder(const Size& size) :
+  PathFinder::PathFinder(const cv::Size& size) :
     pass_map_(new AllTraversable()),
     aux_price_(size, 0),
     label_map_(size, 0),

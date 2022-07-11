@@ -4,6 +4,7 @@
 #include <limits>
 
 #include "point.h"
+#include <opencv2/core/types.hpp>
 
 using Int = std::numeric_limits<int>;
 using Float = std::numeric_limits<float>;

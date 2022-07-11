@@ -6,7 +6,7 @@
 
 namespace xr
 {
-  Graph::Graph(int size, const xr::Size& image_size_) :
+  Graph::Graph(int size, const cv::Size& image_size_) :
     size_(size),
     parent_(size),
     image_size_(image_size_),
