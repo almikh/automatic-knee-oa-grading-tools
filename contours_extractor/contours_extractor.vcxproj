@@ -14,7 +14,6 @@
     <ClInclude Include="active_contours.h" />
     <ClInclude Include="analysis.h" />
     <ClInclude Include="break_points_detector.h" />
-    <ClInclude Include="color.h" />
     <ClInclude Include="contours_finder.h" />
     <ClInclude Include="defs.h" />
     <ClInclude Include="gaps_remover.h" />
@@ -43,7 +42,6 @@
     <ClCompile Include="active_contours.cpp" />
     <ClCompile Include="analysis.cpp" />
     <ClCompile Include="break_points_detector.cpp" />
-    <ClCompile Include="color.cpp" />
     <ClCompile Include="contours_finder.cpp" />
     <ClCompile Include="gaps_remover.cpp" />
     <ClCompile Include="graph.cpp" />

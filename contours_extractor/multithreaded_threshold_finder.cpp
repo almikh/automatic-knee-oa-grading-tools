@@ -64,7 +64,7 @@ namespace xr
       return f.valuation < s.valuation;
     });
 
-    target_index_ = target_it - buffer_.begin();
+    target_index_ = static_cast<int>(target_it - buffer_.begin());
     return buffer_[target_index_].threshold;
   }
 }

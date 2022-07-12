@@ -546,7 +546,7 @@ namespace xr
           variance[k] = 1.0 / n*variance[k] - medium[k] * medium[k];
         }
 
-        int target = std::min_element(variance, variance + 4) - variance; //ptr. diff
+        int target = static_cast<int>(std::min_element(variance, variance + 4) - variance); //ptr. diff
         byte(i, j) = static_cast<uint8_t>(medium[target]);
       }
     }

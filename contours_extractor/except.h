@@ -9,12 +9,6 @@ namespace xr
     }
   };
 
-  struct NotInstalledImageUploaderException : public std::exception {
-    const char* what() const override {
-      return "not installed image uploader!";
-    }
-  };
-
   struct InvalidParameterException : public std::exception {
     InvalidParameterException(const std::string& param_name) : 
       param_name_("invalid parameter: " + param_name)

@@ -115,7 +115,7 @@ namespace xr
       }
     }
 
-    int prev_size = working_copy.size();
+    size_t prev_size = working_copy.size();
     unique(working_copy);
 
     const size_t min_contour_length = 10;

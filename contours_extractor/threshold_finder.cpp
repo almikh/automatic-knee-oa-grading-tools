@@ -15,10 +15,10 @@ namespace xr
   void ThresholdFinder::Verifier::removalDiscontinuities() {
     GapsRemover remover(data_, working_copy_);
 
-    size_t size = 1;
     working_copy_->setFrame(1, 255);
     working_copy_->closing(1);
 
+    int size = 1;
     double factors[] = {1.5, 1.25, 1.5, 1.0, 1.75, 1.75};
     int lenghts[] = {8 * size, 16 * size, 32 * size, 16 * size, 48 * size, 32 * size};
 
@@ -137,7 +137,7 @@ namespace xr
       return f.valuation < s.valuation;
     });
 
-    target_index_ = target_it - buffer_.begin();
+    target_index_ = static_cast<int>(target_it - buffer_.begin());
     return buffer_[target_index_].threshold;
   }
 
