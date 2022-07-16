@@ -1079,10 +1079,10 @@ void MainWindow::findContours(bool) {
   }
 
   int flags = 0;
-  flags |= xr::MainProcessor::UseOpenMP;
-  flags |= xr::MainProcessor::UseAutoBlur;
-  flags |= xr::MainProcessor::UseActiveContours;
-  flags |= xr::MainProcessor::UseAccurateSplit;
+  if (AppPrefs::read("image_smoothing").toBool()) flags |= xr::MainProcessor::UseAutoBlur;
+  if (AppPrefs::read("use_openmp").toBool()) flags |= xr::MainProcessor::UseOpenMP; 
+  if (AppPrefs::read("active_contours").toBool()) flags |= xr::MainProcessor::UseActiveContours;
+  if (AppPrefs::read("accurate_split").toBool()) flags |= xr::MainProcessor::UseAccurateSplit;
 
   xr::MainProcessor processor(std::move(dst), flags);
   processor.setContoursFinderType(xr::MainProcessor::FinderType::Radial);

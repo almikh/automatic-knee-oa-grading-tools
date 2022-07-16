@@ -102,14 +102,28 @@ SettingsWindow::SettingsWindow(QWidget* parent) :
   l->setAlignment(Qt::AlignTop);
   l->setSpacing(8);
 
-  // UI
   auto enable_classifier = new QCheckBox("Enable automitic osteoarthritis classification");
   enable_classifier->setObjectName("enable_classifier");
-  l->addWidget(enable_classifier, r, 0, 1, 2);
-  r += 1;
+  l->addWidget(enable_classifier, r++, 0, 1, 2);
 
-  create_selector(l, "Classifier file path", "classifier_params_path", "", r);
-  r += 1;
+  create_selector(l, "Classifier file path", "classifier_params_path", "", r++);
+
+  //
+  gb = new QGroupBox("Contours extraction");
+  gb->setStyleSheet("QGroupBox { font-weight: bold; } ");
+  gb->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
+  vl->addWidget(gb);
+
+  r = 0;
+  l = new QGridLayout(gb);
+  l->setContentsMargins(8, 8, 8, 8);
+  l->setAlignment(Qt::AlignTop);
+  l->setSpacing(8);
+
+  auto image_smoothing = create_check_box(l, "Use pre-processing: image smoothing", "image_smoothing", r++);
+  auto use_openmp = create_check_box(l, "Use multithreaded contours finder", "use_openmp", r++);
+  auto active_contours = create_check_box(l, "Use active contours to improve result", "active_contours", r++);
+  auto accurate_split = create_check_box(l, "Use post-processing: accurate split", "accurate_split", r++);
 
   //
   auto scroll_area = new QScrollArea(this);
@@ -130,6 +144,11 @@ SettingsWindow::SettingsWindow(QWidget* parent) :
 
     AppPrefs::write("enable_classifier", enable_classifier->isChecked());
     AppPrefs::write("classifier_params_path", classifier_params_path->text());
+
+    AppPrefs::write("image_smoothing", image_smoothing->isChecked());
+    AppPrefs::write("use_openmp", use_openmp->isChecked());
+    AppPrefs::write("active_contours", active_contours->isChecked());
+    AppPrefs::write("accurate_split", accurate_split->isChecked());
   });
 
   init();
@@ -149,11 +168,21 @@ void SettingsWindow::hideEvent(QHideEvent* e) {
 void SettingsWindow::init() {
   const auto classifier_params_path = findChild<QLineEdit*>("classifier_params_path");
   const auto enable_classifier = findChild<QCheckBox*>("enable_classifier");
+  const auto image_smoothing = findChild<QCheckBox*>("image_smoothing");
+  const auto use_openmp = findChild<QCheckBox*>("use_openmp");
+  const auto active_contours = findChild<QCheckBox*>("active_contours");
+  const auto accurate_split = findChild<QCheckBox*>("accurate_split");
 
+  // classifier
   enable_classifier->setChecked(AppPrefs::read("enable_classifier").toBool());
-
   classifier_params_path->setText(AppPrefs::read("classifier_params_path").toString());
   if (classifier_params_path->text().isEmpty() && QFile("script.zip").exists()) {
     classifier_params_path->setText(QFileInfo("script.zip").absoluteFilePath());
   }
+
+  // contours extractor
+  image_smoothing->setChecked(AppPrefs::read("image_smoothing").toBool());
+  use_openmp->setChecked(AppPrefs::read("use_openmp").toBool());
+  active_contours->setChecked(AppPrefs::read("active_contours").toBool());
+  accurate_split->setChecked(AppPrefs::read("accurate_split").toBool());
 }
