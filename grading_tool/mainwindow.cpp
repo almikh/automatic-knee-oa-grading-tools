@@ -1057,7 +1057,6 @@ void MainWindow::findContours(bool) {
   }
 
   auto sample = current_item_->image.clone();
-  auto sample2 = sample.clone();
 
   // find contours
   const auto desired_image_size = 450;
@@ -1079,7 +1078,6 @@ void MainWindow::findContours(bool) {
     }
   }
 
-
   int flags = 0;
   flags |= xr::MainProcessor::UseOpenMP;
   flags |= xr::MainProcessor::UseAutoBlur;
@@ -1091,17 +1089,29 @@ void MainWindow::findContours(bool) {
   processor.setGradientOpType(xr::MainProcessor::GradientOpType::Kirsch);
 
   auto contours = processor.findContours();
+  if (!contours.empty()) {
+    // make gradient for current image
+    if (current_item_ && current_item_->gradient.empty()) {
+      cv::Mat temp;
+      cv::GaussianBlur(current_item_->src_image, temp, cv::Size(3, 3), 0, 0, cv::BORDER_DEFAULT);
+      cv::cvtColor(temp, temp, cv::COLOR_RGB2GRAY);
+      current_item_->gradient = gvf(temp, 0.04, 55);
+      viewport_->setGradient(current_item_->gradient);
+    }
 
-  for (auto contour : contours) {
-    for (auto pt : contour) {
-      sample2.at<cv::Vec3b>(pt.y * 1.0f / factor, pt.x * 1.0f / factor) = cv::Vec3b(0, 0, 255);
+    for (auto contour : contours) {
+      int k = 0;
+      QVector<QPoint> points;
+      for (auto pt : contour) {
+        if (k++ % 20 == 0) points.push_back(QPoint(pt.x, pt.y));
+      }
+
+      auto poly = QPolygonF(points);
+      if (square(poly) > perimeter(poly) * 2) {
+        viewport_->addNewSmartCurve(points);
+      }
     }
   }
-
-  cv::imwrite("test_load.png", sample2);
-
-  current_item_->image = sample2;
-  updateCurrentItem();
 }
 
 void MainWindow::drawPoly(bool checked) {

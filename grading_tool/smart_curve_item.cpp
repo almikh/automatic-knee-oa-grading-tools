@@ -40,6 +40,9 @@ qreal SmartCurveItem::length() const {
   qreal acc = 0.0f;
   QVector<QPointF> prev_segment;
   for (auto path : path_) {
+    if (path.isEmpty())
+      continue;
+
     for (int k = 1; k < path.size(); ++k) {
       acc += dist(path[k - 1], path[k]);
     }
@@ -117,8 +120,11 @@ void SmartCurveItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* o,
 void SmartCurveItem::redraw(bool full_redraw) {
   if (part_under_mouse_ < 0 || full_redraw) {
     path_.clear();
-    for (int k = 1; k < points_.size(); ++k) {
-      if (path_finder_.find(cv::Point(points_[k - 1].x(), points_[k - 1].y()), cv::Point(points_[k].x(), points_[k].y()))) {
+    for (int k = 1; k <= points_.size(); ++k) {
+      int prev_kk = (k - 1  + points_.size()) % points_.size();
+      int kk = k % points_.size();
+
+      if (path_finder_.find(cv::Point(points_[prev_kk].x(), points_[prev_kk].y()), cv::Point(points_[kk].x(), points_[kk].y()))) {
         QVector<QPointF> path;
         for (auto pt : path_finder_.lastPath()) {
           path.push_back(QPointF(pt.x, pt.y));
@@ -127,17 +133,23 @@ void SmartCurveItem::redraw(bool full_redraw) {
         std::reverse(path.begin(), path.end());
         path_.push_back(path);
       }
+      else {
+        path_.push_back({});
+      }
     }
   }
   else {
     for (auto k : { part_under_mouse_ , part_under_mouse_ +1 }) {
-      if (0 < k && k < points_.size() && path_finder_.find(cv::Point(points_[k - 1].x(), points_[k - 1].y()), cv::Point(points_[k].x(), points_[k].y()))) {
+      int prev_kk = (k - 1 + points_.size()) % points_.size();
+      int kk = k % points_.size();
+
+      if (0 <= kk && kk < points_.size() && path_finder_.find(cv::Point(points_[prev_kk].x(), points_[prev_kk].y()), cv::Point(points_[kk].x(), points_[kk].y()))) {
         QVector<QPointF> path;
         for (auto pt : path_finder_.lastPath()) {
           path.push_back(QPointF(pt.x, pt.y));
         }
 
-        path_[k-1] = path;
+        path_[prev_kk] = path;
       }
     }
   }

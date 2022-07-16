@@ -201,3 +201,30 @@ QPointF str2point(const QString& str) {
   auto vals = str.split(';');
   return QPointF(vals[0].toDouble(), vals[1].toDouble());
 }
+
+qreal perimeter(const QPolygonF& poly) {
+  qreal acc = 0.0f;
+  acc += dist(poly.last(), poly.first());
+  for (int k = 1; k < poly.count(); ++k) {
+    acc += dist(poly[k - 1], poly[k]);
+  }
+
+  return acc;
+}
+
+qreal square(const QPolygonF& poly) {
+  int count = 0;
+  auto rect = poly.boundingRect();
+  int left = qMax<int>(0, qMin(rect.x(), rect.x() + rect.width()));
+  int bottom = qMax<int>(0, qMin(rect.y(), rect.y() + rect.height()));
+  int right = left + qAbs<int>(rect.width()), top = bottom + qAbs(rect.height());
+  for (int i = left; i <= right; ++i) {
+    for (int j = bottom; j <= top; ++j) {
+      if (poly.containsPoint(QPointF(i, j), Qt::FillRule::OddEvenFill)) {
+        count += 1;
+      }
+    }
+  }
+
+  return count;
+}

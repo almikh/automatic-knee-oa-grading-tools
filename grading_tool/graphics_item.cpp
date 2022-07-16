@@ -646,15 +646,17 @@ void GraphicsItem::setCreated(bool created, std::optional<int> r) {
   }
 }
 
-void GraphicsItem::checkPartUnderPos(const QPointF& coord) {
+bool GraphicsItem::checkPartUnderPos(const QPointF& coord) {
   const auto r = base_touch_radius / scale_factor_;
   if (type_ == Type::Line) {
     auto data = line_->line();
     if (dist(coord, data.p1()) < r) {
       line_->setPartUnderMouse(0);
+      return true;
     }
     else if (dist(coord, data.p2()) < r) {
       line_->setPartUnderMouse(1);
+      return true;
     }
     else line_->setPartUnderMouse(-1);
   }
@@ -664,7 +666,7 @@ void GraphicsItem::checkPartUnderPos(const QPointF& coord) {
     for (int k = 0; k < 4; ++k) {
       if (dist(coord, points[k]) < r) {
         ellipse_->setPartUnderMouse(k);
-        return;
+        return true;
       }
     }
 
@@ -675,7 +677,7 @@ void GraphicsItem::checkPartUnderPos(const QPointF& coord) {
     for (int k = 0; k < poly.count(); ++k) {
       if (dist(coord, poly[k].toPoint()) < r) {
         angle_->setPartUnderMouse(k);
-        return;
+        return true;
       }
     }
 
@@ -686,7 +688,7 @@ void GraphicsItem::checkPartUnderPos(const QPointF& coord) {
     for (int k = 0; k < poly.count(); ++k) {
       if (dist(coord, poly[k].toPoint()) < r) {
         cobb_angle_->setPartUnderMouse(k);
-        return;
+        return true;
       }
     }
 
@@ -697,7 +699,7 @@ void GraphicsItem::checkPartUnderPos(const QPointF& coord) {
     for (int k = 0; k < poly.count(); ++k) {
       if (dist(coord, poly[k].toPoint()) < r) {
         poly_->setPartUnderMouse(k);
-        return;
+        return true;
       }
     }
 
@@ -708,12 +710,14 @@ void GraphicsItem::checkPartUnderPos(const QPointF& coord) {
     for (int k = 0; k < points.count(); ++k) {
       if (dist(coord, points[k]) < r) {
         smart_curve_->setPartUnderMouse(k);
-        return;
+        return true;
       }
     }
 
     smart_curve_->setPartUnderMouse(-1);
   }
+
+  return false;
 }
 
 bool GraphicsItem::checkSelection(const QPointF& pos) {

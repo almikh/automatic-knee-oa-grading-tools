@@ -148,6 +148,20 @@ void Viewport::setGraphicsItems(const QJsonArray& items, const QVector<Transform
   repaint();
 }
 
+void Viewport::addNewSmartCurve(const QVector<QPoint>& points) {
+  auto item = GraphicsItem::makeSmartCurve(points.first(), pixmap_item_);
+  item->setCalibrationCoef(calib_coef_);
+  item->setScaleFactor(scale_factor_);
+  item->setGradient(gradient_);
+  item->setPoints(points);
+  item->setCreated(true);
+  item->updateCaption();
+
+  graphics_items_.push_back(item);
+
+  repaint();
+}
+
 void Viewport::setLabelText(const QString& text) {
   label_->setPos(QPointF(8, height() - 40));
   label_->setPlainText(text);
@@ -484,9 +498,9 @@ void Viewport::mouseReleaseEvent(QMouseEvent* event) {
   auto point = mapToScene(event->pos());
   auto coord = QPointF(point - pixmap_item_->pos()) / scale_factor_;
   if (event->button() == Qt::RightButton) {
-    if (pixmap_item_ && anchor_shift_) {
+    if (pixmap_item_) {
       auto next_shift = pixmap_item_->pos() - point;
-      if ((next_shift - anchor_shift_.value()).manhattanLength() <= 2) {
+      if (!anchor_shift_ || (next_shift - anchor_shift_.value()).manhattanLength() <= 2) {
         for (int k = 0; k < graphics_items_.size(); ++k) {
           if (graphics_items_[k]->isItemUnderMouse()) {
             emit menuForItemRequested(graphics_items_[k], event->pos());
@@ -495,7 +509,6 @@ void Viewport::mouseReleaseEvent(QMouseEvent* event) {
         }
       }
       
-      pixmap_item_->setPos(anchor_shift_.value() + point);
       anchor_shift_ = std::nullopt;
     }
   }
@@ -570,9 +583,9 @@ void Viewport::mouseReleaseEvent(QMouseEvent* event) {
     else if (mode_ == Mode::SmartCurve) {
       auto item = graphics_items_.last();
       if (!item->isCreated()) {
-        auto poins = item->points();
-        poins.push_back(coord.toPoint());
-        item->setPoints(poins);
+        auto points = item->points();
+        points.push_back(coord.toPoint());
+        item->setPoints(points);
 
         // NOTE:
         // continue drawing
@@ -620,19 +633,27 @@ void Viewport::mouseMoveEvent(QMouseEvent* event) {
   else if (pixmap_item_) {
     auto coord = QPointF(point - pixmap_item_->pos()) / scale_factor_;
     if (drawing_) {
-      if (/*mode_ == Mode::DrawLine && */!graphics_items_.isEmpty()) {
+      if (!graphics_items_.isEmpty() && rect.contains(point)) {
         auto item = graphics_items_.last();
         item->mouseMoveEvent(coord, image_);
       }
     }
     else {
-      for (int k = 0; k < graphics_items_.size(); ++k) {
-        graphics_items_[k]->checkPartUnderPos(coord);
-      }
-
+      bool found = false;
       for (int k = 0; k < graphics_items_.size(); ++k) {
         if (!graphics_items_[k]->isSelected()) {
-          graphics_items_[k]->checkSelection(coord);
+          if (graphics_items_[k]->checkSelection(coord)) {
+            found = true;
+            break;
+          }
+        }
+      }
+
+      if (!found) {
+        for (int k = 0; k < graphics_items_.size(); ++k) {
+          if (graphics_items_[k]->checkPartUnderPos(coord)) {
+            break;
+          }
         }
       }
 

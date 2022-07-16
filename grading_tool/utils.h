@@ -15,6 +15,8 @@ QPointF rotatedPoint(const QPointF& pt, int angle, QSize pixmap_size, bool enabl
 
 qreal dist(const QPointF& p1, const QPointF& p2);
 qreal distToLine(const QPointF& p, const QPointF& pa, const QPointF& pb);
+qreal perimeter(const QPolygonF& p);
+qreal square(const QPolygonF& p);
 
 QString point2str(const QPointF& pt);
 QPointF str2point(const QString& str);

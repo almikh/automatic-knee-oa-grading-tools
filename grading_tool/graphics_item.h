@@ -96,7 +96,7 @@ public:
   void setSelected(bool selected);
 
   bool checkSelection(const QPointF& pos);
-  void checkPartUnderPos(const QPointF& pos);
+  bool checkPartUnderPos(const QPointF& pos);
   void updateCaption();
   void updateColors();
 

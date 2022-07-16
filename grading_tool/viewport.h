@@ -72,6 +72,8 @@ public:
   // @param r:      rotation of current image
   void setGraphicsItems(const QJsonArray& items, const QVector<Transformation>& t = {}, int r = 0);
 
+  void addNewSmartCurve(const QVector<QPoint>& points);
+
   void setLabelText(const QString& text);
   void setLabelVisible(bool visible);
 
