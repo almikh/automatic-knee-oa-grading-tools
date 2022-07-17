@@ -106,7 +106,7 @@ SettingsWindow::SettingsWindow(QWidget* parent) :
   enable_classifier->setObjectName("enable_classifier");
   l->addWidget(enable_classifier, r++, 0, 1, 2);
 
-  create_selector(l, "Classifier file path", "classifier_params_path", "", r++);
+  auto classifier_params_path = std::get<0>(create_selector(l, "Classifier file path", "classifier_params_path", "", r++));
 
   //
   gb = new QGroupBox("Contours extraction");
@@ -120,10 +120,16 @@ SettingsWindow::SettingsWindow(QWidget* parent) :
   l->setAlignment(Qt::AlignTop);
   l->setSpacing(8);
 
-  auto image_smoothing = create_check_box(l, "Use pre-processing: image smoothing", "image_smoothing", r++);
-  auto use_openmp = create_check_box(l, "Use multithreaded contours finder", "use_openmp", r++);
-  auto active_contours = create_check_box(l, "Use active contours to improve result", "active_contours", r++);
-  auto accurate_split = create_check_box(l, "Use post-processing: accurate split", "accurate_split", r++);
+  auto image_smoothing = create_check_box(l, "Use pre-processing: image smoothing", "image_smoothing", r++, 2);
+  auto use_openmp = create_check_box(l, "Use multithreaded contours finder", "use_openmp", r++, 2);
+  auto active_contours = create_check_box(l, "Use active contours to improve result", "active_contours", r++, 2);
+  auto accurate_split = create_check_box(l, "Use post-processing: accurate split", "accurate_split", r++, 2);
+
+  auto edge_detector = create_combo_box(l, "Edge detector:", "edge_detector", r++, { "Kirsch operator", "Sobel operator" });
+  auto extraction_method = create_combo_box(l, "Contours extraction method:", "extraction_method", r++, { 
+    "Radial method", 
+    "Rosenfeld method", 
+    "Simple method" });
 
   //
   auto scroll_area = new QScrollArea(this);
@@ -139,9 +145,6 @@ SettingsWindow::SettingsWindow(QWidget* parent) :
 
   // запись изменений 
   QObject::connect(this, &SettingsWindow::closed, [=](bool) {
-    const auto enable_classifier = findChild<QCheckBox*>("enable_classifier");
-    const auto classifier_params_path = findChild<QLineEdit*>("classifier_params_path");
-
     AppPrefs::write("enable_classifier", enable_classifier->isChecked());
     AppPrefs::write("classifier_params_path", classifier_params_path->text());
 
@@ -149,6 +152,12 @@ SettingsWindow::SettingsWindow(QWidget* parent) :
     AppPrefs::write("use_openmp", use_openmp->isChecked());
     AppPrefs::write("active_contours", active_contours->isChecked());
     AppPrefs::write("accurate_split", accurate_split->isChecked());
+    AppPrefs::write("edge_detector", edge_detector->currentIndex() == 0 ? "kirsch" : "sobel");
+
+    auto em = extraction_method->currentIndex();
+    if (em == 0) AppPrefs::write("extraction_method", "radial");
+    else if (em == 1) AppPrefs::write("extraction_method", "rosenfeld");
+    else AppPrefs::write("extraction_method", "simple");
   });
 
   init();
@@ -172,6 +181,8 @@ void SettingsWindow::init() {
   const auto use_openmp = findChild<QCheckBox*>("use_openmp");
   const auto active_contours = findChild<QCheckBox*>("active_contours");
   const auto accurate_split = findChild<QCheckBox*>("accurate_split");
+  const auto edge_detector = findChild<QComboBox*>("edge_detector");
+  const auto extraction_method = findChild<QComboBox*>("extraction_method");
 
   // classifier
   enable_classifier->setChecked(AppPrefs::read("enable_classifier").toBool());
@@ -185,4 +196,10 @@ void SettingsWindow::init() {
   use_openmp->setChecked(AppPrefs::read("use_openmp").toBool());
   active_contours->setChecked(AppPrefs::read("active_contours").toBool());
   accurate_split->setChecked(AppPrefs::read("accurate_split").toBool());
+  edge_detector->setCurrentIndex(AppPrefs::read("edge_detector", "kirsch").toString() == "kirsch" ? 0 : 1);
+
+  auto em = AppPrefs::read("extraction_method", "radial").toString();
+  if (em == "radial") extraction_method->setCurrentIndex(0);
+  else if (em == "rosenfeld") extraction_method->setCurrentIndex(1);
+  else extraction_method->setCurrentIndex(2);
 }

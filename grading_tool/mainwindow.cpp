@@ -1085,12 +1085,20 @@ void MainWindow::findContours(bool) {
   if (AppPrefs::read("accurate_split").toBool()) flags |= xr::MainProcessor::UseAccurateSplit;
 
   xr::MainProcessor processor(std::move(dst), flags);
-  processor.setContoursFinderType(xr::MainProcessor::FinderType::Radial);
-  processor.setGradientOpType(xr::MainProcessor::GradientOpType::Kirsch);
 
+  auto edge_detector = AppPrefs::read("edge_detector", "kirsch").toString();
+  if (edge_detector == "kirsch") processor.setGradientOpType(xr::MainProcessor::GradientOpType::Kirsch);
+  else processor.setGradientOpType(xr::MainProcessor::GradientOpType::Sobel);
+
+  auto em = AppPrefs::read("extraction_method", "radial").toString();
+  if (em == "radial") processor.setContoursFinderType(xr::MainProcessor::FinderType::Radial);
+  else if (em == "rosenfeld") processor.setContoursFinderType(xr::MainProcessor::FinderType::Rosenfeld);
+  else processor.setContoursFinderType(xr::MainProcessor::FinderType::Simple);
+  
+  // run search
   auto contours = processor.findContours();
   if (!contours.empty()) {
-    // make gradient for current image
+    // NOTE: make gradient for current image
     if (current_item_ && current_item_->gradient.empty()) {
       cv::Mat temp;
       cv::GaussianBlur(current_item_->src_image, temp, cv::Size(3, 3), 0, 0, cv::BORDER_DEFAULT);
