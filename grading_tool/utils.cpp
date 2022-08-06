@@ -228,3 +228,33 @@ qreal square(const QPolygonF& poly) {
 
   return count;
 }
+
+cv::Rect rect(const xr::contour_t& contour) {
+  int left = INT_MAX, right = 0, bottom = INT_MAX, top = 0;
+  for (int k = 0; k < contour.size(); ++k) {
+    if (contour[k].x < left) left = contour[k].x;
+    if (contour[k].x > right) right = contour[k].x;
+    if (contour[k].y < bottom) bottom = contour[k].y;
+    if (contour[k].y > top) top = contour[k].y;
+  }
+
+  return cv::Rect(left, bottom, right - left, top - bottom);
+}
+
+qreal max_width(const xr::contour_t& contour) {
+  qreal ans = 0.0;
+  for (int k = 0; k < contour.size(); ++k) {
+    int current_y = contour[k].y;
+    for (int k2 = 0; k2 < contour.size(); ++k2) {
+      if (k != k2 && contour[k2].y == current_y) {
+        ans = qMax<qreal>(ans, qAbs(contour[k2].x - contour[k].x));
+      }
+    }
+  }
+
+  return ans;
+}
+
+qreal jaccard(const cv::Rect& lhs, const cv::Rect& rhs) {
+  return  (lhs & rhs).area() * 1.0 / (lhs | rhs).area();
+}

@@ -85,6 +85,7 @@ public:
   void setSelectedColor(const QColor& color);
   void setDefaultColor(const QColor& color);
   void setCalibratedColor(const QColor& color);
+  void calcParameters(const cv::Mat& image);
 
   void addExtraPoint(const QPointF& point);
   void setPolygon(const QPolygonF& poly);

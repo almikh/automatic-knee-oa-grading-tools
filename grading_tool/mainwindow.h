@@ -10,6 +10,7 @@
 #include "viewport.h"
 #include "classifier.h"
 #include "metadata.h"
+#include "tfdetect.h"
 
 class QTableWidget;
 class QCustomPlot;
@@ -146,4 +147,5 @@ public:
   void init();
 
   QVector<Classifier::Item> runClassifier(const cv::Mat& joint_area);
+  std::vector<cv::Rect> runDetector(const cv::Mat& input_image);
 };

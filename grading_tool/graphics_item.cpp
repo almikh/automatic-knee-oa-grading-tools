@@ -970,30 +970,6 @@ void GraphicsItem::mouseMoveEvent(const QPointF& pos, const cv::Mat& image) {
     else {
       ellipse_->setPoint(3, pos);
     }
-
-    auto rect = ellipse_->rect();
-    int sum = 0, count = 0, max = 0, min = INT_MAX;
-    int a = rect.width() / 2, b = rect.height() / 2;
-    float h = rect.x() + a, k = rect.y() + b, a2 = a*a, b2 = b*b;
-    int left = qMax<int>(0, qMin(rect.x(), rect.x() + rect.width()));
-    int bottom = qMax<int>(0, qMin(rect.y(), rect.y() + rect.height()));
-    int right = qMin(left + qAbs<int>(rect.width()), image.cols - 1), top = qMin<int>(bottom + qAbs(rect.height()), image.rows - 1);
-    for (int i = left; i <= right; ++i) {
-      for (int j = bottom; j <= top; ++j) {
-        if ((i - h) * (i - h) / a2 + (j - k) * (j - k) / b2 <= 1) {
-          auto px = image.at<cv::Vec2b>(j, i);
-          min = qMin<int>(px[0], min);
-          max = qMax<int>(px[0], max);
-          sum += px[0];
-          count += 1;
-        }
-      }
-    }
-
-    min_ = min;
-    max_ = max;
-    area_ = count;
-    avg_ = double(sum) / count;
   }
   else if (type_ == Type::Angle) {
     if (anchor_index_ >= 0) {
@@ -1015,7 +991,44 @@ void GraphicsItem::mouseMoveEvent(const QPointF& pos, const cv::Mat& image) {
     else {
       poly_->setPoint(poly_->polygon().count() - 1, pos);
     }
+  }
+  else if (type_ == Type::SmartCurve) {
+    if (anchor_index_ >= 0) {
+      smart_curve_->setPoint(anchor_index_, pos.toPoint());
+    }
+  }
 
+  calcParameters(image);
+  updateCaption();
+}
+
+void GraphicsItem::calcParameters(const cv::Mat& image) {
+  if (type_ == Type::Ellipse) {
+    auto rect = ellipse_->rect();
+    int sum = 0, count = 0, max = 0, min = INT_MAX;
+    int a = rect.width() / 2, b = rect.height() / 2;
+    float h = rect.x() + a, k = rect.y() + b, a2 = a * a, b2 = b * b;
+    int left = qMax<int>(0, qMin(rect.x(), rect.x() + rect.width()));
+    int bottom = qMax<int>(0, qMin(rect.y(), rect.y() + rect.height()));
+    int right = qMin(left + qAbs<int>(rect.width()), image.cols - 1), top = qMin<int>(bottom + qAbs(rect.height()), image.rows - 1);
+    for (int i = left; i <= right; ++i) {
+      for (int j = bottom; j <= top; ++j) {
+        if ((i - h) * (i - h) / a2 + (j - k) * (j - k) / b2 <= 1) {
+          auto px = image.at<cv::Vec2b>(j, i);
+          min = qMin<int>(px[0], min);
+          max = qMax<int>(px[0], max);
+          sum += px[0];
+          count += 1;
+        }
+      }
+    }
+
+    min_ = min;
+    max_ = max;
+    area_ = count;
+    avg_ = double(sum) / count;
+  }
+  else if (type_ == Type::Poly) {
     auto poly = poly_->polygon();
     auto rect = poly.boundingRect();
     int sum = 0, count = 0, max = 0, min = INT_MAX;
@@ -1035,7 +1048,7 @@ void GraphicsItem::mouseMoveEvent(const QPointF& pos, const cv::Mat& image) {
     }
 
     int p = dist(poly.first(), poly.back());
-    for (int k = 0; k < poly.size()-1; ++k) {
+    for (int k = 0; k < poly.size() - 1; ++k) {
       p += dist(poly[k], poly[k + 1]);
     }
 
@@ -1046,10 +1059,6 @@ void GraphicsItem::mouseMoveEvent(const QPointF& pos, const cv::Mat& image) {
     avg_ = double(sum) / count;
   }
   else if (type_ == Type::SmartCurve) {
-    if (anchor_index_ >= 0) {
-      smart_curve_->setPoint(anchor_index_, pos.toPoint());
-    }
-
     auto poly = QPolygonF(smart_curve_->points());
     auto rect = poly.boundingRect();
     int sum = 0, count = 0, max = 0, min = INT_MAX;
@@ -1074,8 +1083,6 @@ void GraphicsItem::mouseMoveEvent(const QPointF& pos, const cv::Mat& image) {
     avg_ = double(sum) / count;
     perimeter_ = smart_curve_->length();
   }
-
-  updateCaption();
 }
 
 void GraphicsItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* o, QWidget* w) {

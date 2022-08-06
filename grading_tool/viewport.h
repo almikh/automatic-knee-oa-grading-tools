@@ -71,7 +71,10 @@ public:
   // @param t:      transformations set of current image
   // @param r:      rotation of current image
   void setGraphicsItems(const QJsonArray& items, const QVector<Transformation>& t = {}, int r = 0);
-
+  
+  // add new smart curve (=contour) from image
+  // @param points: points of added contour
+  // @param image:  source image
   void addNewSmartCurve(const QVector<QPoint>& points);
 
   void setLabelText(const QString& text);

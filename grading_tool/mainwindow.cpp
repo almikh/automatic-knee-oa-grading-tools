@@ -24,6 +24,7 @@
 #include <torch/script.h>
 #define slots Q_SLOTS
 
+#include <stdexcept>
 #include <gdcm/gdcmImageReader.h>
 #include <main_processor.h>
 
@@ -45,8 +46,8 @@ QAction* nameAction(QToolBar* bar, QAction* action, const char* name = nullptr) 
 }
 
 const std::tuple<QString, QColor, cv::Scalar> joint_colors[] = {
-  {QString("Red Area"), QColor(Qt::red), cv::Scalar(200, 0, 0)},
-  {QString("Blue Area"), QColor(Qt::blue), cv::Scalar(0, 0, 200)},
+  { QString("Red Area"), QColor(Qt::red), cv::Scalar(200, 0, 0) },
+  { QString("Blue Area"), QColor(Qt::blue), cv::Scalar(0, 0, 200) },
 };
 
 const QString MainWindow::ic_line = "res/ic_line.png";
@@ -68,8 +69,7 @@ MainWindow::MainWindow(QWidget* parent) :
   calib_coef_(new QLabel()),
   loading_ind_(new ProgressIndicator()),
   right_panel_(new QTableWidget()),
-  view_queue_(new ViewQueue())
-{
+  view_queue_(new ViewQueue()) {
   setWindowTitle("Osteoarthritis Grading Tool");
 
   auto splitter = new QSplitter();
@@ -89,17 +89,17 @@ MainWindow::MainWindow(QWidget* parent) :
   // loading area
   loading_area_->setFixedHeight(20);
   wl->addWidget(loading_area_, 0, Qt::AlignLeft);
-  
+
   calib_coef_->setStyleSheet("background-color: black; color:white");
 
-  auto l = new QHBoxLayout(loading_area_); 
+  auto l = new QHBoxLayout(loading_area_);
   l->setContentsMargins(4, 1, 4, 1);
 
   loading_ind_->setFixedSize(16, 16);
   loading_ind_->setColor(Qt::white);
   l->addWidget(loading_ind_, 0, Qt::AlignLeft);
   l->addWidget(calib_coef_, 0, Qt::AlignLeft);
-  
+
   layout->addWidget(working_area_);
 
   // graphs area
@@ -155,7 +155,7 @@ MainWindow::MainWindow(QWidget* parent) :
 
     menu->exec(viewport_->mapToGlobal(pt));
   });
-  
+
   setCentralWidget(splitter);
   resize(800, 600);
 }
@@ -428,7 +428,7 @@ void MainWindow::showProcMenu() {
   auto emboss_d = new QAction("Emboss D", menu);
   connect(emboss_d, &QAction::triggered, [this]() {
     applyFilterForCurrent((cv::Mat_<double>(3, 3) <<
-       0, 1, 1,
+      0, 1, 1,
       -1, 0, 1,
       -1, -1, 0), 128.0f, true);
   });
@@ -500,7 +500,7 @@ void MainWindow::makeToolbar() {
   connect(smart_curve_.first, &QPushButton::clicked, this, &MainWindow::smartCurve);
   connect(proc_menu_, &QPushButton::clicked, this, &MainWindow::showProcMenu);
   connect(transform_menu_, &QPushButton::clicked, this, &MainWindow::showTransformMenu);
-  
+
   proc_menu_->setEnabled(false);
   transform_menu_->setEnabled(false);
 }
@@ -715,31 +715,20 @@ void MainWindow::updateCurrentItem() {
 void MainWindow::runOnData(Metadata::HardPtr data) {
   auto sample = data->src_image.clone();
 
-  // init detector
-  if (!detector_) {
-    if (QFile(detector_graph_file_).exists()) {
-      detector_ = tfdetect::CreateDetectorFromGraph("frozen_inference_graph.pb");
-    }
-    else {
-      qWarning() << "Detector's frozen graph file not found! Skip...";
-      in_process_.remove(data.get());
-      emit itemProcessed(data);
-      return;
-    }
+  // detect joints
+  std::vector<cv::Rect> joints;
+  try {
+    joints = runDetector(sample);
+  }
+  catch (const std::exception& e) {
+    in_process_.remove(data.get());
+    emit itemProcessed(data);
+    qWarning() << e.what();
+    return;
   }
 
-  // detect joints
-  auto knee_joints = detector_->detect(sample);
-
   // classification
-  for (int k = 0; k < static_cast<int>(knee_joints.size()); ++k) {
-    auto r = knee_joints[k];
-    auto rect = cv::Rect(
-      r.x_min * sample.cols,
-      r.y_min * sample.rows,
-      (r.x_max - r.x_min) * sample.cols,
-      (r.y_max - r.y_min) * sample.rows);
-
+  for (auto rect : joints) {
     auto grades = runClassifier(sample(rect));
 
     Metadata::Joint joint;
@@ -781,6 +770,33 @@ void MainWindow::applyFilterForCurrent(cv::Mat filter, float delta, bool apply_t
 
 void MainWindow::calibrate(GraphicsItem* item, const QPoint& pt) {
   calibrateForLength(item->length());
+}
+
+std::vector<cv::Rect> MainWindow::runDetector(const cv::Mat& sample) {
+  if (!detector_) { // init detector
+    if (QFile(detector_graph_file_).exists()) {
+      detector_ = tfdetect::CreateDetectorFromGraph("frozen_inference_graph.pb");
+    }
+    else {
+      throw std::runtime_error("Detector's frozen graph file not found! Skip...");
+    }
+  }
+
+  // detect joints
+  std::vector<cv::Rect> ans;
+  auto knee_joints = detector_->detect(sample);
+  for (int k = 0; k < static_cast<int>(knee_joints.size()); ++k) {
+    auto r = knee_joints[k];
+    auto rect = cv::Rect(
+      r.x_min * sample.cols,
+      r.y_min * sample.rows,
+      (r.x_max - r.x_min) * sample.cols,
+      (r.y_max - r.y_min) * sample.rows);
+
+    ans.push_back(rect);
+  }
+
+  return ans;
 }
 
 QVector<Classifier::Item> MainWindow::runClassifier(const cv::Mat& joint_area) {
@@ -990,7 +1006,7 @@ void MainWindow::drawCircle(bool checked) {
 void MainWindow::drawAngle(bool checked) {
   if (viewport_->mode() != Viewport::Mode::DrawAngle) {
     viewport_->setMode(Viewport::Mode::DrawAngle);
-    draw_angle_.first->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: rgb(28, 244, 19); } ");   
+    draw_angle_.first->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: rgb(28, 244, 19); } ");
     for (auto it : { draw_poly_, draw_circle_, draw_line_, draw_cobb_angle_, smart_curve_ }) {
       it.first->setStyleSheet("QPushButton { border-width: 1px; border-style: outset; border-color: black; background-color: yellow; } ");
       it.second->setChecked(false);
@@ -1058,65 +1074,118 @@ void MainWindow::findContours(bool) {
 
   auto sample = current_item_->image.clone();
 
-  // find contours
-  const auto desired_image_size = 450;
-  float desired_factor_w = desired_image_size * 1.0f / sample.cols;
-  float desired_factor_h = desired_image_size * 1.0f / sample.rows;
-  auto factor = qMin(desired_factor_w, desired_factor_h);
-  if (factor < 1.0f) {
-    auto sw = static_cast<int>(sample.cols * factor);
-    auto sh = static_cast<int>(sample.rows * factor);
-    cv::resize(sample, sample, cv::Size(sw, sh));
-  }
-  else factor = 1.0f;
-
-  xr::Image dst(sample.cols, sample.rows);
-  for (int i = 0; i < sample.cols; ++i) {
-    for (int j = 0; j < sample.rows; ++j) {
-      auto rgb = sample.at<cv::Vec3b>(j, i);
-      dst.byte(i, j) = (int(rgb[0]) + int(rgb[1]) + int(rgb[2])) / 3;
+  std::vector<cv::Rect> joints;
+  if (!current_item_->joints.isEmpty()) {
+    for (auto it : current_item_->joints) {
+      joints.push_back(it.rect);
     }
   }
+  else {
+    joints = runDetector(sample);
+  }
 
-  int flags = 0;
-  if (AppPrefs::read("image_smoothing").toBool()) flags |= xr::MainProcessor::UseAutoBlur;
-  if (AppPrefs::read("use_openmp").toBool()) flags |= xr::MainProcessor::UseOpenMP; 
-  if (AppPrefs::read("active_contours").toBool()) flags |= xr::MainProcessor::UseActiveContours;
-  if (AppPrefs::read("accurate_split").toBool()) flags |= xr::MainProcessor::UseAccurateSplit;
 
-  xr::MainProcessor processor(std::move(dst), flags);
+  for (auto rect : joints) {
+    int x = qMax(1, rect.x - rect.width / 4);
+    int y = qMax(1, rect.y - rect.height / 2);
+    int right = qMin(x + rect.width + rect.width / 2, sample.cols - 2);
+    int top = qMin(y + rect.height * 2, sample.rows - 2);
 
-  auto edge_detector = AppPrefs::read("edge_detector", "kirsch").toString();
-  if (edge_detector == "kirsch") processor.setGradientOpType(xr::MainProcessor::GradientOpType::Kirsch);
-  else processor.setGradientOpType(xr::MainProcessor::GradientOpType::Sobel);
+    rect = cv::Rect(x, y, right - x, top - y);
 
-  auto em = AppPrefs::read("extraction_method", "radial").toString();
-  if (em == "radial") processor.setContoursFinderType(xr::MainProcessor::FinderType::Radial);
-  else if (em == "rosenfeld") processor.setContoursFinderType(xr::MainProcessor::FinderType::Rosenfeld);
-  else processor.setContoursFinderType(xr::MainProcessor::FinderType::Simple);
-  
-  // run search
-  auto contours = processor.findContours();
-  if (!contours.empty()) {
-    // NOTE: make gradient for current image
-    if (current_item_ && current_item_->gradient.empty()) {
-      cv::Mat temp;
-      cv::GaussianBlur(current_item_->src_image, temp, cv::Size(3, 3), 0, 0, cv::BORDER_DEFAULT);
-      cv::cvtColor(temp, temp, cv::COLOR_RGB2GRAY);
-      current_item_->gradient = gvf(temp, 0.04, 55);
-      viewport_->setGradient(current_item_->gradient);
+    auto subsample = sample(rect);
+
+    // resize image for contours search func
+    const auto desired_image_size = 350;
+    float desired_factor_w = desired_image_size * 1.0f / subsample.cols;
+    float desired_factor_h = desired_image_size * 1.0f / subsample.rows;
+    auto factor = qMin(desired_factor_w, desired_factor_h);
+    if (factor < 1.0f) {
+      auto sw = static_cast<int>(subsample.cols * factor);
+      auto sh = static_cast<int>(subsample.rows * factor);
+      cv::resize(subsample, subsample, cv::Size(sw, sh));
+    }
+    else factor = 1.0f;
+
+    // create special image struct
+    xr::Image dst(subsample.cols, subsample.rows);
+    for (int i = 0; i < subsample.cols; ++i) {
+      for (int j = 0; j < subsample.rows; ++j) {
+        auto rgb = subsample.at<cv::Vec3b>(j, i);
+        dst.byte(i, j) = (int(rgb[0]) + int(rgb[1]) + int(rgb[2])) / 3;
+      }
     }
 
-    for (auto contour : contours) {
-      int k = 0;
-      QVector<QPoint> points;
-      for (auto pt : contour) {
-        if (k++ % 20 == 0) points.push_back(QPoint(pt.x, pt.y));
+    int flags = 0;
+    if (AppPrefs::read("image_smoothing").toBool()) flags |= xr::MainProcessor::UseAutoBlur;
+    if (AppPrefs::read("use_openmp").toBool()) flags |= xr::MainProcessor::UseOpenMP;
+    if (AppPrefs::read("active_contours").toBool()) flags |= xr::MainProcessor::UseActiveContours;
+    if (AppPrefs::read("accurate_split").toBool()) flags |= xr::MainProcessor::UseAccurateSplit;
+
+    xr::MainProcessor processor(std::move(dst), flags);
+
+    auto edge_detector = AppPrefs::read("edge_detector", "kirsch").toString();
+    if (edge_detector == "kirsch") processor.setGradientOpType(xr::MainProcessor::GradientOpType::Kirsch);
+    else processor.setGradientOpType(xr::MainProcessor::GradientOpType::Sobel);
+
+    auto em = AppPrefs::read("extraction_method", "radial").toString();
+    if (em == "radial") processor.setContoursFinderType(xr::MainProcessor::FinderType::Radial);
+    else if (em == "rosenfeld") processor.setContoursFinderType(xr::MainProcessor::FinderType::Rosenfeld);
+    else processor.setContoursFinderType(xr::MainProcessor::FinderType::Simple);
+
+    // run search
+    auto contours = processor.findContours();
+    if (!contours.empty()) {
+      // NOTE: make gradient for current image
+      if (current_item_ && current_item_->gradient.empty()) {
+        cv::Mat temp;
+        cv::GaussianBlur(current_item_->src_image, temp, cv::Size(3, 3), 0, 0, cv::BORDER_DEFAULT);
+        cv::cvtColor(temp, temp, cv::COLOR_RGB2GRAY);
+        current_item_->gradient = gvf(temp, 0.04, 55);
+        viewport_->setGradient(current_item_->gradient);
       }
 
-      auto poly = QPolygonF(points);
-      if (square(poly) > perimeter(poly) * 2) {
-        viewport_->addNewSmartCurve(points);
+      QVector<QVector<QPoint>> simplified_contours;
+      for (auto contour : contours) {
+        auto r = ::rect(contour);
+
+#if 0
+        // skip improbable small contours
+        if (r.height * 1.0 / r.width > 3 || r.width * 1.0 / r.height > 3) {
+          continue;
+        }
+
+        // skip improbable big contours
+        auto j1 = jaccard(r, cv::Rect(0, 0, dst.width() / 2, dst.height()));
+        auto j2 = jaccard(r, cv::Rect(dst.width() / 2, 0, dst.width() / 2, dst.height()));
+        if ((j1 > 0.1 && j2 < 0.05) || j2 > 0.1 && j1 < 0.05) {
+          continue;
+        }
+#endif
+
+        int k = 0;
+        QVector<QPoint> points;
+        for (auto pt : contour) {
+          if (k++ % 20 == 0) points.push_back(QPoint(pt.x / factor, pt.y / factor));
+        }
+
+        auto poly = QPolygonF(points);
+        if (square(poly) > perimeter(poly) * 2) {
+          simplified_contours.push_back(points);
+        }
+      }
+
+      qSort(simplified_contours.begin(), simplified_contours.end(), [](auto lhs, auto rhs) {
+        return square(QPolygonF(lhs)) > square(QPolygonF(rhs));
+      });
+
+      // keep only 2 biggest contours
+      while (simplified_contours.size() > 2) simplified_contours.pop_back();
+
+      // создаем
+      for (auto contour : simplified_contours) {
+        for (auto& pt : contour) pt += QPoint(rect.x, rect.y);
+        viewport_->addNewSmartCurve(contour);
       }
     }
   }

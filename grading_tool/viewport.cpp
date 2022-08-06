@@ -155,6 +155,7 @@ void Viewport::addNewSmartCurve(const QVector<QPoint>& points) {
   item->setGradient(gradient_);
   item->setPoints(points);
   item->setCreated(true);
+  item->calcParameters(image_);
   item->updateCaption();
 
   graphics_items_.push_back(item);
