@@ -293,6 +293,45 @@ void Viewport::clearScene() {
   }
 }
 
+std::map<int, float> Viewport::getItemsUnderPointWithDist(const QPointF& pt) {
+  float out;
+  std::map<int, float> found;
+  for (int k = 0; k < graphics_items_.size(); ++k) {
+    if (graphics_items_[k]->isUnderPos(pt, &out)) {
+      found[k] = out;
+    }
+  }
+
+  return found;
+}
+
+std::map<int, float> Viewport::getNearestPartsWithDist(const QPointF& pt) {
+  float out;
+  std::map<int, float> found;
+  for (int k = 0; k < graphics_items_.size(); ++k) {
+    if (graphics_items_[k]->checkPartUnderPos(pt, &out)) {
+      found[k] = out;
+    }
+  }
+
+  return found;
+}
+
+std::optional<int> Viewport::getNearestIndex(const std::map<int, float>& items) {
+  if (!items.empty()) {
+    int t = items.begin()->first;
+    for (const auto& e : items) {
+      if (items.at(t) < e.second) {
+        t = e.first;
+      }
+    }
+
+    return t;
+  }
+
+  return std::nullopt;
+}
+
 void Viewport::resizeEvent(QResizeEvent* event) {
   QGraphicsView::resizeEvent(event);
 
@@ -404,34 +443,37 @@ void Viewport::mousePressEvent(QMouseEvent* event) {
       drawing_ = true;
     }
     else {
-      GraphicsItem* under_selection = nullptr;
-      for (int k = 0; k < graphics_items_.size(); ++k) {
+      // if has no finished items
+      for (int k = 0; k < graphics_items_.size() && !item; ++k) {
         if (!graphics_items_[k]->isCreated()) {
           item = graphics_items_.takeAt(k);
-          break;
         }
-        else if (graphics_items_[k]->isPartUnderPos(coord)) {
-          item = graphics_items_.takeAt(k);
-          break;
-        }
-        else if (graphics_items_[k]->isUnderPos(coord)) {
-          under_selection = graphics_items_[k];
-          break;
+      }
+
+      // next check items' parts under mouse
+      if (!item) {
+        auto nearest_items = getNearestPartsWithDist(coord);
+        if (auto t = getNearestIndex(nearest_items)) {
+          item = graphics_items_.takeAt(t.value());
+
+          // shadow other items
+          for (int k = 0; k < graphics_items_.size(); ++k) {
+            graphics_items_[k]->setHighlighted(false);
+            graphics_items_[k]->setPartUnderMouse(-1);
+          }
         }
       }
 
       // create new if no selected line
       if (!item) {
-        if (under_selection) {
+        auto h_items = getItemsUnderPointWithDist(coord);
+        if (auto t2 = getNearestIndex(h_items)) {
+          auto under_selection = graphics_items_[t2.value()];
           if (under_selection->isSelected()) {
             under_selection->setSelected(false);
           }
-          else {
-            for (auto item : graphics_items_) {
-              item->setSelected(false);
-            }
-
-            under_selection->setSelected(true);
+          else for (int k = 0; k < graphics_items_.size(); ++k) {
+            graphics_items_[k]->setSelected(k == t2.value());
           }
         }
         else if (mode_ == Mode::DrawLine) {
@@ -640,20 +682,20 @@ void Viewport::mouseMoveEvent(QMouseEvent* event) {
       }
     }
     else {
-      bool found = false;
-      for (int k = 0; k < graphics_items_.size(); ++k) {
-        if (!graphics_items_[k]->isSelected()) {
-          if (graphics_items_[k]->checkSelection(coord)) {
-            found = true;
-            break;
+      auto nearest_items = getNearestPartsWithDist(coord);
+      if (auto t = getNearestIndex(nearest_items)) {
+        for (int k = 0; k < graphics_items_.size(); ++k) {
+          graphics_items_[k]->setHighlighted(k == t.value());
+          if (k != t.value()) {
+            graphics_items_[k]->setPartUnderMouse(-1);
           }
         }
       }
-
-      if (!found) {
-        for (int k = 0; k < graphics_items_.size(); ++k) {
-          if (graphics_items_[k]->checkPartUnderPos(coord)) {
-            break;
+      else {
+        auto h_items = getItemsUnderPointWithDist(coord);
+        if (auto t2 = getNearestIndex(h_items)) {
+          for (int k = 0; k < graphics_items_.size(); ++k) {
+            graphics_items_[k]->setHighlighted(k == t2.value());
           }
         }
       }
@@ -667,6 +709,7 @@ void Viewport::mouseMoveEvent(QMouseEvent* event) {
       else emit mousePosOutOfImage();
     }
 
+    update();
     repaint();
   }
 }

@@ -450,19 +450,19 @@ bool GraphicsItem::isCreated() const {
   return created_;
 }
 
-bool GraphicsItem::isUnderPos(const QPointF& p, bool only_lines) const {
+bool GraphicsItem::isUnderPos(const QPointF& p, bool only_lines, float* out) const {
   if (!only_lines && item_->isUnderMouse()) {
     return true;
   }
 
   if (type_ == Type::Line) {
-    return line_->isUnderPos(p);
+    return line_->isUnderPos(p, out);
   }
   else if (type_ == Type::SmartCurve) {
-    return smart_curve_->isUnderPos(p);
+    return smart_curve_->isUnderPos(p, out);
   }
   else if (type_ == Type::Poly) {
-    return poly_->isUnderPos(p);
+    return poly_->isUnderPos(p, out);
   }
   else if (type_ == Type::Ellipse || type_ == Type::Angle || type_ == Type::CobbAngle) {
     // TODO:
@@ -639,6 +639,11 @@ void GraphicsItem::setSelected(bool selected) {
   updateColors();
 }
 
+void GraphicsItem::setHighlighted(bool highlighted) {
+  highlighted_ = highlighted;
+  updateColors();
+}
+
 void GraphicsItem::setCreated(bool created, std::optional<int> r) {
   created_ = created;
   if (r) {
@@ -646,16 +651,18 @@ void GraphicsItem::setCreated(bool created, std::optional<int> r) {
   }
 }
 
-bool GraphicsItem::checkPartUnderPos(const QPointF& coord) {
+bool GraphicsItem::checkPartUnderPos(const QPointF& coord, float* out) {
   const auto r = base_touch_radius / scale_factor_;
   if (type_ == Type::Line) {
     auto data = line_->line();
     if (dist(coord, data.p1()) < r) {
       line_->setPartUnderMouse(0);
+      if (out) *out = dist(coord, data.p1());
       return true;
     }
     else if (dist(coord, data.p2()) < r) {
       line_->setPartUnderMouse(1);
+      if (out) *out = dist(coord, data.p2());
       return true;
     }
     else line_->setPartUnderMouse(-1);
@@ -664,7 +671,9 @@ bool GraphicsItem::checkPartUnderPos(const QPointF& coord) {
     auto rect = ellipse_->rect();
     QPointF points[] = { rect.bottomLeft(), rect.topLeft(), rect.topRight(), rect.bottomRight() };
     for (int k = 0; k < 4; ++k) {
-      if (dist(coord, points[k]) < r) {
+      const auto d = dist(coord, points[k]);
+      if (d < r) {
+        if (out) *out = d;
         ellipse_->setPartUnderMouse(k);
         return true;
       }
@@ -677,6 +686,7 @@ bool GraphicsItem::checkPartUnderPos(const QPointF& coord) {
     for (int k = 0; k < poly.count(); ++k) {
       if (dist(coord, poly[k].toPoint()) < r) {
         angle_->setPartUnderMouse(k);
+        if (out) *out = dist(coord, poly[k].toPoint());
         return true;
       }
     }
@@ -688,6 +698,7 @@ bool GraphicsItem::checkPartUnderPos(const QPointF& coord) {
     for (int k = 0; k < poly.count(); ++k) {
       if (dist(coord, poly[k].toPoint()) < r) {
         cobb_angle_->setPartUnderMouse(k);
+        if (out) *out = dist(coord, poly[k].toPoint());
         return true;
       }
     }
@@ -699,6 +710,7 @@ bool GraphicsItem::checkPartUnderPos(const QPointF& coord) {
     for (int k = 0; k < poly.count(); ++k) {
       if (dist(coord, poly[k].toPoint()) < r) {
         poly_->setPartUnderMouse(k);
+        if (out) *out = dist(coord, poly[k].toPoint());
         return true;
       }
     }
@@ -710,6 +722,7 @@ bool GraphicsItem::checkPartUnderPos(const QPointF& coord) {
     for (int k = 0; k < points.count(); ++k) {
       if (dist(coord, points[k]) < r) {
         smart_curve_->setPartUnderMouse(k);
+        if (out) *out = dist(coord, points[k]);
         return true;
       }
     }
@@ -720,8 +733,29 @@ bool GraphicsItem::checkPartUnderPos(const QPointF& coord) {
   return false;
 }
 
-bool GraphicsItem::checkSelection(const QPointF& pos) {
-  highlighted_ = isUnderPos(pos);
+void GraphicsItem::setPartUnderMouse(int idx) {
+  if (type_ == Type::Line) {
+    line_->setPartUnderMouse(-1);
+  }
+  else if (type_ == Type::Ellipse) {
+    ellipse_->setPartUnderMouse(-1);
+  }
+  else if (type_ == Type::Angle) {
+    angle_->setPartUnderMouse(-1);
+  }
+  else if (type_ == Type::CobbAngle) {
+    cobb_angle_->setPartUnderMouse(-1);
+  }
+  else if (type_ == Type::Poly) {
+    poly_->setPartUnderMouse(-1);
+  }
+  else if (type_ == Type::SmartCurve) {
+    smart_curve_->setPartUnderMouse(-1);
+  }
+}
+
+bool GraphicsItem::checkSelection(const QPointF& pos, float* dist) {
+  highlighted_ = isUnderPos(pos, dist);
   
   updateColors();
 

@@ -21,8 +21,14 @@ bool GraphicsLineItem::isHighlighted() const {
   return highlighted_;
 }
 
-bool GraphicsLineItem::isUnderPos(const QPointF& p) const {
-  return distToLine(p, line().p1(), line().p2()) < 5;
+bool GraphicsLineItem::isUnderPos(const QPointF& p, float* out) const {
+  auto dd = distToLine(p, line().p1(), line().p2());
+  if (dd < 5) {
+    if (out) *out = dd;
+    return true;
+  }
+
+  return false;
 }
 
 void GraphicsLineItem::setPartUnderMouse(int idx) {

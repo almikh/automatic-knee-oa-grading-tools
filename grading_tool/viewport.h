@@ -54,6 +54,11 @@ protected:
   QPointF last_sent_pos_;
   std::optional<QPointF> anchor_shift_;
 
+protected:
+  std::map<int, float> getNearestPartsWithDist(const QPointF& pt);
+  std::map<int, float> getItemsUnderPointWithDist(const QPointF& pt);
+  std::optional<int> getNearestIndex(const std::map<int, float>& items);
+
 public:
   explicit Viewport(QWidget* parent = nullptr);
 

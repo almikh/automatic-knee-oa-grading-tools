@@ -18,7 +18,7 @@ public:
   void setPoint(int idx, const QPoint& pt);
 
   bool isHighlighted() const;
-  bool isUnderPos(const QPointF& point) const;
+  bool isUnderPos(const QPointF& point, float* out = nullptr) const;
   qreal length() const;
 
   QVector<QPoint> points() const;

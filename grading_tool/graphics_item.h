@@ -76,7 +76,7 @@ public:
   double length() const;
   bool isSelected() const;
   bool isPartUnderPos(const QPointF& point) const;
-  bool isUnderPos(const QPointF& point, bool only_lines = false) const;
+  bool isUnderPos(const QPointF& point, bool only_lines = false, float* dist = nullptr) const;
   bool isItemUnderMouse() const;
   bool isCreated() const;
   bool isValid() const;
@@ -94,10 +94,12 @@ public:
   void setGradient(const cv::Mat_<double>& gradient);
   void setScaleFactor(float scale_factor);
   void setCreated(bool created, std::optional<int> rotation = std::nullopt);
+  void setHighlighted(bool highlighted);
   void setSelected(bool selected);
 
-  bool checkSelection(const QPointF& pos);
-  bool checkPartUnderPos(const QPointF& pos);
+  bool checkSelection(const QPointF& pos, float* dist = nullptr);
+  bool checkPartUnderPos(const QPointF& pos, float* dist = nullptr);
+  void setPartUnderMouse(int idx);
   void updateCaption();
   void updateColors();
 

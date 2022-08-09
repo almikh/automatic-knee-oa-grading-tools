@@ -46,10 +46,12 @@ bool GraphicsPolyItem::isHighlighted() const {
   return highlighted_;
 }
 
-bool GraphicsPolyItem::isUnderPos(const QPointF& p) const {
+bool GraphicsPolyItem::isUnderPos(const QPointF& p, float* out) const {
   auto poly = polygon();
   for (int k = 1; k < poly.count(); ++k) {
-    if (distToLine(p, poly[k], poly[k - 1]) < 5) {
+    auto dd = distToLine(p, poly[k], poly[k - 1]);
+    if (dd < 5) {
+      if (out) *out = dd;
       return true;
     }
   }

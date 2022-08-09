@@ -13,7 +13,7 @@ public:
   void setPoint(int idx, const QPointF& pt);
 
   bool isHighlighted() const;
-  bool isUnderPos(const QPointF& point) const;
+  bool isUnderPos(const QPointF& point, float* out) const;
 
   void setPartUnderMouse(int idx);
   void setScaleFactor(float scale_factor);

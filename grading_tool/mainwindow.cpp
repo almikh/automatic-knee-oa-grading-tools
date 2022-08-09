@@ -1175,6 +1175,7 @@ void MainWindow::findContours(bool) {
         }
       }
 
+      // order by square
       qSort(simplified_contours.begin(), simplified_contours.end(), [](auto lhs, auto rhs) {
         return square(QPolygonF(lhs)) > square(QPolygonF(rhs));
       });
@@ -1182,7 +1183,7 @@ void MainWindow::findContours(bool) {
       // keep only 2 biggest contours
       while (simplified_contours.size() > 2) simplified_contours.pop_back();
 
-      // создаем
+      // create graphics items
       for (auto contour : simplified_contours) {
         for (auto& pt : contour) pt += QPoint(rect.x, rect.y);
         viewport_->addNewSmartCurve(contour);

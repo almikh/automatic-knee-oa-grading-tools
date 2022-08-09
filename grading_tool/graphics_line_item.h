@@ -10,7 +10,7 @@ public:
   GraphicsLineItem(const QLineF& line, QGraphicsItem* parent = nullptr);
 
   bool isHighlighted() const;
-  bool isUnderPos(const QPointF& point) const;
+  bool isUnderPos(const QPointF& point, float* dist = nullptr) const;
 
   void setPartUnderMouse(int idx);
   void setScaleFactor(float scale_factor);

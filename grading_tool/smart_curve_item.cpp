@@ -24,10 +24,12 @@ bool SmartCurveItem::isHighlighted() const {
   return highlighted_;
 }
 
-bool SmartCurveItem::isUnderPos(const QPointF& p) const {
+bool SmartCurveItem::isUnderPos(const QPointF& p, float* out) const {
   for (auto path : path_) {
     for (int k = 0; k < path.size(); k += 3) {
-      if (dist(path[k], p) < 7) {
+      auto dd = dist(path[k], p);
+      if (dd < 7) {
+        if (out) *out = dd;
         return true;
       }
     }
