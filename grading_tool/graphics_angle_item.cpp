@@ -69,10 +69,11 @@ void GraphicsAngleItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*
   painter->setPen(QPen(Qt::red, 1.0 / scale_factor_));
   
   auto poly = polygon();
+  auto tick_length = qMax(1.0f, 5 / scale_factor_);
   for (int k = 0; k < poly.count(); ++k) {
     const auto pt = poly[k].toPoint();
     painter->setPen(QPen(part_under_mouse_ == k ? Qt::green : Qt::red, 1.0 / scale_factor_));
-    painter->drawLine(QLine(pt - QPoint(5 / scale_factor_, 0), pt + QPoint(5 / scale_factor_, 0)));
-    painter->drawLine(QLine(pt - QPoint(0, 5 / scale_factor_), pt + QPoint(0, 5 / scale_factor_)));
+    painter->drawLine(QLineF(pt - QPointF(tick_length, 0), pt + QPointF(tick_length, 0)));
+    painter->drawLine(QLineF(pt - QPointF(0, tick_length), pt + QPointF(0, tick_length)));
   }
 }

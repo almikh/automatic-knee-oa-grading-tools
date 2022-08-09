@@ -51,24 +51,25 @@ void GraphicsEllipseItem::paint(QPainter* painter, const QStyleOptionGraphicsIte
   QGraphicsEllipseItem::paint(painter, o, w);
 
   auto r = rect();
+  auto tick_length = qMax(1.0f, 5 / scale_factor_);
   painter->setPen(QPen(Qt::red, 1.0 / scale_factor_));
 
   // painter->setBrush(QBrush(Qt::NoBrush));
   // painter->drawRect(r);
 
   painter->setPen(QPen(part_under_mouse_ == 0 ? Qt::green : Qt::red, 1.0 / scale_factor_));
-  painter->drawLine(QLine(r.bottomLeft().toPoint() - QPoint(5 / scale_factor_, 0), r.bottomLeft().toPoint() + QPoint(5 / scale_factor_, 0)));
-  painter->drawLine(QLine(r.bottomLeft().toPoint() - QPoint(0, 5 / scale_factor_), r.bottomLeft().toPoint() + QPoint(0, 5 / scale_factor_)));
+  painter->drawLine(QLineF(r.bottomLeft().toPoint() - QPointF(tick_length, 0), r.bottomLeft().toPoint() + QPointF(tick_length, 0)));
+  painter->drawLine(QLineF(r.bottomLeft().toPoint() - QPointF(0, tick_length), r.bottomLeft().toPoint() + QPointF(0, tick_length)));
 
   painter->setPen(QPen(part_under_mouse_ == 1 ? Qt::green : Qt::red, 1.0 / scale_factor_));
-  painter->drawLine(QLine(r.topLeft().toPoint() - QPoint(5 / scale_factor_, 0), r.topLeft().toPoint() + QPoint(5 / scale_factor_, 0)));
-  painter->drawLine(QLine(r.topLeft().toPoint() - QPoint(0, 5 / scale_factor_), r.topLeft().toPoint() + QPoint(0, 5 / scale_factor_)));
+  painter->drawLine(QLineF(r.topLeft().toPoint() - QPointF(tick_length, 0), r.topLeft().toPoint() + QPointF(tick_length, 0)));
+  painter->drawLine(QLineF(r.topLeft().toPoint() - QPointF(0, tick_length), r.topLeft().toPoint() + QPointF(0, tick_length)));
 
   painter->setPen(QPen(part_under_mouse_ == 2 ? Qt::green : Qt::red, 1.0 / scale_factor_));
-  painter->drawLine(QLine(r.topRight().toPoint() - QPoint(5 / scale_factor_, 0), r.topRight().toPoint() + QPoint(5 / scale_factor_, 0)));
-  painter->drawLine(QLine(r.topRight().toPoint() - QPoint(0, 5 / scale_factor_), r.topRight().toPoint() + QPoint(0, 5 / scale_factor_)));
+  painter->drawLine(QLineF(r.topRight().toPoint() - QPointF(tick_length, 0), r.topRight().toPoint() + QPointF(tick_length, 0)));
+  painter->drawLine(QLineF(r.topRight().toPoint() - QPointF(0, tick_length), r.topRight().toPoint() + QPointF(0, tick_length)));
 
   painter->setPen(QPen(part_under_mouse_ == 3 ? Qt::green : Qt::red, 1.0 / scale_factor_));
-  painter->drawLine(QLine(r.bottomRight().toPoint() - QPoint(5 / scale_factor_, 0), r.bottomRight().toPoint() + QPoint(5 / scale_factor_, 0)));
-  painter->drawLine(QLine(r.bottomRight().toPoint() - QPoint(0, 5 / scale_factor_), r.bottomRight().toPoint() + QPoint(0, 5 / scale_factor_)));
+  painter->drawLine(QLineF(r.bottomRight().toPoint() - QPointF(tick_length, 0), r.bottomRight().toPoint() + QPointF(tick_length, 0)));
+  painter->drawLine(QLineF(r.bottomRight().toPoint() - QPointF(0, tick_length), r.bottomRight().toPoint() + QPointF(0, tick_length)));
 }

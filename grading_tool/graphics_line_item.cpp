@@ -40,12 +40,13 @@ void GraphicsLineItem::setHighlighted(bool selected) {
 
 void GraphicsLineItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* o, QWidget* w) {
   QGraphicsLineItem::paint(painter, o, w);
-  
+
+  auto tick_length = qMax(1.0f, 5 / scale_factor_);
   painter->setPen(QPen(part_under_mouse_ == 0 ? Qt::green : Qt::red, 1.0 / scale_factor_));
-  painter->drawLine(QLine(line().p1().toPoint() - QPoint(5 / scale_factor_, 0), line().p1().toPoint() + QPoint(5 / scale_factor_, 0)));
-  painter->drawLine(QLine(line().p1().toPoint() - QPoint(0, 5 / scale_factor_), line().p1().toPoint() + QPoint(0, 5 / scale_factor_)));
+  painter->drawLine(QLineF(line().p1().toPoint() - QPointF(tick_length, 0), line().p1().toPoint() + QPointF(tick_length, 0)));
+  painter->drawLine(QLineF(line().p1().toPoint() - QPointF(0, tick_length), line().p1().toPoint() + QPointF(0, tick_length)));
 
   painter->setPen(QPen(part_under_mouse_ == 1 ? Qt::green : Qt::red, 1.0 / scale_factor_));
-  painter->drawLine(QLine(line().p2().toPoint() - QPoint(5 / scale_factor_, 0), line().p2().toPoint() + QPoint(5 / scale_factor_, 0)));
-  painter->drawLine(QLine(line().p2().toPoint() - QPoint(0, 5 / scale_factor_), line().p2().toPoint() + QPoint(0, 5 / scale_factor_)));
+  painter->drawLine(QLineF(line().p2().toPoint() - QPointF(tick_length, 0), line().p2().toPoint() + QPointF(tick_length, 0)));
+  painter->drawLine(QLineF(line().p2().toPoint() - QPointF(0, tick_length), line().p2().toPoint() + QPointF(0, tick_length)));
 }
