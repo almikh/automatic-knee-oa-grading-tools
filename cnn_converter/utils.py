@@ -47,7 +47,7 @@ def load_model(arch_name, num_classes, filename = None, pretrained=True, device 
             
     return cnn_model, frame_size, header
 
-def compute_accuracy(model, loader):
+def compute_accuracy(model, loader, device, debug = False):
     model.eval() # Evaluation mode
     
     predictions = []
@@ -57,13 +57,14 @@ def compute_accuracy(model, loader):
     total_samples = 0
     correct_samples = 0
     for i_step, (x, y) in enumerate(loader):
-        print("step #" + str(i_step))
+        if debug == True:
+            print("step #" + str(i_step))
         
-        x_gpu = x
-        y_gpu = y
-        
-        prediction = model(x_gpu) 
+        x_gpu = x.to(device)
+        y_gpu = y.to(device)
 
+        prediction = model(x_gpu) 
+        
         indices = torch.argmax(prediction, 1)
         correct_samples += torch.sum(indices == y_gpu)
         total_samples += y.shape[0]

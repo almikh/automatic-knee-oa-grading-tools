@@ -7,7 +7,7 @@ Instruments for the automatic classification of knee osteoarthritis according to
 ## Requirements
 1. OpenCV
 2. libtensorflow-cpu
-2. libtorch-cpu
+2. libtorch (or libtorch-cpu) 1.11.0
 3. GDCM
 
 #### OpenCV
