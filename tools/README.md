@@ -15,3 +15,5 @@ List of available scripts:
 - `metrics_finder.ipynb`: auxiliary scripts for displaying statistics and collecting information on several checkpoints of models of the same type.
 
 - `converter.ipynb`: A utility for converting a model from a format obtained during training into a format suitable for use in native code.
+
+- `simple_conf_mat.ipynb`: calculate precision, recall and f-score for an explicitly given confusion matrix.
