@@ -222,8 +222,11 @@ void MainWindow::makeMenuMeasure() {
 
   menu->addSeparator();
 
-  find_contours_ = menu->addAction(QIcon(), "Find contours");
+  find_contours_ = menu->addAction(QIcon(), "Find contours for joints");
   connect(find_contours_, &QAction::triggered, this, &MainWindow::findContours);
+
+  find_all_contours_ = menu->addAction(QIcon(), "Find all contours");
+  connect(find_all_contours_, &QAction::triggered, this, &MainWindow::findContoursOnImage);
 
   menu->addSeparator();
 
@@ -634,6 +637,7 @@ void MainWindow::onContoursFound(const QVector<QVector<QPoint>>& contours) {
 
   view_queue_->setEnabled(true);
   find_contours_->setEnabled(true);
+  find_all_contours_->setEnabled(true);
   loading_ind_->stopAnimation();
 }
 
@@ -870,6 +874,87 @@ void MainWindow::findContoursOnData(Metadata::HardPtr data) {
 
     emit contoursFound(simplified_contours);
   }
+}
+
+void MainWindow::findContoursOnImageImpl(Metadata::HardPtr data) {
+  auto subsample = data->image.clone();
+
+  // make gradient for current image
+  if (data->gradient.empty()) {
+    cv::Mat temp;
+    cv::GaussianBlur(data->src_image, temp, cv::Size(3, 3), 0, 0, cv::BORDER_DEFAULT);
+    cv::cvtColor(temp, temp, cv::COLOR_RGB2GRAY);
+    data->gradient = gvf(temp, 0.04, 55);
+  }
+
+  // resize image for contours search func
+  const auto desired_image_size = 300;
+  float desired_factor_w = desired_image_size * 1.0f / subsample.cols;
+  float desired_factor_h = desired_image_size * 1.0f / subsample.rows;
+  auto factor = qMin(desired_factor_w, desired_factor_h);
+  if (factor < 1.0f) {
+    auto sw = static_cast<int>(subsample.cols * factor);
+    auto sh = static_cast<int>(subsample.rows * factor);
+    cv::resize(subsample, subsample, cv::Size(sw, sh));
+  }
+  else factor = 1.0f;
+
+  // create special image struct
+  xr::Image dst(subsample.cols, subsample.rows);
+  for (int i = 0; i < subsample.cols; ++i) {
+    for (int j = 0; j < subsample.rows; ++j) {
+      auto rgb = subsample.at<cv::Vec3b>(j, i);
+
+      uint8_t r = rgb[0];
+      uint8_t g = rgb[1];
+      uint8_t b = rgb[2];
+      dst.byte(i, j) = static_cast<uint8_t>(r * 0.114 + g * 0.587 + b * 0.299);
+    }
+  }
+
+  int flags = 0;
+  if (AppPrefs::read("image_smoothing").toBool()) flags |= xr::MainProcessor::UseAutoBlur;
+  if (AppPrefs::read("use_openmp").toBool()) flags |= xr::MainProcessor::UseOpenMP;
+  if (AppPrefs::read("active_contours").toBool()) flags |= xr::MainProcessor::UseActiveContours;
+  if (AppPrefs::read("accurate_split").toBool()) flags |= xr::MainProcessor::UseAccurateSplit;
+
+  xr::MainProcessor processor(std::move(dst), flags);
+
+  auto edge_detector = AppPrefs::read("edge_detector", "kirsch").toString();
+  if (edge_detector == "kirsch") processor.setGradientOpType(xr::MainProcessor::GradientOpType::Kirsch);
+  else processor.setGradientOpType(xr::MainProcessor::GradientOpType::Sobel);
+
+  auto em = AppPrefs::read("extraction_method", "radial").toString();
+  if (em == "radial") processor.setContoursFinderType(xr::MainProcessor::FinderType::Radial);
+  else if (em == "rosenfeld") processor.setContoursFinderType(xr::MainProcessor::FinderType::Rosenfeld);
+  else processor.setContoursFinderType(xr::MainProcessor::FinderType::Simple);
+
+  // run search
+  auto contours = processor.findContours();
+  QVector<QVector<QPoint>> simplified_contours;
+  if (!contours.empty()) {
+    for (auto contour : contours) {
+      QVector<QPoint> points;
+      int k = 0;
+
+      // simplify contours and move to global coords system
+      for (auto pt : contour) {
+        if (k++ % 20 == 0) points.push_back(QPoint(pt.x / factor, pt.y / factor));
+      }
+
+      auto poly = QPolygonF(points);
+      if (square(poly) > perimeter(poly) * 2) {
+        simplified_contours.push_back(points);
+      }
+    }
+
+    // order by square
+    qSort(simplified_contours.begin(), simplified_contours.end(), [](auto lhs, auto rhs) {
+      return square(QPolygonF(lhs)) > square(QPolygonF(rhs));
+    });
+  }
+
+  emit contoursFound(simplified_contours);
 }
 
 void MainWindow::rotateCurrentItem(int angle) {
@@ -1205,9 +1290,23 @@ void MainWindow::findContours(bool) {
 
   view_queue_->setEnabled(false);
   find_contours_->setEnabled(false);
+  find_all_contours_->setEnabled(false);
   loading_ind_->startAnimation();
 
   QtConcurrent::run(this, &MainWindow::findContoursOnData, current_item_);
+}
+
+void MainWindow::findContoursOnImage(bool) {
+  if (!current_item_) {
+    return;
+  }
+
+  view_queue_->setEnabled(false);
+  find_contours_->setEnabled(false);
+  find_all_contours_->setEnabled(false);
+  loading_ind_->startAnimation();
+
+  QtConcurrent::run(this, &MainWindow::findContoursOnImageImpl, current_item_);
 }
 
 void MainWindow::drawPoly(bool checked) {

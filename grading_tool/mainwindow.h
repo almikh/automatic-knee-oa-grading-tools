@@ -59,6 +59,7 @@ protected:
   QPushButton* transform_menu_ = nullptr;
   QAction* reset_calib_ = nullptr;
   QAction* find_contours_ = nullptr;
+  QAction* find_all_contours_ = nullptr;
   QAction* calibrate_ = nullptr;
   
   Metadata::HardPtr current_item_;
@@ -112,6 +113,7 @@ protected:
 
   // run models to localize joints and classify AO grades
   Q_SLOT void findContoursOnData(Metadata::HardPtr data);
+  Q_SLOT void findContoursOnImageImpl(Metadata::HardPtr data);
 
   // calibrate measuring units over selected item
   Q_SLOT void calibrate(GraphicsItem* item, const QPoint& pt);
@@ -134,6 +136,7 @@ protected:
   void clearModeView();
 
   Q_SLOT void findContours(bool);
+  Q_SLOT void findContoursOnImage(bool);
 
   // zoom menu
   Q_SLOT void showZoomMenu();
