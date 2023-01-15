@@ -80,6 +80,7 @@ protected:
   QtCharts::QChartView* makeGraph(const QString& title, QColor color, const QVector<Classifier::Item>& data);
 
   void initClassifier();
+  void saveCurrentContoursToImage();
 
   Q_SLOT void openSample(bool);
   Q_SLOT void openSamples(bool);
@@ -105,6 +106,7 @@ protected:
 
   Q_SLOT void onItemProcessed(Metadata::HardPtr data);
   Q_SLOT void onContoursFound(const QVector<QVector<QPoint>>& contours);
+  Q_SLOT void onContoursFoundBase(const xr::contours_t& contours);
 
   Q_SLOT void calibrateForLength(qreal length);
 
@@ -125,6 +127,7 @@ protected:
   Q_SLOT void mousePosOutOfImage();
   
   Q_SIGNAL void itemProcessed(Metadata::HardPtr data);
+  Q_SIGNAL void contoursFoundBase(const xr::contours_t& contours);
   Q_SIGNAL void contoursFound(const QVector<QVector<QPoint>>& contours);
 
   Q_SLOT void drawLine(bool);

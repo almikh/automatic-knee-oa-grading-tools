@@ -9,7 +9,7 @@
 #include <opencv2/opencv.hpp>
 #include "graphics_item.h"
 #include "metadata.h"
-#include "defs.h"
+#include "types.h"
 
 class QPushButton;
 class QHBoxLayout;
@@ -90,7 +90,7 @@ public:
   void scaleTo(qreal mult);
   void resetCalibrationCoef();
   void setCalibrationCoef(std::optional<qreal> coef);
-  void removeGraphicsItem(GraphicsItem* item);
+  int removeGraphicsItem(GraphicsItem* item);
   void setImage(const cv::Mat& image, int rotation = 0);
   void setGradient(const cv::Mat& gradient);
   void setImage(const QImage& image);

@@ -152,7 +152,7 @@
     <ClInclude Include="app_preferences.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="defs.h">
+    <ClInclude Include="types.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="graphics_cobb_angle_item.h">

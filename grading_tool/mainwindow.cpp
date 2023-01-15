@@ -33,7 +33,7 @@
 #include "progress_indicator.h"
 #include "settings_window.h"
 #include "app_preferences.h"
-#include "defs.h"
+#include "types.h"
 
 using namespace QtCharts;
 
@@ -129,9 +129,12 @@ MainWindow::MainWindow(QWidget* parent) :
   makeMenuFile();
   makeMenuMeasure();
   makeMenuTools();
-  
+
+  qRegisterMetaType<xr::contours_t>("xr::contours_t");
+
   connect(this, &MainWindow::itemProcessed, this, &MainWindow::onItemProcessed, Qt::QueuedConnection);
   connect(this, &MainWindow::contoursFound, this, &MainWindow::onContoursFound, Qt::QueuedConnection);
+  connect(this, &MainWindow::contoursFoundBase, this, &MainWindow::onContoursFoundBase, Qt::QueuedConnection);
   connect(viewport_, &Viewport::calibFinished, this, &MainWindow::calibrateForLength);
   connect(viewport_, &Viewport::mousePosChanged, this, &MainWindow::mousePosChanged);
   connect(viewport_, &Viewport::mousePosOutOfImage, this, &MainWindow::mousePosOutOfImage);
@@ -150,7 +153,13 @@ MainWindow::MainWindow(QWidget* parent) :
     auto remove = new QAction("Remove", menu);
     remove->setStatusTip("Remove selected graphics item");
     connect(remove, &QAction::triggered, [=]() {
-      viewport_->removeGraphicsItem(item);
+      auto idx = viewport_->removeGraphicsItem(item);
+      if (idx >= 0 && idx < current_item_->contours.size()) {
+        current_item_->contours.erase(current_item_->contours.begin() + idx);
+#if _DEBUG
+        saveCurrentContoursToImage();
+#endif
+      }
     });
     menu->addAction(remove);
 
@@ -629,6 +638,17 @@ void MainWindow::onItemProcessed(Metadata::HardPtr data) {
   }
 }
 
+void MainWindow::saveCurrentContoursToImage() {
+  auto sample = current_item_->image.clone();
+  for (auto contour : current_item_->contours) {
+    for (auto pt : contour) {
+      cv::rectangle(sample, cv::Rect(pt.x - 1, pt.y - 1, 3, 3), cv::Scalar(0, 0, 0), -1);
+    }
+  }
+
+  cv::imwrite("sample.png", sample);
+}
+
 void MainWindow::onContoursFound(const QVector<QVector<QPoint>>& contours) {
   viewport_->setGradient(current_item_->gradient);
   for (const auto& contour : contours) {
@@ -639,6 +659,28 @@ void MainWindow::onContoursFound(const QVector<QVector<QPoint>>& contours) {
   find_contours_->setEnabled(true);
   find_all_contours_->setEnabled(true);
   loading_ind_->stopAnimation();
+}
+
+void MainWindow::onContoursFoundBase(const xr::contours_t& contours) {
+  QVector<QVector<QPoint>> simplified_contours;
+  if (!contours.empty()) {
+    for (auto contour : contours) {
+      int k = 0;
+
+      // simplify contours and move to global coords system
+      QVector<QPoint> points;
+      for (auto pt : contour) {
+        if (k++ % 20 == 0) points.push_back(QPoint(pt.x, pt.y));
+      }
+
+      simplified_contours.push_back(points);
+    }
+
+    onContoursFound(simplified_contours);
+#if _DEBUG
+    saveCurrentContoursToImage();
+#endif
+  }
 }
 
 void MainWindow::calibrateForLength(qreal length) {
@@ -829,10 +871,20 @@ void MainWindow::findContoursOnData(Metadata::HardPtr data) {
     else processor.setContoursFinderType(xr::MainProcessor::FinderType::Simple);
 
     // run search
-    auto contours = processor.findContours();
+    data->contours = processor.findContours();
+
+    // move contours to global coords system
+    for (auto& contour : data->contours) {
+      auto r = ::rect(contour);
+      for (auto& pt : contour) {
+        pt.x = rect.x + pt.x / factor;
+        pt.y = rect.y + pt.y / factor;
+      }
+    }
+
     QVector<QVector<QPoint>> simplified_contours;
-    if (!contours.empty()) {
-      for (auto contour : contours) {
+    if (!data->contours.empty()) {
+      for (auto contour : data->contours) {
         auto r = ::rect(contour);
 
 #if 0
@@ -852,9 +904,9 @@ void MainWindow::findContoursOnData(Metadata::HardPtr data) {
         int k = 0;
         QVector<QPoint> points;
 
-        // simplify contours and move to global coords system
+        // simplify contours 
         for (auto pt : contour) {
-          if (k++ % 20 == 0) points.push_back(QPoint(rect.x + pt.x / factor, rect.y + pt.y / factor));
+          if (k++ % 20 == 0) points.push_back(QPoint(pt.x, pt.y));
         }
 
         auto poly = QPolygonF(points);
@@ -930,31 +982,16 @@ void MainWindow::findContoursOnImageImpl(Metadata::HardPtr data) {
   else processor.setContoursFinderType(xr::MainProcessor::FinderType::Simple);
 
   // run search
-  auto contours = processor.findContours();
-  QVector<QVector<QPoint>> simplified_contours;
-  if (!contours.empty()) {
-    for (auto contour : contours) {
-      QVector<QPoint> points;
-      int k = 0;
+  data->contours = processor.findContours();
 
-      // simplify contours and move to global coords system
-      for (auto pt : contour) {
-        if (k++ % 20 == 0) points.push_back(QPoint(pt.x / factor, pt.y / factor));
-      }
-
-      auto poly = QPolygonF(points);
-      if (square(poly) > perimeter(poly) * 2) {
-        simplified_contours.push_back(points);
-      }
+  for (auto& contour : data->contours) {
+    for (auto& pt : contour) {
+      pt.x /= factor;
+      pt.y /= factor;
     }
-
-    // order by square
-    qSort(simplified_contours.begin(), simplified_contours.end(), [](auto lhs, auto rhs) {
-      return square(QPolygonF(lhs)) > square(QPolygonF(rhs));
-    });
   }
 
-  emit contoursFound(simplified_contours);
+  emit contoursFoundBase(data->contours);
 }
 
 void MainWindow::rotateCurrentItem(int angle) {

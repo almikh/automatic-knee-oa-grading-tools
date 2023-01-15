@@ -5,9 +5,10 @@
 #include <QString>
 #include <QVector>
 
+#include <defs.h>
 #include <opencv2/opencv.hpp>
 #include "classifier.h"
-#include "defs.h"
+#include "types.h"
 
 struct Metadata {
   using HardPtr = std::shared_ptr<Metadata>;
@@ -22,6 +23,7 @@ public:
   cv::Mat gradient;
   QString filename;
   QVector<Joint> joints;
+  xr::contours_t contours;
   bool already_display = false;
   ViewportState viewport_state;
   std::optional<qreal> calib_coef;

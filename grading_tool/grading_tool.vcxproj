@@ -213,7 +213,7 @@
     <QtMoc Include="mainwindow.h">
     </QtMoc>
     <QtMoc Include="view_queue.h" />
-    <ClInclude Include="defs.h" />
+    <ClInclude Include="types.h" />
     <ClInclude Include="graphics_angle_item.h" />
     <ClInclude Include="graphics_cobb_angle_item.h" />
     <ClInclude Include="graphics_ellipse_item.h" />

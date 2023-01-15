@@ -63,7 +63,7 @@ ViewportState Viewport::state() const {
   return s;
 }
 
-void Viewport::removeGraphicsItem(GraphicsItem* item) {
+int Viewport::removeGraphicsItem(GraphicsItem* item) {
   auto idx = graphics_items_.indexOf(item);
   if (idx >= 0) {
     graphics_items_.removeAt(idx);
@@ -72,6 +72,8 @@ void Viewport::removeGraphicsItem(GraphicsItem* item) {
 
     repaint();
   }
+
+  return idx;
 }
 
 void Viewport::scaleTo(qreal factor) {

@@ -3,7 +3,7 @@
 #include <QJsonObject>
 #include <optional>
 
-#include "defs.h"
+#include "types.h"
 #include "graphics_text_item.h"
 #include "graphics_line_item.h"
 #include "graphics_ellipse_item.h"
